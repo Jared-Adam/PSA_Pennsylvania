@@ -8,6 +8,7 @@ library(tidyverse)
 
 # Data ####
 yield <- PSA_PA_yield
+weather <- PSA_PA_weather
 
 # Test of averaging every two rows ####
 
@@ -66,14 +67,46 @@ overall_yield <- yield_for_weather %>%
   group_by(trt, year) %>%
   mutate(overall_mean = mean(bu_ac)) %>%
   select(-crop, -trt_num, -block, -bu_ac, -plot) %>% 
-  distinct(trt, .keep_all = TRUE) %>% 
-  print(n = 20)
+  distinct(trt, .keep_all = TRUE) 
 
 ?geom_bar
 ggplot(overall_yield, aes(x= year, y = overall_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')
 
-# now going to add weather data 
+# now going to add weather data
+?lubridate
+weather_clean <- weather %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
+  mutate(month = format(date, "%m"),
+         year = format(date, "%y"),
+         month_name = month.name[month(date)]) %>% 
+  rename(avg_air = 'Avg Air Temp (?F)',
+         max_temp = 'Max Air Temp (?F)', 
+         min_temp = 'Min Air Temp (?F)',
+         tot_precip = 'Total Precipitation') %>% 
+  mutate(month = as.factor(month),
+         year = as.factor(year),
+         month_name = as.factor(month_name)) %>% 
+  group_by(month, year) %>% 
+  mutate(avg_precip = mean(tot_precip)) %>% 
+  distinct(year, .keep_all = TRUE) %>% 
+  select(-date, -max_temp, -min_temp) %>% 
+  relocate(month_name, month, year, avg_air, avg_precip) %>% 
+  arrange(year) %>% 
+  print( n = Inf)
+
+ggplot(weather_clean, aes(x = year, y = tot_precip, fill = month_name))+
+  geom_bar(position = 'dodge', stat = 'identity')
+
+# combining weather and yield 
+new_df <- cbind(overall_yield, weather_clean)
+weather_yield <- new_df %>% 
+  rename(year = year...1) %>% 
+  select(-year...6)
+ggplot(weather_yield, aes(x = avg_precip, y = overall_mean, color = trt, shape = year))+
+         geom_point(size = 4)
+
+###
 
 # Anova ####
 anova_one <- aov(bu_ac_mean ~ trt + year, yield_clean)
@@ -90,3 +123,8 @@ TukeyHSD(anova_two)
 ggplot(yield_clean, aes(x = year, y = bu_ac_mean, fill = trt))+
   geom_boxplot()
 
+# yield ~ precip
+anova_three <- aov(overall_mean ~ avg_precip, weather_yield)
+summary(anova_three)
+hist(residuals(anova_three))
+shapiro.test(residuals(anova_three))
