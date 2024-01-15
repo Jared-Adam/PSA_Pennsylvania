@@ -40,7 +40,7 @@ yield
 yield$plot <- gsub('-[0-9.]','', yield$plot) # remove - and all numbers following
 
 
-yield_clean <- yield%>% 
+yield_clean <- yield %>% 
   group_by(year, plot) %>% 
   mutate(lb_pass_mean = mean(lb_pass_moisture), 
          lb_ac_mean = mean(lb_ac),
@@ -50,6 +50,30 @@ yield_clean <- yield%>%
   distinct(plot, .keep_all = TRUE) %>% 
   print(n = Inf)
 as_tibble(yield_clean)
+
+###
+
+# going to make a new df to regress weather data by yield
+yield_for_weather <- yield %>% 
+  group_by(year, plot) %>% 
+  select(-lb_pass_moisture, -lb_ac) %>% 
+  mutate(year = as.factor(year),
+         trt = as.factor(trt)) %>% 
+  print(n = Inf)
+
+overall_yield <- yield_for_weather %>% 
+  mutate(trt = as.factor(trt)) %>% 
+  group_by(trt, year) %>%
+  mutate(overall_mean = mean(bu_ac)) %>%
+  select(-crop, -trt_num, -block, -bu_ac, -plot) %>% 
+  distinct(trt, .keep_all = TRUE) %>% 
+  print(n = 20)
+
+?geom_bar
+ggplot(overall_yield, aes(x= year, y = overall_mean, fill = trt))+
+  geom_bar(position = 'dodge' , stat = 'identity')
+
+# now going to add weather data 
 
 # Anova ####
 anova_one <- aov(bu_ac_mean ~ trt + year, yield_clean)
@@ -65,3 +89,4 @@ TukeyHSD(anova_two)
 
 ggplot(yield_clean, aes(x = year, y = bu_ac_mean, fill = trt))+
   geom_boxplot()
+
