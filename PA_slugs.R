@@ -2,7 +2,8 @@
 
 # packages ####
 library(tidyverse)
-
+library(emmeans)
+library(lme4)
 # data ####
 slugs <- PSA_PA_slugs
 
@@ -44,6 +45,7 @@ slug_clean <- slugs %>%
 fall_slugs <- subset(slug_clean, season == "fall")
 spring_slugs <- subset(slug_clean, season == "spring")
 
+# models ####
 
 #over dispersion check: yes
 mean(fall_slugs$total_slug, na.rm = TRUE)
@@ -51,7 +53,21 @@ var(fall_slugs$total_slug, na.rm = TRUE)
 mean(spring_slugs$total_slug, na.rm = TRUE)
 var(spring_slugs$total_slug, na.rm = TRUE)
 
-# data vis: good ggplots
+# spring models 
+# test model: 
+test_spring_model <- glmer.nb(total_slug ~ treatment+
+                                (1|block/plot_id)+ (1|month), data = spring_slugs)
+summary(test_spring_model)
+
+# the random of effects of this model are extremely low, this means I likely do not need to include them
+spring_model <- glmer.nb(total_slug ~ treatment +
+                           (1|block) + (1|month), 
+                         data = spring_slugs)
+summary(spring_model)
+hist(residuals(spring_model))
+spring_emm <- emmeans(spring_model, pairwise ~ treatment, type = "response")
+pairs(spring_emm) # will print the contrasts
+plot(spring_emm$emmeans)
 
 ggplot(spring_slugs, aes(x = treatment, y = total_slug, fill = year))+
   geom_boxplot()+
@@ -62,6 +78,11 @@ ggplot(spring_slugs, aes(x = treatment, y = total_slug, fill = year))+
   xlab("")+
   theme(axis.text.x = element_text(size=12),
         axis.text.y = element_text(size = 12))
+
+
+
+
+
 
 ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
   geom_boxplot()+
