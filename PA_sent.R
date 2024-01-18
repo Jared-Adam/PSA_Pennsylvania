@@ -8,6 +8,8 @@
 # packages ####
 library(tidyverse)
 library(lme4)
+library(performance)
+library(see)
 
 # data ####
 sent <- PSA_PA_Sent_prey
@@ -33,6 +35,17 @@ sent_23 <- subset(sent_years, year == '2023')
 # 2021 ####
 sent_21
 
+# perofrmaance test 
+test_model <- glmer(to.predated ~ as.factor(treatment) +
+                            (1|block), data = sent_21_v3_loop,
+                          family = binomial)
+r2_nakagawa(test_model)
+result<-binned_residuals(test_model)
+plot(result)
+
+
+
+
 #subset by growth stage
 sent_21_v3_loop <- subset(sent_21, growth_stage == 'V3')
 sent_21_v5_loop <- subset(sent_21, growth_stage == 'V5')
@@ -45,41 +58,58 @@ sent_21_r3_loop <- subset(sent_21, growth_stage == 'R3')
 # step 2, created an empty list for the outputs
 v3_time_list <- c("to.predated", "n.predated", "d.predated")
 v3_21_summary_list <- list()
+r2_list <- list()
+binned_residuals <- list()
 for(i in 1:length(v3_time_list)){ # for each iteration across the length of the list I made
   print(i) # print each iteration
   col <- v3_time_list[i] #place the iterations into an object named col
   print(col) # print them to make sure it works
-  sent_21_v3 <- subset(sent_21_v3_loop, select = c("plot_id", "row", "treatment", col)) # subset what I want to use in the model plus the new col I made
-  colnames(sent_21_v3) <- c("plot_id", "row", "treatment", "col") # add this as a column name for the model
+  sent_21_v3 <- subset(sent_21_v3_loop, select = c("plot_id", "row", "treatment",'block', col)) # subset what I want to use in the model plus the new col I made
+  colnames(sent_21_v3) <- c("plot_id", "row", "treatment", 'block', "col") # add this as a column name for the model
   #print sent_21_V3 to make sure it works
   sent_21_v3_model <- glmer(col ~ as.factor(treatment) +
-                             (1|plot_id/row), data = sent_21_v3,
+                             (1|block), data = sent_21_v3,
                            family = binomial)
   summary_v3_sent <- summary(sent_21_v3_model)
   v3_21_summary_list[[i]] <- summary_v3_sent
+  r2_list_final <- r2_nakagawa(sent_21_v3_model)
+  r2_list[[i]] <- r2_list_final
+  residual_list <- binned_residuals(sent_21_v3_model)
+  binned_residuals[[i]] <- residual_list
 }
 v3_21_summary_list
+r2_list
+plot(binned_residuals[[1]])
+
 hist(residuals(v3_21_summary_list[[1]]))
 hist(residuals(v3_21_summary_list[[2]]))
 hist(residuals(v3_21_summary_list[[3]]))
 
-
 # V5
 v5_time_list <- c('to.predated', 'n.predated', 'd.predated')
 v5_21_summary_list <- list()
+r2_list_v5 <- list()
+binned_residuals_v5 <- list()
 for(i in 1:length(v5_time_list)){
   print(i)
   col <- v5_time_list[i]
   print(col)
-  sent_21_v5 <- subset(sent_21_v5_loop, select = c("plot_id", "row", "treatment", col))
-  colnames(sent_21_v5) <- c('plot_id', 'row', 'treatment', 'col')
+  sent_21_v5 <- subset(sent_21_v5_loop, select = c("plot_id", "row", "treatment",'block', col))
+  colnames(sent_21_v5) <- c('plot_id', 'row', 'treatment','block', 'col')
   sent_21_v5_model <- glmer(col ~ as.factor(treatment)+
-                              (1|plot_id/row), data = sent_21_v5, 
+                              (1|block), data = sent_21_v5, 
                             family = binomial)
   summary_v5_sent <- summary(sent_21_v5_model)
   v5_21_summary_list[[i]] <- summary_v5_sent
+  r2_list_final <- r2_nakagawa(sent_21_v5_model)
+  r2_list_v5[[i]] <- r2_list_final
+  residual_list <- binned_residuals(sent_21_v5_model)
+  binned_residuals_v5[[i]] <- residual_list
 }
 v5_21_summary_list
+r2_list_v5
+plot(binned_residuals_v5[[1]])
+
 hist(residuals(v5_21_summary_list[[1]]))
 hist(residuals(v5_21_summary_list[[2]]))
 hist(residuals(v5_21_summary_list[[3]]))
@@ -88,26 +118,36 @@ hist(residuals(v5_21_summary_list[[3]]))
 # R3
 r3_time_list <- c('to.predated', 'n.predated', 'd.predated')
 r3_21_summary_list <- list()
+r2_list_r3 <- list()
+binned_residuals_r3 <- list()
 for(i in 1:length(r3_time_list)){
   print(i)
   col <- r3_time_list[i]
   print(col)
-  sent_21_r3 <- subset(sent_21_r3_loop, select = c("plot_id", "row", "treatment", col))
-  colnames(sent_21_r3) <- c('plot_id', 'row', 'treatment', 'col')
+  sent_21_r3 <- subset(sent_21_r3_loop, select = c("plot_id", "row", "treatment", "block", col))
+  colnames(sent_21_r3) <- c('plot_id', 'row', 'treatment', 'block', 'col')
   sent_21_r3_model <- glmer(col ~ as.factor(treatment)+
-                              (1|plot_id/row), data = sent_21_r3, 
+                              (1|block/plot_id), data = sent_21_r3, # nesting year in the future
                             family = binomial)
   summary_r3_sent <- summary(sent_21_r3_model)
   r3_21_summary_list[[i]] <- summary_r3_sent
-}
+  r2_list_final <- r2_nakagawa(sent_21_r3_model)
+  r2_list_r3[[i]] <- r2_list_final
+#   residual_list <- binned_residuals(sent_21_r3_model)
+#   binned_residuals_r3[[i]] <- residual_list
+ }
 r3_21_summary_list
-#error in d.predated: IDK why
+r2_list_r3
+binned_residuals_r3
+#Singularity error: Is this becuase my values are so close to 1 that there is no variation? 
+
 
 hist(residuals(r3_21_summary_list[[1]]))
 hist(residuals(r3_21_summary_list[[2]]))
 #hist(residuals(r3_21_summary_list[[3]]))
 
-
+# binary data is ok with plot becuase each is a data point. Count or biomass does not work becuase it is pseudo rep. 
+# in that case, we take the average. 
 
 
 
