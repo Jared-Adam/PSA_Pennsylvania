@@ -9,6 +9,7 @@ library(tidyverse)
 # Data ####
 yield <- PSA_PA_yield
 weather <- PSA_PA_weather
+cc <- PSA_PAcc_biomass
 
 # Test of averaging every two rows ####
 
@@ -65,9 +66,10 @@ yield_for_weather <- yield %>%
 overall_yield <- yield_for_weather %>% 
   mutate(trt = as.factor(trt)) %>% 
   group_by(trt, year) %>%
-  summarise(overall_mean = mean(bu_ac), 
-            sd = sd(bu_ac),
-            se = sd/sqrt(n())) 
+  summarise(overall_yield_mean = mean(bu_ac), 
+            yield_sd = sd(bu_ac),
+            yield_se = yield_sd/sqrt(n())) %>% 
+  arrange(year)
 
 # %>%
 #   dplyr::select(-crop, -trt_num, -block, -bu_ac, -plot) %>% 
@@ -78,7 +80,7 @@ overall_yield <- yield_for_weather %>%
 ggplot(overall_yield, aes(x= trt, y = overall_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
   facet_wrap(~year)+
-   geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+   geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
                  colour="orange", alpha=0.9, size=1.3)+
   labs(y = "Mean (bu/ac) by treatment",
        x = 'Treatment',
@@ -94,9 +96,9 @@ ggplot(overall_yield, aes(x= trt, y = overall_mean, fill = trt))+
 yield_21 <- overall_yield %>% 
   filter(year %in% '2021')
 
-ggplot(yield_21, aes(x = trt, y = overall_mean, fill = trt)) +
+ggplot(yield_21, aes(x = trt, y = overall_yield_mean, fill = trt)) +
   geom_bar(position = 'dodge', stat = 'identity')+
-  geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+  geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
                  colour="orange", alpha=0.9, size=1.3)+
   labs(y = "Mean (bu/ac) by treatment",
        x = 'Treatment',
@@ -106,9 +108,9 @@ ggplot(yield_21, aes(x = trt, y = overall_mean, fill = trt)) +
 #2022
 yield_22 <- overall_yield %>% 
   filter(year %in% '2022')
-ggplot(yield_22 , aes(x = trt, y = overall_mean, fill = trt)) +
+ggplot(yield_22 , aes(x = trt, y = overall_yield_mean, fill = trt)) +
   geom_bar(position = 'dodge', stat = 'identity')+
-  geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+  geom_errorbar( aes(x=trt, ymin=overall_yield_mean-se, ymax=overall_yield_mean+yield_se), width=0.4, 
                  colour="orange", alpha=0.9, size=1.3)+
   labs(y = "Mean (bu/ac) by treatment",
        x = 'Treatment',
@@ -118,9 +120,9 @@ ggplot(yield_22 , aes(x = trt, y = overall_mean, fill = trt)) +
 #2023 
 yield_23 <- overall_yield %>% 
   filter(year %in% '2023')
-ggplot(yield_23 , aes(x = trt, y = overall_mean, fill = trt)) +
+ggplot(yield_23 , aes(x = trt, y = overall_yield_mean, fill = trt)) +
   geom_bar(position = 'dodge', stat = 'identity')+
-  geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+  geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
                  colour="orange", alpha=0.9, size=1.3)+
   labs(y = "Mean (bu/ac) by treatment",
        x = 'Treatment',
@@ -143,7 +145,7 @@ weather_clean <- weather %>%
   mutate(month = as.factor(month),
          year = as.factor(year),
          month_name = as.factor(month_name)) %>% 
-  group_by(month, year) %>% 
+  group_by(year, month) %>% 
   mutate(avg_precip = mean(tot_precip)) %>% 
   distinct(year, .keep_all = TRUE) %>% 
   select(-date, -max_temp, -min_temp) %>% 
@@ -155,22 +157,49 @@ ggplot(weather_clean, aes(x = month, y = tot_precip, fill = month_name))+
   geom_bar(position = 'dodge', stat = 'identity')+
   facet_wrap(~year)
 
+### this needs work: 1/19/2024
+# dfs are not the same and are binding, but not correctly ...
 # combining weather and yield 
 new_df <- cbind(overall_yield, weather_clean)
 weather_yield <- new_df %>% 
   rename(year = year...2) %>% 
   select(-year...8)
-ggplot(filter(weather_yield, year  %in% '2022'), aes(x = overall_mean, y = avg_precip, color = trt, shape = year))+
+ggplot(filter(weather_yield, year  %in% '2022'), aes(x = overall_yield$overall_yield_mean, y = weather_clean$avg_precip, color = trt, shape = year))+
          geom_point(size = 4)
-
+####
 
 
 # cover crop biomass
+# cc_clean <- 
+  
+cc_clean <- cc %>% 
+  mutate_at(vars(1:4), as.factor) %>% 
+  mutate(cc_biomass_g = as.numeric(cc_biomass_g)) %>% 
+  group_by(year, trt) %>% 
+  summarise(cc_mean = mean(cc_biomass_g),
+            cc_sd = sd(cc_biomass_g),
+            cc_se = cc_sd/sqrt(n())) %>%
+  arrange(year, factor(trt, c("check", "green", "brown", "gr-br")))
 
+ggplot(cc_clean, aes(x = trt, y = cc_mean, fill = trt))+
+  facet_wrap(~year)+
+  geom_bar(stat = 'identity', position = 'dodge')+
+  geom_errorbar( aes(x=trt, ymin=cc_mean-cc_se, ymax=cc_mean+cc_se), width=0.4, 
+                 colour="orange", alpha=0.9, size=1.3)
 
+# add cc to weather and yield df
+cc_bind <- cc_clean 
+cc_yield <- cbind(cc_bind, overall_yield)
+cc_yield <- cc_yield %>% 
+  dplyr::select(-'year...7') %>% 
+  rename(year = year...1) %>% 
+  dplyr::select(-trt...2) %>% 
+  rename(trt = trt...6) %>% 
+  relocate(year, trt)
 
-
-
+ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean, shape = trt, color = trt))+
+  geom_point(stat = 'identity', position = 'identity')+
+  facet_wrap(~year)
 
 ###
 
