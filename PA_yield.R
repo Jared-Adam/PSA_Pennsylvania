@@ -65,13 +65,69 @@ yield_for_weather <- yield %>%
 overall_yield <- yield_for_weather %>% 
   mutate(trt = as.factor(trt)) %>% 
   group_by(trt, year) %>%
-  mutate(overall_mean = mean(bu_ac)) %>%
-  select(-crop, -trt_num, -block, -bu_ac, -plot) %>% 
-  distinct(trt, .keep_all = TRUE) 
+  summarise(overall_mean = mean(bu_ac), 
+            sd = sd(bu_ac),
+            se = sd/sqrt(n())) 
+
+# %>%
+#   dplyr::select(-crop, -trt_num, -block, -bu_ac, -plot) %>% 
+#   distinct(trt, .keep_all = TRUE) 
+#   
 
 ?geom_bar
-ggplot(overall_yield, aes(x= year, y = overall_mean, fill = trt))+
-  geom_bar(position = 'dodge' , stat = 'identity')
+ggplot(overall_yield, aes(x= trt, y = overall_mean, fill = trt))+
+  geom_bar(position = 'dodge' , stat = 'identity')+
+  facet_wrap(~year)+
+   geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+                 colour="orange", alpha=0.9, size=1.3)+
+  labs(y = "Mean (bu/ac) by treatment",
+       x = 'Treatment',
+       title = 'Rough plot of yield by year and treatment with standard error bars')+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))
+# green outcompeted other treatments in both 2022 and 2023
+  # this is important!
+
+### 
+# by year: yield
+
+#2021 
+yield_21 <- overall_yield %>% 
+  filter(year %in% '2021')
+
+ggplot(yield_21, aes(x = trt, y = overall_mean, fill = trt)) +
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+                 colour="orange", alpha=0.9, size=1.3)+
+  labs(y = "Mean (bu/ac) by treatment",
+       x = 'Treatment',
+       title = 'Rough plot of yield by year and treatment with standard error bars')+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))
+
+#2022
+yield_22 <- overall_yield %>% 
+  filter(year %in% '2022')
+ggplot(yield_22 , aes(x = trt, y = overall_mean, fill = trt)) +
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+                 colour="orange", alpha=0.9, size=1.3)+
+  labs(y = "Mean (bu/ac) by treatment",
+       x = 'Treatment',
+       title = 'Rough plot of yield by year and treatment with standard error bars')+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))
+
+#2023 
+yield_23 <- overall_yield %>% 
+  filter(year %in% '2023')
+ggplot(yield_23 , aes(x = trt, y = overall_mean, fill = trt)) +
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar( aes(x=trt, ymin=overall_mean-se, ymax=overall_mean+se), width=0.4, 
+                 colour="orange", alpha=0.9, size=1.3)+
+  labs(y = "Mean (bu/ac) by treatment",
+       x = 'Treatment',
+       title = 'Rough plot of yield by year and treatment with standard error bars')+
+  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))
+
+
 
 # now going to add weather data
 ?lubridate
