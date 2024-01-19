@@ -134,7 +134,7 @@ ggplot(yield_23 , aes(x = trt, y = overall_mean, fill = trt)) +
 weather_clean <- weather %>% 
   mutate(date = as.Date(date, "%m/%d/%Y")) %>% 
   mutate(month = format(date, "%m"),
-         year = format(date, "%y"),
+         year = format(date, "%Y"),
          month_name = month.name[month(date)]) %>% 
   rename(avg_air = 'Avg Air Temp (?F)',
          max_temp = 'Max Air Temp (?F)', 
@@ -151,16 +151,26 @@ weather_clean <- weather %>%
   arrange(year) %>% 
   print( n = Inf)
 
-ggplot(weather_clean, aes(x = year, y = tot_precip, fill = month_name))+
-  geom_bar(position = 'dodge', stat = 'identity')
+ggplot(weather_clean, aes(x = month, y = tot_precip, fill = month_name))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  facet_wrap(~year)
 
 # combining weather and yield 
 new_df <- cbind(overall_yield, weather_clean)
 weather_yield <- new_df %>% 
-  rename(year = year...1) %>% 
-  select(-year...6)
-ggplot(weather_yield, aes(x = avg_precip, y = overall_mean, color = trt, shape = year))+
+  rename(year = year...2) %>% 
+  select(-year...8)
+ggplot(filter(weather_yield, year  %in% '2022'), aes(x = overall_mean, y = avg_precip, color = trt, shape = year))+
          geom_point(size = 4)
+
+
+
+# cover crop biomass
+
+
+
+
+
 
 ###
 
