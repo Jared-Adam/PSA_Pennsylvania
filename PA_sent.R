@@ -25,7 +25,13 @@ sent_years <- sent %>%
           d.absent, d.partial, d.predated, to.predated, n.weather, d.weather)%>% 
   mutate(n.predated = as.double(n.predated),
          d.predated = as.double(d.predated),
-         to.predated = as.double(to.predated))
+         to.predated = as.double(to.predated)) %>% 
+  group_by(year, block, treatment, growth_stage, plot_id) %>% 
+  summarise(pred_tot = sum(to.predated)) %>% 
+  mutate(total = 6) %>% 
+  mutate(prop_pred = (pred_tot/total)) %>% 
+  print(n= Inf)
+  
 
 # subset by year and then growth stage 
 sent_21 <- subset(sent_years, year == '2021')
@@ -36,12 +42,14 @@ sent_23 <- subset(sent_years, year == '2023')
 sent_21
 
 # perofrmaance test 
-test_model <- glmer(to.predated ~ as.factor(treatment) +
-                            (1|block), data = sent_21_v3_loop,
-                          family = binomial)
+test_model <- glmer(prop_pred ~ as.factor(treatment) +
+                            (1|block), data = sent_21_v3_loop, 
+                    weights = total,
+                    family = binomial)
 r2_nakagawa(test_model)
 result<-binned_residuals(test_model)
 plot(result)
+summary(test_model)
 
 
 
@@ -147,7 +155,7 @@ hist(residuals(r3_21_summary_list[[2]]))
 #hist(residuals(r3_21_summary_list[[3]]))
 
 # binary data is ok with plot becuase each is a data point. Count or biomass does not work becuase it is pseudo rep. 
-# in that case, we take the average. 
+# in that case, we take the average. Wallace said this, I do not agree and changed it to a prop
 
 ###
 ##
@@ -220,11 +228,12 @@ binned_residuals <- list()
     growth <- growth_list[j]
     # print(col) # print them to make sure it works
     print(growth)
-    sent_22_mdf <- subset(sent_22_loop, select = c("plot_id", "row", "treatment",'block', 'to.predated')) # subset what I want to use in the model plus the new col I made
-    colnames(sent_22_v3) <- c("plot_id", "row", "treatment", 'block', 'to.predated') # add this as a column name for the model
+    sent_22_mdf <- subset(sent_22_loop, select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
+    colnames(sent_22_v3) <- c("plot_id", "treatment", 'block', 'prop_pred', 'total') # add this as a column name for the model
     #print sent_21_V3 to make sure it works
-    sent_22_model <- glmer(to.predated ~ as.factor(treatment) +
+    sent_22_model <- glmer(prop_pred ~ as.factor(treatment) +
                                 (1|block), data = sent_22_mdf,
+                           weights = total,
                               family = binomial)
     summary_22_v3_sent <- summary(sent_22_model)
     summary_list_22[[j]] <- summary_22_v3_sent
@@ -233,7 +242,7 @@ binned_residuals <- list()
   }
 
 test_summary_list <- v3_22_summary_list
-r2_list_22_v3[[3]] # r2 on these is not working, I don't think... 1/21/2024
+r2_list_22_v3[[3]] # no conditional r2 becuase singular
 # plot(binned_residuals())
 
 
@@ -273,3 +282,43 @@ binned_residuals <- list()
 
 test_summary_list <- v3_23_summary_list
 r2_list_23_v3[[3]]
+
+# 2023 prop test 
+sent_23_test_loop <- sent_23
+
+growth_list <- c('V3', 'V5', 'R3')
+test_23_summary_list <- list()
+r2_list_23_test <- list()
+binned_residuals <- list()
+
+for(j in 1: length(growth_list)){# for each iteration across the length of the list I made
+  #print(i) # print each iteration
+  print(j)
+  #col <- v3_time_list[i] #place the iterations into an object named col
+  growth <- growth_list[j]
+  # print(col) # print them to make sure it works
+  print(growth)
+  sent_23_mdf <- subset(sent_23_test_loop, select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
+  colnames(sent_23_mdf) <- c("plot_id", "treatment", 'block', 'prop_pred', 'total') # add this as a column name for the model
+  #print sent_21_V3 to make sure it works
+  sent_23_test_model <- glmer(prop_pred ~ as.factor(treatment) +
+                           (1|block), data = sent_23_mdf,
+                         weights = total,
+                         family = binomial)
+  test_23_summary_list <- summary(sent_23_test_model)
+  summary_list_22[[j]] <- test_23_summary_list
+  r2_list_23_test <- r2_nakagawa(sent_23_test_model)
+  r2_list_23_test[[j]] <- r2_list_23_test
+}
+test_23_summary_list
+
+
+
+
+# plots ####
+sent_plots <- sent %>% 
+  select(-n.weather, -d.weather, -n.absent, -n.partial, -d.absent, -d.partial) %>% 
+  mutate(prop_pred = (to.predated/6))
+ggplot(sent_plots, aes(x = treatment, y = to.predated))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  facet_wrap(~growth_stage)
