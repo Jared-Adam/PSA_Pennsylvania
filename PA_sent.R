@@ -25,13 +25,20 @@ sent_years <- sent %>%
           d.absent, d.partial, d.predated, to.predated, n.weather, d.weather)%>% 
   mutate(n.predated = as.double(n.predated),
          d.predated = as.double(d.predated),
-         to.predated = as.double(to.predated)) %>% 
+         to.predated = as.double(to.predated)) %>%
+  
+ 
+  
+sent_prop <- sent %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  dplyr::select(-location, -date) %>% 
   group_by(year, block, treatment, growth_stage, plot_id) %>% 
   summarise(pred_tot = sum(to.predated)) %>% 
   mutate(total = 6) %>% 
   mutate(prop_pred = (pred_tot/total)) %>% 
   print(n= Inf)
-  
+
 
 # subset by year and then growth stage 
 sent_21 <- subset(sent_years, year == '2021')
@@ -317,12 +324,14 @@ test_summary_list
 r2_test
 
 summary_list <- list()
-models <- list()
+model <- list()
 growthlist <- c('V3', 'V5', 'R3')
-for (x in unique(test_loop$growth_stage)) {
+for (x in seq_along(unique(test_loop$growth_stage))) {
   print(x)
-  models <- glmer(prop_pred ~ as.factor(treatment) +
-                   (1|block), data = test_loop, 
+  val <- unique(test_loop$growth_stage[x])
+  # data = subset(test_loop, growth_stage == x)
+  model <- glmer(prop_pred ~ as.factor(treatment) +
+                   (1|block), data = data, 
                  weights = total, 
                  family = binomial)
   summary_here <- summary(summary(model))
@@ -330,19 +339,27 @@ for (x in unique(test_loop$growth_stage)) {
 }
 summary_list
 
+
+
+
+
+
 library(broom)
 
-library(tidyr)
-
 broom_test <- test_loop %>% 
-  group_by(growth_stage) %>% 
-  summarise(out = list(glmer(prop_pred ~ as.factor(treatment) +
+  ungroup() %>% 
+  mutate(growth_stage = as.factor(growth_stage)) %>% 
+  nest(growth_stage) %>% 
+  mutate(model = map(glmer(prop_pred ~ as.factor(treatment) +
                                       (1|block), data = test_loop, 
                                     weights = total, 
-                                    family = binomial))) %>%
+                                    family = binomial))) %>% 
   unnest(out)
 
+# 1/22/2023 : done with this shit for a while 
 
+
+# all years for fuck sake ####
 
 
 
@@ -356,9 +373,12 @@ broom_test <- test_loop %>%
 
 
 # plots ####
-sent_plots <- sent %>% 
-  select(-n.weather, -d.weather, -n.absent, -n.partial, -d.absent, -d.partial) %>% 
-  mutate(prop_pred = (to.predated/6))
-ggplot(sent_plots, aes(x = treatment, y = to.predated))+
-  geom_bar(position = 'dodge', stat = 'identity')+
-  facet_wrap(~growth_stage)
+# fuq u 
+sent_prop
+
+
+
+ggplot(sent_prop, aes(x = as.factor(treatment), y = prop_pred, fill = as.factor(treatment)))+
+  geom_boxplot()+
+  coord_flip()+
+  facet_wrap(~year)
