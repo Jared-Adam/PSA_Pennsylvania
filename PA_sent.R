@@ -50,7 +50,7 @@ sent_21
 
 # perofrmaance test 
 test_model <- glmer(prop_pred ~ as.factor(treatment) +
-                            (1|block), data = sent_21_v3_loop, 
+                            (1|block), data = sent_prop, 
                     weights = total,
                     family = binomial)
 r2_nakagawa(test_model)
@@ -373,12 +373,11 @@ broom_test <- test_loop %>%
 
 
 # plots ####
-# fuq u 
 sent_prop
 
 
 
-ggplot(sent_prop, aes(x = as.factor(treatment), y = prop_pred, fill = as.factor(treatment)))+
+ggplot(sent_prop, aes(x = treatment, y = prop_pred, fill = as.factor(treatment)))+
   geom_boxplot()+
   coord_flip()+
-  facet_wrap(~year)
+  facet_grid(~year)
