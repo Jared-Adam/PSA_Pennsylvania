@@ -284,33 +284,73 @@ test_summary_list <- v3_23_summary_list
 r2_list_23_v3[[3]]
 
 # 2023 prop test 
-sent_23_test_loop <- sent_23
+test_loop <- sent_23
+
+sent_23_test_loop$growth_stage <- as.factor(sent_23_test_loop$growth_stage)
 
 growth_list <- c('V3', 'V5', 'R3')
-test_23_summary_list <- list()
-r2_list_23_test <- list()
+test_summary_list <- list()
+r2_test <- list()
 binned_residuals <- list()
-
-for(j in 1: length(growth_list)){# for each iteration across the length of the list I made
+for (i in 1:length(unique(test_loop$growth_stage))) {
+  for(j in 1:length(unique(growth_list))){# for each iteration across the length of the list I made
   #print(i) # print each iteration
   print(j)
   #col <- v3_time_list[i] #place the iterations into an object named col
   growth <- growth_list[j]
   # print(col) # print them to make sure it works
   print(growth)
-  sent_23_mdf <- subset(sent_23_test_loop, select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
-  colnames(sent_23_mdf) <- c("plot_id", "treatment", 'block', 'prop_pred', 'total') # add this as a column name for the model
+  test_mdf <- subset(test_loop, select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
+  colnames(test_mdf) <- c("plot_id", "treatment", 'block', 'prop_pred', 'total') # add this as a column name for the model
   #print sent_21_V3 to make sure it works
-  sent_23_test_model <- glmer(prop_pred ~ as.factor(treatment) +
-                           (1|block), data = sent_23_mdf,
+  test_model <- glmer(prop_pred ~ as.factor(treatment) +
+                           (1|block), data = test_mdf,
                          weights = total,
                          family = binomial)
-  test_23_summary_list <- summary(sent_23_test_model)
-  summary_list_22[[j]] <- test_23_summary_list
-  r2_list_23_test <- r2_nakagawa(sent_23_test_model)
-  r2_list_23_test[[j]] <- r2_list_23_test
+  summary_ <- summary(test_model)
+  test_summary_list[[j]] <- summary_
+  r2_test_final <- r2_nakagawa(test_model)
+  r2_test[[j]] <- r2_test_final
 }
-test_23_summary_list
+}
+test_summary_list
+r2_test
+
+summary_list <- list()
+models <- list()
+growthlist <- c('V3', 'V5', 'R3')
+for (x in unique(test_loop$growth_stage)) {
+  print(x)
+  models <- glmer(prop_pred ~ as.factor(treatment) +
+                   (1|block), data = test_loop, 
+                 weights = total, 
+                 family = binomial)
+  summary_here <- summary(summary(model))
+  summary_list[[x]] <- summary_here
+}
+summary_list
+
+library(broom)
+
+library(tidyr)
+
+broom_test <- test_loop %>% 
+  group_by(growth_stage) %>% 
+  summarise(out = list(glmer(prop_pred ~ as.factor(treatment) +
+                                      (1|block), data = test_loop, 
+                                    weights = total, 
+                                    family = binomial))) %>%
+  unnest(out)
+
+
+
+
+
+
+
+
+
+
 
 
 
