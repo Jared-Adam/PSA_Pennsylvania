@@ -40,11 +40,11 @@ test_slug %>%
 # whole data set 
 
 slug_clean <- slugs %>% 
-  select(-location, -shingle_id, -time, -temp, -row) %>% 
+  dplyr::select(-location, -shingle_id, -time, -temp, -row) %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
   rename(precip = "7day_precip") %>% 
-  select(-date, -precip) %>% 
+  dplyr::select(-date, -precip) %>% 
   mutate(year = as.factor(year), 
        treatment = as.factor(treatment))%>% 
   group_by(season, year, month, plot_id, treatment, block) %>% 
@@ -58,11 +58,33 @@ spring_slugs <- subset(slug_clean, season == "spring")
 
 # models ####
 
-#over dispersion check: yes
-mean(fall_slugs$total_slug, na.rm = TRUE)
-var(fall_slugs$total_slug, na.rm = TRUE)
-mean(spring_slugs$total_slug, na.rm = TRUE)
-var(spring_slugs$total_slug, na.rm = TRUE)
+# no more of this: 
+  # use the new overdispersion code 
+# #over dispersion check: yes
+# mean(fall_slugs$total_slug, na.rm = TRUE)
+# var(fall_slugs$total_slug, na.rm = TRUE)
+# mean(spring_slugs$total_slug, na.rm = TRUE)
+# var(spring_slugs$total_slug, na.rm = TRUE)
+
+
+# look at overdispersion: variance > mean?
+dispersion_stats <- slug_clean %>% 
+  group_by(treatment) %>%
+  summarise(
+    mean = mean(total_slug, na.rm=TRUE),
+    variances = var(total_slug, na.rm=TRUE),
+    ratio = variances/mean) 
+if(dispersion_stats$mean[1] > dispersion_stats$variances[1] & 
+   dispersion_stats$mean[2] > dispersion_stats$variances[2] &
+   dispersion_stats$mean[3] > dispersion_stats$variances[3] &
+   dispersion_stats$mean[4] > dispersion_stats$variances[4]){
+  print("run a poisson, probs")
+  } else {
+    print("these jawns overdispersed")
+  }
+
+
+
 
 # spring models 
 # test model: 
@@ -75,7 +97,6 @@ spring_model <- glmer.nb(total_slug ~ treatment +
                            (1|block) + (1|month), 
                          data = spring_slugs)
 summary(spring_model)
-hist(residuals(spring_model))
 spring_emm <- emmeans(spring_model, pairwise ~ treatment, type = "response")
 pairs(spring_emm) # will print the contrasts
 plot(spring_emm$emmeans)
@@ -83,12 +104,9 @@ plot(spring_emm$emmeans)
 # glm.nb from MASS
 glm_test <- glm(total_slug ~ treatment, family = poisson, data = spring_slugs)
 summary(glm_test)
-hist(residuals(glm_test))
 
 glm.nb_test <-glm.nb(total_slug ~ treatment + year, data = spring_slugs)
 summary(glm.nb_test)
-hist(residuals(glm.nb_test))
-shapiro.test(residuals(glm.nb_test))
 
 
 # 1/16/2023
@@ -96,6 +114,23 @@ shapiro.test(residuals(glm.nb_test))
 # i then tried a glm and glm.nb, but the residuals are ass. 
 # I refuse to transform, so what is next? 
 
+
+
+# let's see which is better, poisson or nb? 
+# run one of each where the only difference is the family 
+library(lmtest)
+library(MASS)
+poisson_model <- glmer(total_score ~ treatment + 
+                         (1|block) + (1|date), 
+                       data = rodale_glmer, 
+                       family = poisson)
+
+nb_model_trt <- glmer.nb(total_score ~ treatment + 
+                           (1|block) + (1|date), 
+                         data = rodale_glmer) 
+
+lrtest(poisson_model,nb_model_trt)
+# the negative binomial has the higher likelihood score, so we will use that
 
 
 
