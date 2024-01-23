@@ -22,10 +22,14 @@ sent_years <- sent %>%
          year = format(date, '%Y')) %>% 
   dplyr::select(-location, -date) %>% 
   relocate(year, growth_stage, plot_id, block, treatment, row, sample, n.absent, n.partial, n.predated, 
-          d.absent, d.partial, d.predated, to.predated, n.weather, d.weather)%>% 
+          d.absent, d.partial, d.predated, to.predated, n.weather, d.weather)%>%
   mutate(n.predated = as.double(n.predated),
          d.predated = as.double(d.predated),
-         to.predated = as.double(to.predated)) %>%
+         to.predated = as.double(to.predated)) %>% 
+  print(n = Inf)
+
+pred_tot <- sent_years %>% 
+  select(-n.absent, -n.partial, -d.absent, -d.partial, -d.predated)
   
  
   
@@ -360,20 +364,81 @@ broom_test <- test_loop %>%
 
 
 # all years for fuck sake ####
+sent_years
+pred_tot
+sent_prop
+sent_years$growth_stage <- as.factor(sent_years$growth_stage)
+test <- glmer(to.predated ~ as.factor(treatment)*growth_stage +
+                            (1|year/block/plot_id), data = sent_years,
+                          family = binomial)
+
+summary(test)
+r2_nakagawa(test)
+result <- binned_residuals(test)
+plot(result)
+
+null <- glmer(to.predated ~ as.factor(treatment) +
+                (1|year), data = sent_years,
+              family = binomial)
+summary(null)
+r2_nakagawa(null)
+result_null <- binned_residuals(null)
+plot(result_null)
+
+block_md <- glmer(to.predated ~ as.factor(treatment) +
+                (1|year/block), data = sent_years,
+              family = binomial)
+check_model(block_md)
+summary(block_md)
+r2_nakagawa(block_md)
+result_block <- binned_residuals(block_md)
+plot(result_block)
+
+plot_md <- glmer(to.predated ~ as.factor(treatment) +
+                   (1|year/block/plot_id) , data = sent_years, 
+                 family = binomial)
+check_model(plot_md)
+summary(plot_md)
+this <- binned_residuals(plot_md)
+plot(this)
+r2_nakagawa(plot_md)
+
+
+growth_md <-  glmer(to.predated ~ as.factor(treatment)*growth_stage +
+                      (1|year/block/plot_id) , data = sent_years, 
+                    family = binomial)
+check_model(growth_md)
+summary(growth_md)
+that <- binned_residuals(growth_md)
+plot(that)
+r2_nakagawa(growth_md)
 
 
 
 
 
+# jw method? 
+install.packages("nlme")
+library(nlme)
+help(lme)
+help(corCAR1)
+m1 <- nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|year/block/plot_id, 
+          correlation = nlme::corCAR1(form=~growth_stage|year/block/plot_id), data = sent_years)
 
 
+m2 <-nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|year/block/plot_id, 
+         data = sent_years)
+summary(m2)
+r2_nakagawa(m2)
 
-
+additive <- update(m2, correlation = nlme::corCAR1(form=~growth_stage|year/block/plot_id))
 
 
 
 # plots ####
 sent_prop
+
+
 
 
 
