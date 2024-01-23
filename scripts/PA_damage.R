@@ -83,6 +83,8 @@ sum(new_dmg$bcw)
 # models ####
 # test model to look at variables before we run the loop
 dmg_model <- new_dmg
+# sum(dmg_model$multiple)
+
 
 
 test_m1 <- glmer(s ~ treatment + growth_stage +
@@ -108,9 +110,19 @@ summary(test_m3)
 r2_nakagawa(test_m3)
 hist(residuals(test_m3))
 
+###
+##
+#
+# model slugs (singularity in the loop)
+slugs <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, s))
+#
+##
+###
 
-pest_columns <- c('bcw', 'multiple', 'other', 's', 'sb', 'taw')
+
+pest_columns <- c('bcw','other','sb', 'taw', 'multiple')
 summary_list <- list()
+r2_list <- list()
 for (pest in 1:length(pest_columns)) {
   print(pest)
   new_col <- pest_columns[pest]
@@ -121,9 +133,11 @@ for (pest in 1:length(pest_columns)) {
                  family = binomial)
   summary_model <- summary(model)
   summary_list[[pest]] <- summary_model
+  r2_model <- r2_nakagawa(model)
+  r2_list[[pest]] <- r2_model
 }
 
-#multiple failed 
+#multiple failed
 mult_m1 <- glmer(multiple ~ treatment  +
                    (1|year/growth_stage/block), data = dmg_model,
                  family = binomial)
