@@ -146,21 +146,15 @@ plot(jw_m_r)
 
 
 
-
-
-
-
-
-
-
-ggplot(spring_slugs, aes(x = treatment, y = total_slug, fill = year))+
+# plots ####
+ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = season))+
   geom_boxplot()+
   facet_wrap(~year)+
-  ggtitle("Total Spring Slugs by Treatment")+
   scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
-  ylab("Total slug counts")+
-  xlab("")+
-  theme(axis.text.x = element_text(size=12),
+  labs( x = 'Treatment',
+        y = 'Total Slug Counts', 
+        title = "Total Spring Slugs by Treatment")+
+  theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 12))
 
 
