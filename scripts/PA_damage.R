@@ -170,6 +170,8 @@ summary_list
 r2_list
 emms_mod
 
+saved_emmeans <- (emms_mod[[1]][emms_mod$emmeans])
+
 # #multiple failed: test cuz my wrangling was not perfect
 # mult_m1 <- glmer(multiple ~ treatment  +
 #                    (1|year/growth_stage/block), data = dmg_model,
