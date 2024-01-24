@@ -200,13 +200,17 @@ all_emmeans <- rbind(bcw_saved, s_saved, sb_saved, taw_saved, multiple_saved, ot
 as_tibble(all_emmeans)
 all_emmeans$pest <- as.factor(all_emmeans$pest)
 
+# plot ####
+
 # all years
 #facet order
 all_emmeans$pest_f <- factor(all_emmeans$pest, levels =c('slug', 'stink bug', 'bcw', 'taw',
                                                 'other', 'multiple'))
 # data_text <- data.frame(
-#   labels = c('Conditional R2: 0.306 Marginal R2: 0.024'),
-#   pest_f = factor('slug', levels =  ('slug'))
+#   label = c('test', 'test2'),
+#   pest_f = c('slug', 'stink bug'),
+#   x = c('Green', 'Green'),
+#   y = c(0.7, .15)
 # )
 
 ggplot(all_emmeans, aes(color = treatment))+
