@@ -134,6 +134,7 @@ other <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treat
 other_m1 <- glmer(other ~ treatment +
                    (1|year), data = dmg_model,
                  family = binomial)
+other_saved <- emmeans(other_m1, pairwise ~ treatment, type = 'response')
 summary(other_m1)
 r2_nakagawa(other_m1)
 model_performance(other_m1)
@@ -141,11 +142,12 @@ model_performance(other_m1)
 #
 ##
 ###
-# I am confused: my emmeans results shows a 0 in the treatment. But I cannot find it here... 
-unique(dmg_model$treatment)
-subset(dmg_model, !(0 %in% dmg_model$treatment))
-dmg_model <- dmg_model %>% 
-  filter(treatment != 0)
+
+# old code to find 0 in trt
+# unique(dmg_model$treatment)
+# subset(dmg_model, !(0 %in% dmg_model$treatment))
+# dmg_model <- dmg_model %>% 
+#   filter(treatment != 0)
 
 pest_columns <- c('bcw','s','sb', 'taw', 'multiple')
 summary_list <- list()
@@ -170,11 +172,65 @@ summary_list
 r2_list
 emms_mod
 
-saved_emmeans <- (emms_mod[[1]][emms_mod$emmeans])
+# idk how to loop this, so doing it manually 
+bcw_saved <- emms_mod[[1]]
+bcw_saved <- as.data.frame(bcw_saved$emmeans)
+bcw_saved['pest'] <- ("bcw")
 
-# #multiple failed: test cuz my wrangling was not perfect
-# mult_m1 <- glmer(multiple ~ treatment  +
-#                    (1|year/growth_stage/block), data = dmg_model,
-#                  family = binomial)
+s_saved <- emms_mod[[2]]
+s_saved <- as.data.frame(s_saved$emmeans)
+s_saved['pest'] <- ('slug')
+
+sb_saved <- emms_mod[[3]]
+sb_saved <- as.data.frame(sb_saved$emmeans)
+sb_saved['pest'] <- ('stink bug')
+
+taw_saved <- emms_mod[[4]]
+taw_saved <- as.data.frame(taw_saved$emmeans)
+taw_saved['pest'] <- ('taw')
+
+multiple_saved <- emms_mod[[5]]
+multiple_saved <- as.data.frame(multiple_saved$emmeans)
+multiple_saved['pest'] <- ('multiple')
+
+other_saved <- as.data.frame(other_saved$emmeans)
+other_saved['pest'] <- ('other')
+
+all_emmeans <- rbind(bcw_saved, s_saved, sb_saved, taw_saved, multiple_saved, other_saved)
+as_tibble(all_emmeans)
+all_emmeans$pest <- as.factor(all_emmeans$pest)
+
+# all years
+#facet order
+all_emmeans$pest_f <- factor(all_emmeans$pest, levels =c('slug', 'stink bug', 'bcw', 'taw',
+                                                'other', 'multiple'))
+# data_text <- data.frame(
+#   labels = c('Conditional R2: 0.306 Marginal R2: 0.024'),
+#   pest_f = factor('slug', levels =  ('slug'))
+# )
+
+ggplot(all_emmeans, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = prob), size = 3,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0, linewidth = 1.5)+
+  geom_errorbar(aes(x = treatment,ymin = asymp.LCL, ymax = asymp.UCL), 
+                alpha = .6, width = 0, linewidth = 1)+
+  facet_wrap(~pest_f, scales = "free")+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
+        axis.text.y = element_text(size = 12))
+  
+
+tag_facet(plot)
+install.packages('egg')
+library(egg)
 
 
+
+
+
+  # +
+  # geom_errorbar(ymax = all_emmeans$asymp.UCL, ymin = all_emmeans$asymp.LCL)
+  # 
+?geom_errorbar
