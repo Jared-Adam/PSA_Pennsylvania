@@ -1,5 +1,5 @@
 # Jared Adam
-# PA PSA damage incidence
+# PA PSA damage incidence corn
 # three years, two growth stages 
 
 # packages #### 
@@ -66,6 +66,8 @@ m1_full <- glmer(prop_damaged ~ treatment + (1|year/growth/block/plotid),
                  weights = total_sum)
 summary(m1_full)
 r2_nakagawa(m1_full)
+# Conditional R2: 0.234
+# Marginal R2: 0.020
 m1_em <- emmeans(m1_full, pairwise~treatment, type = 'response')
 plot_emm <- as.data.frame(m1_em$emmeans)
 
@@ -88,4 +90,12 @@ ggplot(plot_emm, aes(color = treatment))+
                 alpha = .6, width = 0, linewidth = 1)+
   scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
-        axis.text.y = element_text(size = 12))
+        axis.text.y = element_text(size = 12))+
+  annotate("text", x = 3.6, y = 0.9, label = "p = 0.000522")+
+  labs(
+    title = "Damage incidence all years by treatment",
+    y = "Proportion damaged (damaged / total)",
+    x = "Treatment"
+  )+
+  theme(legend.position = 'none')
+
