@@ -11,12 +11,28 @@ library(tidyverse)
 library(lme4)
 library(MASS)
 library(performance)
+library(emmeans)
 
 # data ####
 damage_type <- PSA_PA_damage
 
+
 # wrangling ####
 damage_type
+
+unique(damage_type$treatment)
+(NA %in% damage_type$treatment)
+# all of 2023 does not have a treatment number.. whoops
+
+damage_type <- damage_type %>% 
+  mutate(treatment = case_when(plot_id %in% c(101,203,304,401,503) ~ 1,
+                               plot_id %in% c(103,204,302,403,501) ~ 2,
+                               plot_id %in% c(102,201,303,402,502) ~ 3, 
+                               plot_id %in% c(104,202,301,404,504) ~ 4))
+
+unique(damage_type$treatment)
+(NA %in% damage_type$treatment)
+
 unique(damage_type$damage_type)
 # we need to create a new column for each damage type. 
 # this will be accomplished by splitting the damage into new columns 
@@ -113,16 +129,28 @@ hist(residuals(test_m3))
 ###
 ##
 #
-# model slugs (singularity in the loop)
-slugs <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, s))
+# model other (singularity in the loop)
+other <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, other))
+other_m1 <- glmer(other ~ treatment +
+                   (1|year), data = dmg_model,
+                 family = binomial)
+summary(other_m1)
+r2_nakagawa(other_m1)
+model_performance(other_m1)
+
 #
 ##
 ###
+# I am confused: my emmeans results shows a 0 in the treatment. But I cannot find it here... 
+unique(dmg_model$treatment)
+subset(dmg_model, !(0 %in% dmg_model$treatment))
+dmg_model <- dmg_model %>% 
+  filter(treatment != 0)
 
-
-pest_columns <- c('bcw','other','sb', 'taw', 'multiple')
+pest_columns <- c('bcw','s','sb', 'taw', 'multiple')
 summary_list <- list()
 r2_list <- list()
+emms_mod <- list()
 for (pest in 1:length(pest_columns)) {
   print(pest)
   new_col <- pest_columns[pest]
@@ -131,14 +159,20 @@ for (pest in 1:length(pest_columns)) {
   model <- glmer(new_col ~ treatment +
                    (1|year/growth_stage/block), data = new_df,
                  family = binomial)
+  emms_mod[[pest]] <- emmeans(model, pairwise ~ as.factor(treatment),type = "response")
   summary_model <- summary(model)
   summary_list[[pest]] <- summary_model
   r2_model <- r2_nakagawa(model)
   r2_list[[pest]] <- r2_model
 }
 
-#multiple failed
-mult_m1 <- glmer(multiple ~ treatment  +
-                   (1|year/growth_stage/block), data = dmg_model,
-                 family = binomial)
+summary_list
+r2_list
+emms_mod
+
+# #multiple failed: test cuz my wrangling was not perfect
+# mult_m1 <- glmer(multiple ~ treatment  +
+#                    (1|year/growth_stage/block), data = dmg_model,
+#                  family = binomial)
+
 
