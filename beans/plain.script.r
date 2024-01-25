@@ -53,6 +53,8 @@ slugs = slugs_beans_all %>%
   group_by(season, year, month, plot, treatment, block) %>% 
   summarise(total_slug =  sum(slug_count))%>% 
   print(n = Inf)
+slugs <- slugs[1:160,]
+unique(slugs$treatment)
 
 
 #subset by season
@@ -94,7 +96,19 @@ nb_model_trt <- glmer.nb(total_slug ~ treatment +
 lrtest(poisson_model,nb_model_trt)
 # the negative binomial has the higher likelihood score, so we will use that
 
+#actual model: TBD
 
+
+# plots ###
+ggplot(slugs, aes(x = treatment, y = total_slug, fill = treatment))+
+  geom_boxplot()+
+  facet_wrap(~year + season)+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
+  labs( x = 'Treatment',
+        y = 'Total Slug Counts', 
+        title = "Total Spring Slugs by Treatment")+
+  theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 12))
 
 
 
