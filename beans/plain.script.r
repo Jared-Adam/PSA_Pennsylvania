@@ -11,6 +11,8 @@ library(MASS)
 library(performance)
 library(lme4)
 library(emmeans)
+library(lmtest)
+
 
 # 2022 data ####
 # 2022: did this in a hurry but then I ended up paying for the wifi anywho
@@ -26,7 +28,7 @@ pf <- two
 pf_raw <- three
 
 
-# 2022 and 2023 data ####
+# SLUGS 2022 and 2023 data ####
 slugs = slugs_beans_all %>% 
   mutate(slug_count = as.numeric(slug_count)) %>% 
   rename(precip = '7_day_precip_in') %>% 
@@ -51,4 +53,48 @@ slugs = slugs_beans_all %>%
   group_by(season, year, month, plot, treatment, block) %>% 
   summarise(total_slug =  sum(slug_count))%>% 
   print(n = Inf)
+
+
+#subset by season
+
+fall_slugs <- subset(slugs, season == "fall")
+spring_slugs <- subset(slugs, season == "spring")
+
+# models ####
+
+# look at overdispersion: variance > mean?
+dispersion_stats <- slugs %>% 
+  group_by(treatment) %>%
+  summarise(
+    mean = mean(total_slug, na.rm=TRUE),
+    variances = var(total_slug, na.rm=TRUE),
+    ratio = variances/mean) 
+if(dispersion_stats$mean[1] > dispersion_stats$variances[1] & 
+   dispersion_stats$mean[2] > dispersion_stats$variances[2] &
+   dispersion_stats$mean[3] > dispersion_stats$variances[3] &
+   dispersion_stats$mean[4] > dispersion_stats$variances[4]){
+  print("run a poisson, probs")
+  } else {
+    print("these jawns overdispersed")
+  }
+
+
+
+# let's see which is better, poisson or nb? 
+# run one of each where the only difference is the family 
+poisson_model <- glmer(total_slug ~ treatment + 
+                         (1|year/block), 
+                       data = slugs, 
+                       family = poisson)
+
+nb_model_trt <- glmer.nb(total_slug ~ treatment + 
+                           (1|year/block), 
+                         data = slugs) 
+
+lrtest(poisson_model,nb_model_trt)
+# the negative binomial has the higher likelihood score, so we will use that
+
+
+
+
 
