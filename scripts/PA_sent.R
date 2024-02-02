@@ -422,8 +422,12 @@ install.packages("nlme")
 library(nlme)
 help(lme)
 help(corCAR1)
+
+# this is a repeated measures model, and thus, plot id is included 
 m1 <- nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|year/block/plot_id, 
-          correlation = nlme::corCAR1(form=~growth_stage|year/block/plot_id), data = sent_years)
+          correlation = nlme::corCAR1(form=~1|year/block/plot_id), data = sent_years)
+summary(m1)
+r2_nakagawa(m1)
 
 
 m2 <-nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|year/block/plot_id, 
