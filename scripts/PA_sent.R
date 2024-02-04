@@ -428,14 +428,30 @@ m1 <- nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|yea
           correlation = nlme::corCAR1(form=~1|year/block/plot_id), data = sent_years)
 summary(m1)
 r2_nakagawa(m1)
+binned_residuals(m1, residuals = "response")
 
-
-m2 <-nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|year/block/plot_id, 
-         data = sent_years)
+m2 <- nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|block/plot_id, 
+                correlation = nlme::corCAR1(form=~1|block/plot_id), data = sent_years)
 summary(m2)
 r2_nakagawa(m2)
+binned_residuals(m2, residuals = "response")
 
-additive <- update(m2, correlation = nlme::corCAR1(form=~growth_stage|year/block/plot_id))
+
+m3 <- nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|plot_id, 
+                correlation = nlme::corCAR1(form=~1|plot_id), data = sent_years)
+summary(m3)
+
+
+
+
+
+# 
+# m2 <-nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|year/block/plot_id, 
+#          data = sent_years)
+# summary(m2)
+# r2_nakagawa(m2)
+# 
+# additive <- update(m2, correlation = nlme::corCAR1(form=~growth_stage|year/block/plot_id))
 
 
 
