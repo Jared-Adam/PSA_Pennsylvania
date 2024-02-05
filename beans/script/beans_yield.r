@@ -43,10 +43,12 @@ overall_yield <- yield_for_weather %>%
   summarise(overall_yield_mean = mean(bu_ac), 
             yield_sd = sd(bu_ac),
             yield_se = yield_sd/sqrt(n())) %>% 
-  arrange(year)
+  arrange(year,factor(trt, c("check", "green", "brown", "gr-br")))
 
 # cc data: to add to over_yield ####
-overall_yield
+# this is for the binding process
+overall_yield <- overall_yield %>% 
+  ungroup()
 cc
 cc_start <- cc %>% 
   mutate_at(vars(1:4), as.factor) %>% 
@@ -63,15 +65,27 @@ new_checks <- as_tibble(year = c('2022','2023'),
 new_cc <- rbind(as.data.frame(cc_start), new_checks)
 
 new_cc <- as_tibble(new_cc)
+
 cc_clean <- new_cc %>% 
   mutate_at(vars(1:2), as.factor)%>%
   mutate_at(vars(3:5), as.numeric) %>% 
-  arrange(year, factor(trt, c("check", "green", "brown", "gr-br")))
+  arrange(year, factor(trt, c("check", "gr", "br", "grbr")))
+
+cc_to_bind <- cc_clean %>% 
+  select(-year, -trt)
+
+cc_bind <- cbind(cc_to_bind, overall_yield)
+cc_bind <- as_tibble(cc_bind)
+
+cc_yield <- cc_bind %>% 
+  relocate(trt, year)
+  
 
 
 
 # visuals ####
 
+# yield 
 
 ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
@@ -84,3 +98,16 @@ ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))
 # green outcompeted other treatments in both 2022 and 2023
   # this is important!
+
+
+# cc
+ggplot(cc_clean, aes(x = trt, y = cc_mean, fill = trt))+
+  facet_wrap(~year)+
+  geom_bar(stat = 'identity', position = 'dodge')+
+  geom_errorbar( aes(x=trt, ymin=cc_mean-cc_se, ymax=cc_mean+cc_se), width=0.4, 
+                 colour="orange", alpha=0.9, size=1.3)
+
+# cc x yield
+ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean, shape = trt, color = trt))+
+  geom_point(stat = 'identity', position = 'identity', size = 8)+
+  facet_wrap(~year)
