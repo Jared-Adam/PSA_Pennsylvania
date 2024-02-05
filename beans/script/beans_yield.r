@@ -20,6 +20,8 @@ yield_clean <- beans_yield %>%
          bu_ac_mean = mean(bu_ac)) %>% 
   dplyr::select(-lb_pass_moisture, -lb_ac, -bu_ac) %>% 
   mutate(year = as.factor(year)) %>% 
+  mutate(plot = as.factor(plot)) %>% 
+  mutate(trt = as.factor(trt)) %>% 
   distinct(plot, .keep_all = TRUE) %>% 
   print(n = Inf)
 yield_clean <- yield_clean[1:40,]
@@ -87,7 +89,7 @@ cc_yield <- cc_bind %>%
 
 # yield 
 
-ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
+beans_yield_plot <- ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
   facet_wrap(~year)+
    geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
@@ -101,13 +103,35 @@ ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
 
 
 # cc
-ggplot(cc_clean, aes(x = trt, y = cc_mean, fill = trt))+
+beans_cc <- ggplot(cc_clean, aes(x = trt, y = cc_mean, fill = trt))+
   facet_wrap(~year)+
   geom_bar(stat = 'identity', position = 'dodge')+
   geom_errorbar( aes(x=trt, ymin=cc_mean-cc_se, ymax=cc_mean+cc_se), width=0.4, 
                  colour="orange", alpha=0.9, size=1.3)
 
 # cc x yield
-ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean, shape = trt, color = trt))+
+beans_cc_x_yield <- ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean, shape = trt, color = trt))+
   geom_point(stat = 'identity', position = 'identity', size = 8)+
   facet_wrap(~year)
+
+# Anovas of yield ####
+an_b1 <- aov(bu_ac_mean ~ trt + year, yield_clean)
+summary(an_b1)
+plot(residuals(an_b1))
+hist(residuals(an_b1))
+TukeyHSD(an_b1)
+
+# sig by year, not by trt = GOOD
+
+an_b2 <- aov(bu_ac_mean ~ year, yield_clean)
+summary(an_b2)
+TukeyHSD(an_b2)
+
+
+ggplot(yield_clean, aes(x = year, y = bu_ac_mean, fill = trt))+
+  geom_boxplot()
+
+# yield ~ precip
+# anova_three <- aov(overall_mean ~ avg_precip, weather_yield)
+# summary(anova_three)
+# hist(residuals(anova_three))
