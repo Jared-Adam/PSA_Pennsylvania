@@ -103,7 +103,7 @@ beans_yield_plot <- ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fi
 
 
 # cc
-beans_cc <- ggplot(cc_clean, aes(x = trt, y = cc_mean, fill = trt))+
+beans_cc <- ggplot(filter(cc_clean, trt != 'check'), aes(x = trt, y = cc_mean, fill = trt))+
   facet_wrap(~year)+
   geom_bar(stat = 'identity', position = 'dodge')+
   geom_errorbar( aes(x=trt, ymin=cc_mean-cc_se, ymax=cc_mean+cc_se), width=0.4, 
@@ -112,7 +112,8 @@ beans_cc <- ggplot(cc_clean, aes(x = trt, y = cc_mean, fill = trt))+
 # cc x yield
 beans_cc_x_yield <- ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean, shape = trt, color = trt))+
   geom_point(stat = 'identity', position = 'identity', size = 8)+
-  facet_wrap(~year)
+  facet_wrap(~year)+
+  scale_color_manual(values = c("Green" = 'green', "Brown" = 'brown', "Gr-Br" = "orange"))
 
 # Anovas of yield ####
 an_b1 <- aov(bu_ac_mean ~ trt + year, yield_clean)
@@ -127,6 +128,11 @@ an_b2 <- aov(bu_ac_mean ~ year, yield_clean)
 summary(an_b2)
 TukeyHSD(an_b2)
 
+# no diff in cc 
+an_cc1 <- aov(cc_mean ~ trt, cc_clean)
+summary(an_cc1)
+hist(residuals(an_cc1))
+TukeyHSD(an_cc1)
 
 ggplot(yield_clean, aes(x = year, y = bu_ac_mean, fill = trt))+
   geom_boxplot()
