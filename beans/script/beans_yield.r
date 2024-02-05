@@ -48,6 +48,25 @@ overall_yield <- yield_for_weather %>%
 # cc data: to add to over_yield ####
 overall_yield
 cc
+cc_start <- cc %>% 
+  mutate_at(vars(1:4), as.factor) %>% 
+  group_by(year, trt) %>% 
+  summarise(cc_mean = mean(cc_g),
+            cc_sd = sd(cc_g),
+            cc_se = cc_sd/sqrt(n())) 
+new_checks <- as_tibble(year = c('2022','2023'),
+                         trt = c('check','check'),
+                         cc_mean = c('NA','NA'),
+                         cc_sd = c('NA', 'NA'),
+                         cc_se = c('NA','NA'))
+                         
+new_cc <- rbind(as.data.frame(cc_start), new_checks)
+
+new_cc <- as_tibble(new_cc)
+cc_clean <- new_cc %>% 
+  mutate_at(vars(1:2), as.factor)%>%
+  mutate_at(vars(3:5), as.numeric) %>% 
+  arrange(year, factor(trt, c("check", "green", "brown", "gr-br")))
 
 
 
