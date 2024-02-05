@@ -7,7 +7,7 @@ library(tidyverse)
 # data ####
 beans_yield <- PA_PSA_beans_yield_all
 weather <- PSA_PA_weather
-
+cc <- beans_cc_biomasss
 
 # wrangling ####
 beans_yield$plot <- gsub('-[0-9.]','', beans_yield$plot) # remove - and all numbers following
@@ -36,6 +36,7 @@ yield_for_weather <- beans_yield %>%
   print(n = Inf)
 yield_for_weather <- yield_for_weather[1:80,]
 
+# no plot here, just year and trt
 overall_yield <- yield_for_weather %>% 
   mutate(trt = as.factor(trt)) %>% 
   group_by(trt, year) %>%
@@ -43,6 +44,14 @@ overall_yield <- yield_for_weather %>%
             yield_sd = sd(bu_ac),
             yield_se = yield_sd/sqrt(n())) %>% 
   arrange(year)
+
+# cc data: to add to over_yield ####
+overall_yield
+cc
+
+
+
+# visuals ####
 
 
 ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
