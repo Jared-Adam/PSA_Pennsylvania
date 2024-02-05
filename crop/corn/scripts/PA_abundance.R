@@ -1,5 +1,5 @@
 # Jared Adam
-# abundance data: PF and Sweep nets
+# CORN abundance data: PF and Sweep nets
 # started on 2/5/2024
 
 # packages ####
@@ -29,7 +29,7 @@ pivot<-test %>%
   pivot_wider(names_from = family, 
               values_from = family,
               values_fn = list(family = length))
-
+# wrangling ####
 # whole data set 
 pf_wide <- pf %>% 
   select(-split, -life_stage, -sp, -genus) %>% 
@@ -57,15 +57,17 @@ pf_clean <- pf_wide %>%
                          plot %in% c(103,204,302,403,501) ~ 2,
                          plot %in% c(102,201,303,402,502) ~ 3, 
                          plot %in% c(104,202,301,404,504) ~ 4))) %>% 
-  na.omit() %>% 
+  na.omit() %>%
   print(n = Inf)
 colnames(pf_clean)
 
-# Permanova ####
+# Permanova for PF ####
+
 #
 ##
 ###
-# PF 2022 # 
+
+# PF 2022 ##
 pf_2022 <- filter(pf_clean, year == 2022)
 
 family_names_22 <- pf_2022[6:24]
@@ -79,7 +81,14 @@ perm_2_1
 perm_2_2 <- adonis2(dist_22 ~ trt + date, permutations = 999, method = 'bray', data = pf_2022)
 perm_2_2
 
-# PF 2023 #
+###
+##
+#
+#
+##
+###
+
+# PF 2023 ##
 pf_2023 <- filter(pf_clean, year == 2023)
 
 family_names_23 <- pf_2023[6:24]
@@ -92,8 +101,14 @@ perm_3_1
 perm_3_2 <- adonis2(dist_23 ~ trt + date, permutations = 999, method = 'bray', data = pf_2023)
 perm_3_2
 
-# PF 22 and 23 #
+###
+##
+#
+#
+##
+###
 
+# PF 22 and 23 ##
 dist <- vegdist(family_names, 'bray')
 
 perm_1 <- adonis2(dist ~ trt, permutations = 999, method = "bray", data = pf_clean)
@@ -118,10 +133,9 @@ perm_4
 ##
 #
 
-#
-##
-###
-# SWEEP 
+
+
+# Permanova for SWEEP ####
 
 
 ###
@@ -130,10 +144,36 @@ perm_4
 
 
 # NMDS ####
+# 
+##
+###
 
+# PF 22 #
+
+ord_22_2 <- metaMDS(family_names_22, k = 2)
+ord_22_2$stress
+
+# 3 D is better 
+ord_22_3 <- metaMDS(family_names_22, k = 3)
+ord_22_3$stress
+
+
+# PF 23 # 
+
+ord_23_2 <- metaMDS(family_names_23, k = 2)
+ord_23_2$stress
+
+# 3 D is better 
+ord_23_3 <- metaMDS(family_names_23, k = 3)
+ord_23_3$stress
+
+
+
+# these are for 22 and 23 
 ord_2 <- metaMDS(family_names, k = 2)
 ord_2$stress
 
+# 3 D is better 
 ord_3 <- metaMDS(family_names, k = 3)
 ord_3$stress
 
@@ -144,5 +184,5 @@ sp <- scores(ord_3, choices = 1:3, dispaly = 'species',  scaling = 'symmetric')
 text(p1$xyz.convert(sp), rownames(sp), cex = 0.7, xpd = TRUE)
 
 
-huh <-
+
 
