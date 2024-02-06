@@ -168,7 +168,7 @@ with(bpf_2023, ordihull(tpl_2, groups = bpf_2023$timing, draw = "poly",
                         label = F,
                         border = F,
                         alpha = 50))
-text(tpl$xyz.convert(b_23_fsc), rownames(b_23_fsc), cex = 1.2)
+text(tpl_2$xyz.convert(b_23_fsc), rownames(b_23_fsc), cex = 1.2)
 legend(x = -3, y = -0.5, legend = c("2023-06-26", "2023-07-28"), col = 1:3, pch = 16, cex = 2)
 legend(0.5, -0.5, "Stress: 0.1732693",
        xjust = 0.5,
@@ -240,7 +240,14 @@ legend(0.5, -0.5, "Stress: 0.1471073",
 title(main ="NMDS of 2022 and 2023 population distributions by year",
       cex.main = 2)
 
-
+# for after corn is done 
+legend(0.5, -0.5, "Timing p-value: 0.0001***",
+       xjust = 0.5,
+       yjust = 4.5, 
+       x.intersp = -0.5,
+       y.intersp = 0.1, 
+       adj = c(0,0.5), 
+       cex = 1.5)
 
 
 
