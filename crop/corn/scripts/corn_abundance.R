@@ -105,7 +105,7 @@ c_22_fsc$species <- rownames(c_22_fsc)
 ordiplot3d(cord_22_3)
 tc_1 <- with(cpf_2022, ordiplot3d(cord_22_3, col = timing, pch = 16, angle = 50))
 with(cpf_2022, ordihull(tc_1, groups = cpf_2022$timing, draw = "poly", 
-                        col = 1:3, 
+                        col = 3:4, 
                         label = F,
                         border = F,
                         alpha = 50))
