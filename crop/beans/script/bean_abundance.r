@@ -67,11 +67,13 @@ colnames(pf_clean)
 
 bpf_2022 <- filter(bpf_clean, year == 2022)
 unique(bpf_2022$date)
+colnames(bpf_2022)
 bpf_2022 <- bpf_2022 %>% 
   mutate(timing = case_when(date == "2022-05-28" ~ 1,
                             date == "2022-07-01" ~ 2,
                             date == "2022-08-18" ~ 3)) %>% 
   mutate(timing = as.factor(timing)) %>% 
+  dplyr::rename(Linyphiidae = Lin) %>% 
   relocate(year, date, timing)
 
 bean_family_names_22 <- bpf_2022[7:25]
@@ -94,6 +96,10 @@ bord_22_3$stress
 
 # plot
 
+b_22_fsc <- as.data.frame(scores(bord_22_3, "species"))
+b_22_fsc$species <- rownames(b_22_fsc)
+
+
 ordiplot3d(bord_22_3)
 tpl <- with(bpf_2022, ordiplot3d(bord_22_3, col = timing, pch = 16, angle = 50))
 with(bpf_2022, ordihull(tpl, groups = bpf_2022$timing, draw = "poly", 
@@ -101,8 +107,8 @@ with(bpf_2022, ordihull(tpl, groups = bpf_2022$timing, draw = "poly",
                         label = F,
                         border = F,
                         alpha = 50))
-text(tpl$xyz.convert(fsc), rownames(fsc), cex = 1.2)
-legend(x = 'right', legend = levels(bpf_2022$timing), col = 1:3, pch = 16, cex = 2)
+text(tpl$xyz.convert(b_22_fsc), rownames(b_22_fsc), cex = 1.2)
+legend(x = 'right', legend = c("2022-05-28", "2022-07-01", "2022-08-18"), col = 1:3, pch = 16, cex = 2)
 legend(0, -0.5, "Stress: 0.118642",
        xjust = 0.5,
        yjust = 3, 
@@ -110,7 +116,7 @@ legend(0, -0.5, "Stress: 0.118642",
        y.intersp = 0.1, 
        adj = c(0,0.5), 
        cex = 1.5)
-title(main ="NMDS of 2022 population distributions by treatment",
+title(main ="NMDS of 2022 population distributions by timing",
       cex.main = 2)
 
 
@@ -125,8 +131,16 @@ title(main ="NMDS of 2022 population distributions by treatment",
 
 
 bpf_2023 <- filter(bpf_clean, year == 2023)
-
-bean_family_names_23 <- bpf_2023[6:24]
+colnames(bpf_2023)
+unique(bpf_2023$date)
+bpf_2023 <- bpf_2023 %>% 
+  dplyr::mutate(timing = case_when(date == "2023-06-26" ~ 1,
+                                   date == "2023-07-28" ~ 2)) %>% 
+  dplyr::mutate(timing = as.factor(timing)) %>% 
+  dplyr::rename(Linyphiidae = Lin) %>% 
+  relocate(year, date, timing)
+unique(bpf_2023$timing)
+bean_family_names_23 <- bpf_2023[7:25]
 bdist_23 <- vegdist(bean_family_names_23, 'bray')
 
 bperm_3_1 <- adonis2(bdist_23 ~ trt, permutations = 999, method = 'bray', data = bpf_2023)
@@ -139,11 +153,32 @@ bperm_3_2
 # NMDS
 
 # 3 D is better 
-bord_23_3 <- metaMDS(family_names_23, k = 3)
+bord_23_3 <- metaMDS(bean_family_names_23, k = 3)
 bord_23_3$stress
 
 
 # plot 
+b_23_fsc <- as.data.frame(scores(bord_23_3, 'species'))
+b_23_fsc$species <- rownames(b_23_fsc)
+
+ordiplot3d(bord_23_3)
+tpl_2 <- with(bpf_2023, ordiplot3d(bord_23_3, col = timing, pch = 16, angle = 50))
+with(bpf_2023, ordihull(tpl_2, groups = bpf_2023$timing, draw = "poly", 
+                        col = 1:3, 
+                        label = F,
+                        border = F,
+                        alpha = 50))
+text(tpl$xyz.convert(b_23_fsc), rownames(b_23_fsc), cex = 1.2)
+legend(x = -3, y = -0.5, legend = c("2023-06-26", "2023-07-28"), col = 1:3, pch = 16, cex = 2)
+legend(0.5, -0.5, "Stress: 0.1732693",
+       xjust = 0.5,
+       yjust = 3, 
+       x.intersp = -0.5,
+       y.intersp = 0.1, 
+       adj = c(0,0.5), 
+       cex = 1.5)
+title(main ="NMDS of 2023 population distributions by timing",
+      cex.main = 2)
 
 
 ###
@@ -152,7 +187,14 @@ bord_23_3$stress
 
 
 # 22 and 23 ####
-beans_dist <- bpf_clean[6:24]
+colnames(bpf_clean)
+unique(bpf_clean$date)
+bpf_clean <- bpf_clean %>% 
+  dplyr::rename(Linyphiidae = Lin)
+
+bean_family_names <- bpf_clean[6:24]
+
+beans_dist <- vegdist(bean_family_names, 'bray')
 
 bpf_year <- bpf_clean %>% 
   mutate(date = as.factor(date))
@@ -164,17 +206,43 @@ bperm_2 <- adonis2(beans_dist ~ year , permutations = 999, mathod = 'bray', data
 bperm_2
 
 #date is significant 
-bperm_3 <- adonis2(beans_dist ~ trt * date, permutations = 999, method = 'bray', data = bpf_year)
+bperm_3 <- adonis2(beans_dist ~ year + date + trt, permutations = 999, method = 'bray', data = bpf_year)
 bperm_3
 
 # NMDS
 
 # these are for 22 and 23 
 # 3 D is better 
-bord_3 <- metaMDS(family_names, k = 3)
+bord_3 <- metaMDS(bean_family_names, k = 3)
 bord_3$stress
 
 # plot 
+
+b_all_fsc <- as.data.frame(scores(bord_3, 'species'))
+b_all_fsc$species <- rownames(b_all_fsc)
+
+ordiplot3d(bord_3)
+tpl_3 <- with(bpf_clean, ordiplot3d(bord_3, col = year, pch = 16, angle = 50))
+with(bpf_clean, ordihull(tpl_3, groups = bpf_clean$year, draw = "poly", 
+                        col = 1:3, 
+                        label = F,
+                        border = F,
+                        alpha = 50))
+#text(tpl$xyz.convert(b_all_fsc), rownames(b_all_fsc), cex = 1.2)
+legend(x = -3, y = -0.5, legend = c("2022", "2023"), col = 1:3, pch = 16, cex = 2)
+legend(0.5, -0.5, "Stress: 0.1471073",
+       xjust = 0.5,
+       yjust = 3, 
+       x.intersp = -0.5,
+       y.intersp = 0.1, 
+       adj = c(0,0.5), 
+       cex = 1.5)
+title(main ="NMDS of 2022 and 2023 population distributions by year",
+      cex.main = 2)
+
+
+
+
 
 ###
 ##
