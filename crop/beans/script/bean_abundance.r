@@ -66,8 +66,15 @@ colnames(pf_clean)
 
 
 bpf_2022 <- filter(bpf_clean, year == 2022)
+unique(bpf_2022$date)
+bpf_2022 <- bpf_2022 %>% 
+  mutate(timing = case_when(date == "2022-05-28" ~ 1,
+                            date == "2022-07-01" ~ 2,
+                            date == "2022-08-18" ~ 3)) %>% 
+  mutate(timing = as.factor(timing)) %>% 
+  relocate(year, date, timing)
 
-bean_family_names_22 <- bpf_2022[6:24]
+bean_family_names_22 <- bpf_2022[7:25]
 bdist_22 <- vegdist(bean_family_names_22, 'bray')
 
 bperm_2_1 <- adonis2(bdist_22 ~ trt, permutations = 999, method = 'bray', data = bpf_2022)
@@ -88,14 +95,14 @@ bord_22_3$stress
 # plot
 
 ordiplot3d(bord_22_3)
-tpl <- with(bpf_2022, ordiplot3d(bord_22_3, col = trt, pch = 16, angle = 50))
-with(bpf_2022, ordihull(tpl, groups = bpf_2022$trt, draw = "poly", 
-                        col = 1:4, 
+tpl <- with(bpf_2022, ordiplot3d(bord_22_3, col = timing, pch = 16, angle = 50))
+with(bpf_2022, ordihull(tpl, groups = bpf_2022$timing, draw = "poly", 
+                        col = 1:3, 
                         label = F,
                         border = F,
                         alpha = 50))
 text(tpl$xyz.convert(fsc), rownames(fsc), cex = 1.2)
-legend(x = 'right', legend = levels(bpf_2022$trt), col = 1:4, pch = 16, cex = 2)
+legend(x = 'right', legend = levels(bpf_2022$timing), col = 1:3, pch = 16, cex = 2)
 legend(0, -0.5, "Stress: 0.118642",
        xjust = 0.5,
        yjust = 3, 
@@ -129,14 +136,22 @@ bperm_3_1
 bperm_3_2 <- adonis2(bdist_23 ~ trt + date, permutations = 999, method = 'bray', data = bpf_2023)
 bperm_3_2
 
+# NMDS
+
+# 3 D is better 
+bord_23_3 <- metaMDS(family_names_23, k = 3)
+bord_23_3$stress
+
+
+# plot 
+
+
 ###
 ##
 #
-#
-##
-### 
 
-# 22 and 23 #
+
+# 22 and 23 ####
 beans_dist <- bpf_clean[6:24]
 
 bpf_year <- bpf_clean %>% 
@@ -152,41 +167,14 @@ bperm_2
 bperm_3 <- adonis2(beans_dist ~ trt * date, permutations = 999, method = 'bray', data = bpf_year)
 bperm_3
 
-###
-##
-#
-
-# NMDS PF ####
-#
-##
-###
-
-# 3D is substantially better than 2D for all of these 
-
-###
-##
-#
-#
-##
-###
-
-# PF 23 # 
-
-# 3 D is better 
-bord_23_3 <- metaMDS(family_names_23, k = 3)
-bord_23_3$stress
-
-###
-##
-#
-#
-##
-###
+# NMDS
 
 # these are for 22 and 23 
 # 3 D is better 
 bord_3 <- metaMDS(family_names, k = 3)
 bord_3$stress
+
+# plot 
 
 ###
 ##
