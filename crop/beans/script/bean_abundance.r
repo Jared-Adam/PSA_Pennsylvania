@@ -58,13 +58,13 @@ bpf_clean <- bpf_wide %>%
   print(n = Inf)
 colnames(pf_clean)
 
-# permanova PF ####
+# PF 2022 ####
 
 #
 ##
 ###
 
-# PF 2022 ##
+
 bpf_2022 <- filter(bpf_clean, year == 2022)
 
 bean_family_names_22 <- bpf_2022[6:24]
@@ -78,14 +78,45 @@ bperm_2_1
 bperm_2_2 <- adonis2(bdist_22 ~ trt + date, permutations = 999, method = 'bray', data = bpf_2022)
 bperm_2_2
 
+
+# PF 22 #
+
+# 3 D is better 
+bord_22_3 <- metaMDS(bean_family_names_22, k = 3)
+bord_22_3$stress
+
+# plot
+
+ordiplot3d(bord_22_3)
+tpl <- with(bpf_2022, ordiplot3d(bord_22_3, col = trt, pch = 16, angle = 50))
+with(bpf_2022, ordihull(tpl, groups = bpf_2022$trt, draw = "poly", 
+                        col = 1:4, 
+                        label = F,
+                        border = F,
+                        alpha = 50))
+text(tpl$xyz.convert(fsc), rownames(fsc), cex = 1.2)
+legend(x = 'right', legend = levels(bpf_2022$trt), col = 1:4, pch = 16, cex = 2)
+legend(0, -0.5, "Stress: 0.118642",
+       xjust = 0.5,
+       yjust = 3, 
+       x.intersp = -0.5,
+       y.intersp = 0.1, 
+       adj = c(0,0.5), 
+       cex = 1.5)
+title(main ="NMDS of 2022 population distributions by treatment",
+      cex.main = 2)
+
+
 ###
 ##
 #
+
+# PF 2023 ####
 #
 ##
 ###
 
-# PF 2023 ##
+
 bpf_2023 <- filter(bpf_clean, year == 2023)
 
 bean_family_names_23 <- bpf_2023[6:24]
@@ -126,22 +157,11 @@ bperm_3
 #
 
 # NMDS PF ####
-
-library(rgl) # nope
 #
 ##
 ###
 
 # 3D is substantially better than 2D for all of these 
-
-# PF 22 #
-
-bord_22_2 <- metaMDS(bean_family_names_22, k = 2)
-bord_22_2$stress
-
-# 3 D is better 
-bord_22_3 <- metaMDS(bean_family_names_22, k = 3)
-bord_22_3$stress
 
 ###
 ##
@@ -151,9 +171,6 @@ bord_22_3$stress
 ###
 
 # PF 23 # 
-
-bord_23_2 <- metaMDS(family_names_23, k = 2)
-bord_23_2$stress
 
 # 3 D is better 
 bord_23_3 <- metaMDS(family_names_23, k = 3)
@@ -167,9 +184,6 @@ bord_23_3$stress
 ###
 
 # these are for 22 and 23 
-bord_2 <- metaMDS(family_names, k = 2)
-bord_2$stress
-
 # 3 D is better 
 bord_3 <- metaMDS(family_names, k = 3)
 bord_3$stress
@@ -177,85 +191,25 @@ bord_3$stress
 ###
 ##
 #
+
+# practice/ test plots ####
 # test plot from stack overflow 
-
-data(dune,dune.env)
-SITE_ID <- c("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t")
-dune.env$SITE_ID <- SITE_ID
-?cca
-ord <- cca(dune ~ A1 + Moisture, dune.env)
-ordiplot3d(ord)
-pl4 <- with(dune.env, ordiplot3d(ord, col = Management, pch=16,angle=50))
-
-with(dune.env, ordihull(pl4, dune.env$Management, draw = "poly", col = 1:4,label=T,
-                        alpha = 50))
-
-sp <- scores(pl4, choices=1:3, display="sites", scaling="symmetric")
-spp <- as.data.frame(cbind(dune.env$SITE_ID,sp))
-with(dune.env, ordilabel(pl4,labels=spp$V1,col="black", fill=NA, border=NA, pos = 2))
-
-# my turn 
-# going to chull trt into the df with my nmds and species names 
-# using bord_3 for nmds
-# using df bpf_2023
-bpf_2022 <- filter(bpf_clean, year == 2022)
-
-bean_family_names_22 <- bpf_2022[6:24]
-
-bord_22_3 <- metaMDS(bean_family_names_22, k = 3)
-
-
-scrs <-scores(bord_22_3, display = 'sites')
-scrs <- cbind(as.data.frame(scrs), trt = bpf_2022$trt)
-
-fsc <- as.data.frame(scores(bord_22_3, 'species'))
-fsc$species <- rownames(fsc)
-
-
-check <- scrs[scrs$trt == '1',][chull(scrs[scrs$trt == '1', c('NMDS1', "NMDS2", "NMDS3")]),]
-brown <- scrs[scrs$trt == '2',][chull(scrs[scrs$trt == '2', c('NMDS1', "NMDS2", "NMDS3")]),]
-green <- scrs[scrs$trt == '3',][chull(scrs[scrs$trt == '3', c('NMDS1', "NMDS2", "NMDS3")]),]
-grbr <- scrs[scrs$trt == '4',][chull(scrs[scrs$trt == '4', c('NMDS1', "NMDS2", "NMDS3")]),]
-
-hull.data <- rbind(check, brown, green, grbr)
-as_tibble(hull.data) %>% 
-  print(n= Inf)
-
-# I now have a df with 3 dimensions of nmds values and associates treatments with species scrs above
-##
-# plot window must be the appropriate size to fit the points and the polygons 
-
-ordiplot3d(bord_22_3)
-tpl <- with(bpf_2022, ordiplot3d(bord_22_3, col = trt, pch = 16, angle = 50))
-with(bpf_2022, ordihull(tpl, groups = bpf_2022$trt, draw = "poly", 
-                        col = 1:4, 
-                        label = F,
-                        border = F,
-                        alpha = 50))
-text(tpl$xyz.convert(fsc), rownames(fsc))
-legend(x = 'top', legend = levels(bpf_2022$trt), col = 1:4, pch = 16)
-
-##
-
-
-
-
-# tout <- ordiplot3d(bord_3, col = 'red', ax.col = 'black', pch = 18)
-# any(!is.finite(bpf_2023$trt))
-# is.na(bpf_2023$trt)
-# unique(bpf_2023$trt)
 # 
+# data(dune,dune.env)
+# SITE_ID <- c("a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t")
+# dune.env$SITE_ID <- SITE_ID
+# ?cca
+# ord <- cca(dune ~ A1 + Moisture, dune.env)
+# ordiplot3d(ord)
+# pl4 <- with(dune.env, ordiplot3d(ord, col = Management, pch=16,angle=50))
 # 
-# ordiplot3d(bord_3)
-# tpl <- with(bpf_2023, ordiplot3d(bord_3, col = trt, pch = 16, angle = 50))
-# with(bpf_2023, ordihull(tpl, groups = bpf_2023$trt, draw = "poly", 
-#                         col = 1:4, 
-#                         label = T, 
+# with(dune.env, ordihull(pl4, dune.env$Management, draw = "poly", col = 1:4,label=T,
 #                         alpha = 50))
 # 
-# tsp <- scores(bord_3, choices = 1:3, display = 'species')
-# tspp <- as.data.frame(cbind(bpf_2023$trt, tsp))
-# with(bpf_2023, ordilabel(tpl, labels))
+# 
+# sp <- scores(pl4, choices=1:3, display="sites", scaling="symmetric")
+# spp <- as.data.frame(cbind(dune.env$SITE_ID,sp))
+# with(dune.env, ordilabel(pl4,labels=spp$V1,col="black", fill=NA, border=NA, pos = 2))
 
 
 ##
@@ -280,30 +234,5 @@ plot <- ordiplot3d(bord_3, display = 'sites')
 for(i in unique(hull.data$trt)) ordihull(plot, groups = hull.data$trt,
                                          draw = 'poly', 
                                          col = i)
-
-##
-
-# ellipse <- ordiellipse(bang, groups = hull.data$trt, kind = 'ehull', dar = 'polygon')
-
-
-
-
-##
-
-
-tout <- ordiplot3d(bord_3, col = 'red', ax.col = 'black', pch = 18)
-ordiplot3d(bord_3)
-tpl <- with(bpf_2023, ordiplot3d(bord_3, col = trt, pch = 16, angle = 50))
-with(bpf_2023, ordihull(tpl, bpf_2023$trt, draw = "poly", 
-                        col = 1:4, 
-                        label = T, 
-                        alpha = 50))
-
-tsp <- scores(bord_3, choices = 1:3, display = 'species')
-tspp <- as.data.frame(cbind(bpf_2023$trt, tsp))
-with(bpf_2023, ordilabel(tpl, labels))
-
-
-
 
 
