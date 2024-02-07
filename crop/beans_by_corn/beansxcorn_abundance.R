@@ -57,6 +57,14 @@ colnames(b_clean)
 b_23 <- b_clean %>% 
   filter(year == 2023) %>% 
   print(n = Inf)
+b_23 <- b_23 %>% 
+  rename('Coleoptera larvae' = Coleoptera)%>% 
+  rename(Lyniphiidae = Lin) %>%
+  mutate(Carabidae_new = Carabidae + Pterostichus +Cicindelidae) %>% 
+  select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  rename(Carabidae = Carabidae_new) %>% 
+  print(n = Inf)
+colnames(b_23)
 
 ###
 ##
@@ -98,6 +106,27 @@ colnames(c_clean)
 
 c_22 <- c_clean %>% 
   filter(year == 2022) %>% 
+  rename(Lyniphiidae = Lyn,
+         Staphylinidae = Staph, 
+         Tetragnathidae = Tetrgnathidae) %>% 
+  mutate(Carabidae_new = Carabidae + Cicindelidae,
+         Gryll = Gryllidae +Gyrillidae) %>% 
+  select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
+  rename(Carabidae = Carabidae_new,
+         Gryllidae = Gryll) %>%
+  print(n = Inf) 
+
+###
+##
+#
+# 
+##
+###
+
+bc <- rbind(b_23, c_22)
+bc <- bc %>% 
+  arrange(year, plot, crop) %>% 
+  replace(is.na(.),0) %>% 
   print(n = Inf)
 
 ###
@@ -106,4 +135,29 @@ c_22 <- c_clean %>%
 
 # functional groups? ####
 
+# permanova ####
+#
+##
+###
+bc
 
+bc_fams <- bc[6:25]
+bc_dist <- vegdist(bc_fams, method = "bray")
+
+# crop and date are sig
+p1 <- adonis2(bc_dist ~ crop + date + trt, perm = 999, method = "bray", data = bc)
+p1
+
+# nmds ####
+#
+##
+###
+
+nmds <- metaMDS(bc_dist, k=3)
+nmds$stress
+
+###
+##
+#
+
+# plot ####
