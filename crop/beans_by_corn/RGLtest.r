@@ -124,9 +124,6 @@ all_arth_bc <- rbind(b_rgl, c_rgl)%>%
   mutate_at(6:25, as.numeric) %>% 
   print(n = Inf)
 
-# youtube exmaple ####
-library(readxl)
-
 # nmds ####
 
 ?inner_join
