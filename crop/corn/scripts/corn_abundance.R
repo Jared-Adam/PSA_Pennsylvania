@@ -296,3 +296,6 @@ title(main ="NMDS of corn 2022 x 2023 population distributions by year",
 
 
 
+
+# anova ####
+pf_clean

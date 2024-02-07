@@ -135,7 +135,7 @@ bc <- bc %>%
 ##
 #
 
-# permanova ####
+# permanova corn 22 beans 23 ####
 #
 ##
 ###
@@ -148,7 +148,7 @@ bc_dist <- vegdist(bc_fams, method = "bray")
 p1 <- adonis2(bc_dist ~ crop + date + trt, perm = 999, method = "bray", data = bc)
 p1
 
-# nmds ####
+# nmds corn 22 beans 23####
 #
 ##
 ###
@@ -161,7 +161,7 @@ stressplot(nmds)
 ##
 #
 
-# plot ####
+# plot corn 22 beans 23 ####
 
 fsc <- as.data.frame(scores(nmds, "species"))
 fsc$species <- rownames(fsc)
@@ -176,7 +176,7 @@ with(bc, ordihull(bc_p, groups = bc$crop, draw = "poly",
 text(bc_p$xyz.convert(fsc), rownames(fsc), cex = 1.2)
 legend(x = 'right', legend = levels(bc$crop), col = 1:3, pch = 16, cex = 2)
 
-# loop for anova of pops x crop ####
+# loop for anova of pops x crop corn 22 beans 23 ####
 #
 ##
 ###
@@ -382,3 +382,47 @@ ggplot(tot_se_years_bc_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
 
 
 
+
+# permanova all years ####
+#
+##
+###
+
+all_arth_bc
+all_years_arth <- all_arth_bc[6:25]
+all_years_scores <- vegdist(all_years_arth, method = "bray")
+
+# crop is significant 
+all_years_p1 <- adonis2(all_years_scores ~ crop + trt, perm = 999, method = "bray", data = all_arth_bc)
+all_years_p1
+###
+##
+#
+
+# nmds all years ####
+#
+##
+###
+
+nmds_all_years <- metaMDS(all_years_arth, k = 3)
+nmds_all_years$stress
+stressplot(nmds_all_years)
+
+###
+##
+#
+
+# plot all years ####
+
+all_fsc <- as.data.frame(scores(nmds_all_years, 'species'))
+all_fsc$species <- rownames(all_fsc)
+
+ordiplot3d(nmds_all_years)
+all_bc_p <- with(all_arth_bc, ordiplot3d(nmds_all_years, col = crop, pch = 16, angle = 50))
+with(all_arth_bc, ordihull(all_bc_p, groups = all_arth_bc$crop, draw = "poly", 
+                  col = 1:3, 
+                  label = F,
+                  border = F,
+                  alpha = 50))
+text(all_bc_p$xyz.convert(all_fsc), rownames(all_fsc), cex = 1.2)
+legend(x = 'right', legend = levels(all_arth_bc$crop), col = 1:3, pch = 16, cex = 2)

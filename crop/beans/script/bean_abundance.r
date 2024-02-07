@@ -299,3 +299,6 @@ for(i in unique(hull.data$trt)) ordihull(plot, groups = hull.data$trt,
                                          col = i)
 
 
+
+# anova ####
+bpf_clean
