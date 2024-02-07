@@ -266,18 +266,42 @@ plot(tukey_list[[5]])
 
 
 
-# wut ####
-se_df <- bc %>% 
-  group_by(crop, trt) %>% 
-  summarise(mean = rowMeans(select(6:25))) %>% 
-  select(crop, trt, mean)
-
-bc %>% 
+# total arthropods by crop and trt for 2022 and 2023 ####
+colnames(func_bc)
+tot_arth <- func_bc %>% 
   group_by(crop, trt) %>% 
   rowwise() %>% 
-  mutate(sum = sum(c_across(6:23))) %>% 
-  select(crop, trt, sum)
+  mutate(sum = sum(c_across(6:12))) %>% 
+  print(n = Inf)
 
+se_df <- tot_arth %>% 
+  group_by(crop, trt) %>% 
+  summarise(mean = mean(sum),
+            sd = sd(sum),
+            n = n(),
+            se = sd/ sqrt(n)) %>% 
+  select(crop, trt, mean, sd, se)
+
+tot_aov <- aov(sum ~ crop + trt, tot_arth)
+summary(tot_aov)
+TukeyHSD(tot_aov)
+hist(residuals(tot_aov))
+
+tot_se_df <- tot_arth %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(sum), 
+            sd = sd(sum), 
+            n = n(), 
+            se = sd/ sqrt(n))
+
+ggplot(tot_se_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 1.9, y=16.8, label = "***", size = 6)+
+  labs(title = "Total arthropod by crop",
+       x = 'Crop and Year',
+       y = 'Mean Arthropod population')+
+  scale_x_discrete(labels=c('Corn:2022', 'Beans:2023'))
 
   sps_grouped <- bc_loop %>% 
     group_by(crop, trt) %>% 
@@ -286,3 +310,75 @@ bc %>%
               n = n()) %>% 
     mutate(se = sd/sqrt(n))
   
+# total arthropods by crop for all years ####
+b_clean 
+c_clean
+
+all_b <- b_clean %>% 
+  rename('Coleoptera larvae' = Coleoptera)%>% 
+  rename(Lyniphiidae = Lin) %>%
+  mutate(Carabidae_new = Carabidae + Pterostichus +Cicindelidae) %>% 
+  select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  rename(Carabidae = Carabidae_new) %>% 
+  print(n = Inf)
+
+all_c <- c_clean %>% 
+  rename(Lyniphiidae = Lyn,
+         Staphylinidae = Staph, 
+         Tetragnathidae = Tetrgnathidae) %>% 
+  mutate(Carabidae_new = Carabidae + Cicindelidae,
+         Gryll = Gryllidae +Gyrillidae) %>% 
+  select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
+  rename(Carabidae = Carabidae_new,
+         Gryllidae = Gryll) %>%
+  print(n = Inf) 
+
+all_arth_bc <- rbind(all_b, all_c)%>% 
+  arrange(year, plot, crop) %>% 
+  replace(is.na(.),0) %>% 
+  mutate_at(6:25, as.numeric) %>% 
+  print(n = Inf)
+
+func_tot <- all_arth_bc %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Agelenidae +
+           Lyniphiidae + Araneae + Salticidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Other_insects = Dermaptera + Coreidae) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+         -Lyniphiidae, -Araneae, -Salticidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Dermaptera, -Coreidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae,
+         Coleoptera_larvae = 'Coleoptera larvae')
+
+tot_all_years <- func_tot %>% 
+  group_by(crop, trt) %>% 
+  arrange(crop, trt) %>% 
+  rowwise() %>% 
+  mutate(sum = sum(c_across(6:12))) %>% 
+  print(n = Inf)
+
+all_years_bc_aov <- aov(sum ~ crop + trt, tot_all_years)
+summary(all_years_bc_aov)
+TukeyHSD(all_years_bc_aov)
+
+tot_se_years_bc_df <- tot_all_years %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(sum), 
+            sd = sd(sum), 
+            n = n(), 
+            se = sd/ sqrt(n))
+
+ggplot(tot_se_years_bc_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 1.9, y=18, label = "***", size = 6)+
+  labs(title = "Total arthropod by crop (all timings)",
+       x = 'Crop',
+       y = 'Mean Arthropod population')+
+  scale_x_discrete(labels=c('Corn', 'Beans'))
+
+
+
+
