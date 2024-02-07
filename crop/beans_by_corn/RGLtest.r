@@ -175,13 +175,22 @@ rgl_crop <- rgl_crop %>%
                            crop == "corn" ~ "red"))
 rgl_crop %>% count(color)
 
-plot3d(rgl_crop, 
+plot3d(x = rgl_crop$NMDS1, y = rgl_crop$NMDS2, z = rgl_crop$NMDS3, 
+       type="s",
+       size = 2,
        col = rgl_crop$color,
-       type = 's',
        xlab = 'NMDS Axis 1', 
        ylab = 'NMDS Axis 2',
        zlab = 'NMDS Axis 3')
 
+# cannot get spheres to work 
+x = c(1,2,3,4,5)
+y = c(4,3,4,6,7)
+z = c(4,5,6,7,7)
+plot3d(x,y,z, 
+       type = "s")
+
+# movie3d(spin3d(axis = c(0,0,1), rpm = 0.5), duration = 15)
 
 
 
