@@ -135,8 +135,6 @@ bc <- bc %>%
 ##
 #
 
-# functional groups? ####
-
 # permanova ####
 #
 ##
@@ -186,6 +184,31 @@ bc
 bc_fams
 colnames(bc_fams)
 
+# going to split into more functional groups first 
+# spiders
+# carabids 
+# other beetles 
+# beetle larvae 
+# non-insect arthropods
+# other
+colnames(bc)
+
+func_bc <- bc %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Agelenidae +
+           Lyniphiidae + Araneae + Salticidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Other_insects = Dermaptera + Coreidae) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+         -Lyniphiidae, -Araneae, -Salticidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Dermaptera, -Coreidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae,
+         Coleoptera_larvae = 'Coleoptera larvae')
+
+
+
+
 #test anova to check dist 
 test_aov <- aov(Lycosidae ~ crop + trt, bc)
 summary(test_aov)
@@ -193,19 +216,25 @@ TukeyHSD(test_aov)
 hist(residuals(test_aov))
 plot(bc$crop, bc$Lycosidae)
 plot(bc$crop, bc$Carabidae)
+
+func_test <- aov(Aranaeomorphae ~ crop + trt, func_bc)
+summary(func_test)
+TukeyHSD(func_test)
+plot(func_bc$crop, func_bc$Aranaeomorphae)
 # loop 
 
-sp_list <- bc_fams
-test_list <- list()
+
+
+sp_list <- func_bc[6:14]
 summary_list <- list()
 tukey_list <- list()
-crop_p <- list()
-trt_p <- list()
-for(i in 1:20){
+# crop_p <- list()
+# trt_p <- list()
+for(i in 1:9){
   print(i)
   sps <- colnames(sp_list[i])
   print(sps)
-  bc_loop <- subset(bc, select = c("crop", "trt", sps))
+  bc_loop <- subset(func_bc, select = c("crop", "trt", sps))
   colnames(bc_loop) <- c("crop", "trt", "sps")
   
   model <- aov(sps ~ crop, bc_loop)
@@ -216,17 +245,26 @@ for(i in 1:20){
   aov_tukey <- TukeyHSD(model)
   tukey_list[[i]] <- aov_tukey
   
-  # pvalue extraction
-  # crop_pval <- summary_list$`Pr(>F)`[1]
-  # trt_pval <- summary_list$`Pr(>F)`[3]
-  # crop_p[[i]] <- crop_pval
-  # trt_p[[i]] <- trt_pval
+  print(ggplot(bc_loop, aes(x = crop, y = sps, fill = crop))+
+    geom_bar(position = 'dodge', stat= 'identity'))
+
+
 }
+colnames(sp_list)
 summary_list
-tukey_list[1]
-plot(tukey_list[[1]])
-tukey_list[17]
-plot(tukey_list[[17]])
+# groups w sig values : 1, 3, 5, 6, 7, 8
+# Formicidae, Ensifera, Carabidae, Aranaeomorphae, Non_Insect_Arth, Other_Coleoptera
+tukey_list[6]
+plot(tukey_list[[6]])
+tukey_list[5]
+plot(tukey_list[[5]])
+
+# main groups of interest: 5 = carabidae beans > corn | 6 = aranaeomorphae corn > beans
+
+
+
+
+
 
 # wut ####
 se_df <- bc %>% 
