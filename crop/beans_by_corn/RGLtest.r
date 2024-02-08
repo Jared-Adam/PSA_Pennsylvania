@@ -152,45 +152,57 @@ hull_rgl
 rgl_fsc
 
 
-test_rgl <- inner_join(all_arth_bc, rgl_trts, by = c('trt'), relationship = 'many-to-many') %>% 
-  mutate(color = case_when( trt == "1" ~ 'red',
-                            trt == "2" ~ 'brown',
-                            trt == "3" ~ 'green',
-                            trt == "4" ~ 'orange'))
+# plotly 
+install.packages("plotly")
+library(plotly)
+
+fig <- plot_ly(rgl_crop, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~crop, colors = c("blue", "red"))
+fig <- fig %>% add_markers()
+fig
+htmlwidgets::saveWidget(fig, "test.htlm")
 
 
-plot3d(x = test_rgl$NMDS1, y = test_rgl$NMDS2, z = test_rgl$NMDS3,
-       col = test_rgl$color, size = 6, type = 'p',
-       xlab = 'NMDS Axis 1', 
-       ylab = 'NMDS Axis 2',
-       zlab = 'NMDS Axis 3'
-       )
+#####
 
-# I want to do this by crop, not trt: no sig with trt
-rgl_pops
-scrs <- scores(rgl_nmds, display = "sites")
-rgl_crop <- cbind(as.data.frame(scrs), crop = all_arth_bc$crop)
-rgl_crop <- rgl_crop %>% 
-  mutate(color = case_when(crop == "beans" ~ "blue", 
-                           crop == "corn" ~ "red"))
-rgl_crop %>% count(color)
-
-plot3d(x = rgl_crop$NMDS1, y = rgl_crop$NMDS2, z = rgl_crop$NMDS3, 
-       type="s",
-       size = 2,
-       col = rgl_crop$color,
-       xlab = 'NMDS Axis 1', 
-       ylab = 'NMDS Axis 2',
-       zlab = 'NMDS Axis 3')
-
-# cannot get spheres to work 
-x = c(1,2,3,4,5)
-y = c(4,3,4,6,7)
-z = c(4,5,6,7,7)
-plot3d(x,y,z, 
-       type = "s")
-
-# movie3d(spin3d(axis = c(0,0,1), rpm = 0.5), duration = 15)
+# test_rgl <- inner_join(all_arth_bc, rgl_trts, by = c('trt'), relationship = 'many-to-many') %>% 
+#   mutate(color = case_when( trt == "1" ~ 'red',
+#                             trt == "2" ~ 'brown',
+#                             trt == "3" ~ 'green',
+#                             trt == "4" ~ 'orange'))
+# 
+# 
+# plot3d(x = test_rgl$NMDS1, y = test_rgl$NMDS2, z = test_rgl$NMDS3,
+#        col = test_rgl$color, size = 6, type = 'p',
+#        xlab = 'NMDS Axis 1', 
+#        ylab = 'NMDS Axis 2',
+#        zlab = 'NMDS Axis 3'
+#        )
+# 
+# # I want to do this by crop, not trt: no sig with trt
+# rgl_pops
+# scrs <- scores(rgl_nmds, display = "sites")
+# rgl_crop <- cbind(as.data.frame(scrs), crop = all_arth_bc$crop)
+# rgl_crop <- rgl_crop %>% 
+#   mutate(color = case_when(crop == "beans" ~ "blue", 
+#                            crop == "corn" ~ "red"))
+# rgl_crop %>% count(color)
+# 
+# plot3d(x = rgl_crop$NMDS1, y = rgl_crop$NMDS2, z = rgl_crop$NMDS3, 
+#        type="s",
+#        size = 2,
+#        col = rgl_crop$color,
+#        xlab = 'NMDS Axis 1', 
+#        ylab = 'NMDS Axis 2',
+#        zlab = 'NMDS Axis 3')
+# 
+# # cannot get spheres to work 
+# x = c(1,2,3,4,5)
+# y = c(4,3,4,6,7)
+# z = c(4,5,6,7,7)
+# plot3d(x,y,z, 
+#        type = "s")
+# 
+# # movie3d(spin3d(axis = c(0,0,1), rpm = 0.5), duration = 15)
 
 
 
