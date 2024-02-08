@@ -1,6 +1,8 @@
 # Jared Adam 
 # beans slugs = 2022 and 2023
-# on a plain 
+# started on the plane 
+# adding here slug populations models and figs
+# slug x predator regressions and plots 
 
 # packages ####
 library(tidyverse)
@@ -79,10 +81,29 @@ nb_model_trt <- glmer.nb(total_slug ~ treatment +
 lrtest(poisson_model,nb_model_trt)
 # the negative binomial has the higher likelihood score, so we will use that
 
-#actual model: TBD
+#actual model: 
+unique(slugs$season)
+is.factor(slugs$season)
+slugs <- slugs %>% 
+  mutate(season = as.factor(season))
+model_1 <- glmer.nb(total_slug ~ treatment + (1|year), 
+                    data = slugs)
+summary(model_1)
+r2_nakagawa(model_1)
+binned_residuals(model_1)
+br_1 <- binned_residuals(model_1)
+plot(br_1)
 
 
-# plots ####
+# glm for trt*szn no random 
+model_2 <- MASS::glm.nb(total_slug ~ treatment + season, data = slugs)
+summary(model_2)
+hist(residuals(model_2))
+
+
+# significance between fall and spring, but not year or treatment
+
+# plots for slug populations  ####
 ggplot(slugs, aes(x = treatment, y = total_slug, fill = treatment))+
   geom_boxplot()+
   facet_wrap(~year + season)+
@@ -93,3 +114,220 @@ ggplot(slugs, aes(x = treatment, y = total_slug, fill = treatment))+
   theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 12))
 
+
+# slugs x predators data ####
+colnames(slugs)
+slugs_tot_beasn <- slugs %>% 
+  replace(is.na(.),0) %>% 
+  group_by(year, treatment) %>% 
+  summarise(slug_total_trt = sum(total_slug))
+
+
+# abundance df code 
+bpf <- bean_pf
+
+bpf_wide <- bpf %>% 
+  dplyr::select(-split, -life_stage, -sp, -genus) %>% 
+  group_by(date, plot) %>% 
+  pivot_wider(names_from = family, 
+              values_from = family,
+              values_fn = list(family = length)) %>% 
+  print(n = Inf)
+
+colnames(bpf_wide)
+bpf_wider <- bpf_wide  %>% 
+  replace(is.na(.),0) %>% 
+  mutate(Lin = Liniphiide + Lyniphiidae + Linyphiidae) %>% 
+  dplyr::select(-Liniphiide, -Lyniphiidae, -Linyphiidae, -na) %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"), 
+         year = format(date, "%Y")) %>% 
+  relocate(year) %>% 
+  mutate(year = as.factor(year)) %>% 
+  mutate_at(3:5, as.factor) 
+colnames(bpf_wide)
+
+bpf_clean <- bpf_wider %>% 
+  mutate(trt = as.factor(case_when(plot %in% c(101,203,304,401,503) ~ 1,
+                         plot %in% c(103,204,302,403,501) ~ 2,
+                         plot %in% c(102,201,303,402,502) ~ 3, 
+                         plot %in% c(104,202,301,404,504) ~ 4))) %>% 
+  na.omit() %>%  
+  dplyr::select(-crop) %>% 
+  mutate(crop = 'beans',
+         crop = as.factor(crop)) %>% 
+  relocate(year, date, crop) %>% 
+  print(n = Inf)
+colnames(bpf_clean)
+
+unique(bpf_clean$date)
+pred_tot_beans <- bpf_clean %>% 
+  mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae + Coleoptera +
+           Staphylinidae + Gryllidae + Pterostichus + Tetragnathidae + Chilopoda +
+           Cicindelidae + Gnaphosidae + Agelenidae + Lin) %>% 
+  group_by(year, season, trt) %>% 
+  summarise(total = sum(Predators))
+
+
+slugs_preds <- cbind(pred_tot_beans, slugs_tot_beasn) %>% 
+  dplyr::select(year...1, trt, total, slug_total_trt) %>% 
+  rename(year = year...1, 
+         pred_total = total) %>% 
+  mutate(pred_total = as.numeric(pred_total))
+
+# slug X predators model ####
+pred_tot_beans.model <- bpf_clean %>% 
+  mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae + Coleoptera +
+           Staphylinidae + Gryllidae + Pterostichus + Tetragnathidae + Chilopoda +
+           Cicindelidae + Gnaphosidae + Agelenidae + Lin)
+colnames(pred_tot_beans.model)
+
+slugs_clean.model<- slugs %>% 
+  replace(is.na(.),0)
+colnames(slugs_clean.model)
+slugs_preds
+
+poisson_model.2 <- glm(slug_total_trt ~ pred_total,
+                       data = slugs_preds,
+                       family = poisson)
+
+nb_model_trt.2 <- glm.nb(slug_total_trt ~ pred_total, 
+                         data = slugs_preds) 
+
+lrtest(poisson_model.2,nb_model_trt.2)
+# the negative binomial has the higher likelihood score, so we will use that
+
+pred_slug.1 <- glm.nb(slug_total_trt ~ pred_total, 
+                      data = slugs_preds)
+summary(pred_slug.1)
+hist(residuals(pred_slug.1))
+
+
+# slug X predators plot ####
+ggplot(slugs_preds, aes(x = pred_total, y = slug_total_trt, color = trt, shape = year))+
+  geom_point(size = 6)+
+  geom_smooth(method = 'lm')+
+  facet_wrap(~year, scales = "free")+
+  labs(title = "Soybean Slug x Predator Population",
+       x = "Predator Total", 
+       y = "Slug Population")
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# IDK what the fuck with the addition here ####
+
+# need to group by predators 
+# spider, carabids... who else? 
+colnames(b_clean)
+b_clean %>% 
+  mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae +
+           Staphylinidae + Opiliones + Gryllidae + Pterostichus + Tetragnathidae +
+           Cicindelidae + Gnaphosidae + Agelenidae + Lin + Chilopoda + Coleoptera) %>% 
+  dplyr::select(-Lycosidae , -Formicidae, -Carabidae, -Thomisidae,
+                  -Staphylinidae, -Opiliones, -Gryllidae, -Pterostichus, -Tetragnathidae,
+                  -Cicindelidae, -Gnaphosidae, -Agelenidae, -Lin, -Chilopoda, - Coleoptera) %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
+  group_by(year, trt) %>% 
+  dplyr::summarise(sums = sum(Predators)) %>% 
+  group_by(year, trt) %>% 
+  dplyr::summarise(mean = mean(sums))
+
+#
+b_clean %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
+  # relocate(Lycosidae, Formicidae, Carabidae, Thomisidae,
+  #            Staphylinidae, Opiliones, Gryllidae, Pterostichus, Tetragnathidae, 
+  #            Cicindelidae, Gnaphosidae, Agelenidae, Lin, Chilopoda, Coleoptera) %>% 
+  rowwise() %>% 
+  mutate(sum = sum(c_across(6:18))) %>% 
+  group_by(year,trt) %>% 
+  dplyr::summarise(sum = mean(sum))
+
+#
+b_clean %>% 
+  filter(year =="2022") %>%   
+  dplyr::mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae +
+                                       Staphylinidae + Opiliones + Gryllidae + Pterostichus + Tetragnathidae +
+                                       Cicindelidae + Gnaphosidae + Agelenidae + Lin + Chilopoda + Coleoptera) %>% 
+  dplyr::select(-Lycosidae , -Formicidae, -Carabidae, -Thomisidae,
+                -Staphylinidae, -Opiliones, -Gryllidae, -Pterostichus, -Tetragnathidae,
+                -Cicindelidae, -Gnaphosidae, -Agelenidae, -Lin, -Chilopoda, - Coleoptera) %>%
+  group_by(trt) %>% 
+  dplyr::summarise(sum = sum(Predators))
+#
+b_clean %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
+  relocate(Lycosidae, Formicidae, Carabidae, Thomisidae,
+           Staphylinidae, Opiliones, Gryllidae, Pterostichus, Tetragnathidae, 
+           Cicindelidae, Gnaphosidae, Agelenidae, Lin, Chilopoda, Coleoptera) %>% 
+  dplyr::mutate(tot = Lycosidae + Formicidae + Carabidae + Thomisidae +
+                  Staphylinidae + Opiliones + Gryllidae + Pterostichus + Tetragnathidae +
+                  Cicindelidae + Gnaphosidae + Agelenidae + Lin + Chilopoda + Coleoptera) %>% 
+  dplyr::select(trt, year, tot) %>% 
+  dplyr::group_by(year, trt) %>% 
+  dplyr::summarise(sums = sum(tot))
+#
+colmns<- c('Lycosidae', 'Formicidae', 'Carabidae', 'Thomisidae',
+         'Staphylinidae', 'Opiliones', 'Gryllidae', 'Pterostichus', 'Tetragnathidae', 
+         'Cicindelidae', 'Gnaphosidae', 'Agelenidae', 'Lin', 'Chilopoda', 'Coleoptera')
+
+b_clean %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
+  dplyr::group_by(year, trt) %>% 
+  dplyr::mutate(sum = rowSums())
+
+colnames(b_clean)
+b_clean$total <- rowSums(b_clean[6:24])
+print(b_clean$total)
+b_clean %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
+  group_by(year, trt) %>% 
+  summarise(sum = sum(total))
+
+
+# some high values in 2022
+b_clean %>% 
+  dplyr::filter(year == "2022") %>% 
+  rowwise() %>% 
+  mutate(sum = sum(c_across(6:22))) %>% 
+  dplyr::select(trt, sum) %>% 
+  dplyr::group_by(trt) %>% 
+  dplyr::summarise(sum = sum(sum))
+
+b_clean %>% 
+  dplyr::filter(year == "2023") %>% 
+  rowwise() %>% 
+  mutate(sum = sum(c_across(6:22), na.rm = T)) %>% 
+  dplyr::select(trt, sum) %>% 
+  dplyr::group_by(trt) %>% 
+  dplyr::summarise(sum = sum(sum))
