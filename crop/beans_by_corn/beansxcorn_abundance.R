@@ -426,3 +426,38 @@ with(all_arth_bc, ordihull(all_bc_p, groups = all_arth_bc$crop, draw = "poly",
                   alpha = 50))
 text(all_bc_p$xyz.convert(all_fsc), rownames(all_fsc), cex = 1.2)
 legend(x = 'right', legend = levels(all_arth_bc$crop), col = 1:3, pch = 16, cex = 2)
+
+
+# plotly ####
+rgl_pops <- all_arth_bc[6:25]
+
+rgl_nmds <- metaMDS(rgl_pops, k=3)
+
+# trts
+scrs <- scores(rgl_nmds, display = "sites")
+rgl_trts <- cbind(as.data.frame(scrs), trt = all_arth_bc$trt)
+
+# species names 
+rgl_fsc <- as.data.frame(scores(rgl_nmds, 'species'))
+rgl_fsc$species <- rownames(rgl_fsc)
+
+Check <- rgl_trts[rgl_trts$trt == "1",][chull(rgl_trts[rgl_trts$trt == "1", c("NMDS1", "NMDS2", "NMDS3")]),]
+Brown <- rgl_trts[rgl_trts$trt == "2",][chull(rgl_trts[rgl_trts$trt == "2", c("NMDS1", "NMDS2", "NMDS3")]),]
+Green <- rgl_trts[rgl_trts$trt == "3",][chull(rgl_trts[rgl_trts$trt == "3", c("NMDS1", "NMDS2", "NMDS3")]),]
+GrBr <- rgl_trts[rgl_trts$trt == "4",][chull(rgl_trts[rgl_trts$trt == "4", c("NMDS1", "NMDS2", "NMDS3")]),]
+
+hull_rgl <- rbind(Check, Brown, Green, GrBr)
+
+# so, now I have species names and treatments values (this is their location in the nmds) 
+hull_rgl
+rgl_fsc
+
+
+# plotly 
+install.packages("plotly")
+library(plotly)
+
+fig <- plot_ly(rgl_crop, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~crop, colors = c("blue", "red"))
+fig <- fig %>% add_markers()
+fig
+htmlwidgets::saveWidget(fig, "test.htlm")
