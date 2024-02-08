@@ -163,8 +163,8 @@ unique(bpf_clean$date)
 pred_tot_beans <- bpf_clean %>% 
   mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae + Coleoptera +
            Staphylinidae + Gryllidae + Pterostichus + Tetragnathidae + Chilopoda +
-           Cicindelidae + Gnaphosidae + Agelenidae + Lin) %>% 
-  group_by(year, season, trt) %>% 
+           Cicindelidae + Gnaphosidae + Agelenidae + Lin + Opiliones) %>% 
+  group_by(year, trt) %>% 
   summarise(total = sum(Predators))
 
 
@@ -175,16 +175,16 @@ slugs_preds <- cbind(pred_tot_beans, slugs_tot_beasn) %>%
   mutate(pred_total = as.numeric(pred_total))
 
 # slug X predators model ####
-pred_tot_beans.model <- bpf_clean %>% 
-  mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae + Coleoptera +
-           Staphylinidae + Gryllidae + Pterostichus + Tetragnathidae + Chilopoda +
-           Cicindelidae + Gnaphosidae + Agelenidae + Lin)
-colnames(pred_tot_beans.model)
-
-slugs_clean.model<- slugs %>% 
-  replace(is.na(.),0)
-colnames(slugs_clean.model)
-slugs_preds
+# pred_tot_beans.model <- bpf_clean %>% 
+#   mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae + Coleoptera +
+#            Staphylinidae + Gryllidae + Pterostichus + Tetragnathidae + Chilopoda +
+#            Cicindelidae + Gnaphosidae + Agelenidae + Lin)
+# colnames(pred_tot_beans.model)
+# 
+# slugs_clean.model<- slugs %>% 
+#   replace(is.na(.),0)
+# colnames(slugs_clean.model)
+# slugs_preds
 
 poisson_model.2 <- glm(slug_total_trt ~ pred_total,
                        data = slugs_preds,
@@ -243,91 +243,3 @@ ggplot(slugs_preds, aes(x = pred_total, y = slug_total_trt, color = trt, shape =
 
 
 
-
-# IDK what the fuck with the addition here ####
-
-# need to group by predators 
-# spider, carabids... who else? 
-colnames(b_clean)
-b_clean %>% 
-  mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae +
-           Staphylinidae + Opiliones + Gryllidae + Pterostichus + Tetragnathidae +
-           Cicindelidae + Gnaphosidae + Agelenidae + Lin + Chilopoda + Coleoptera) %>% 
-  dplyr::select(-Lycosidae , -Formicidae, -Carabidae, -Thomisidae,
-                  -Staphylinidae, -Opiliones, -Gryllidae, -Pterostichus, -Tetragnathidae,
-                  -Cicindelidae, -Gnaphosidae, -Agelenidae, -Lin, -Chilopoda, - Coleoptera) %>% 
-  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
-  group_by(year, trt) %>% 
-  dplyr::summarise(sums = sum(Predators)) %>% 
-  group_by(year, trt) %>% 
-  dplyr::summarise(mean = mean(sums))
-
-#
-b_clean %>% 
-  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
-  # relocate(Lycosidae, Formicidae, Carabidae, Thomisidae,
-  #            Staphylinidae, Opiliones, Gryllidae, Pterostichus, Tetragnathidae, 
-  #            Cicindelidae, Gnaphosidae, Agelenidae, Lin, Chilopoda, Coleoptera) %>% 
-  rowwise() %>% 
-  mutate(sum = sum(c_across(6:18))) %>% 
-  group_by(year,trt) %>% 
-  dplyr::summarise(sum = mean(sum))
-
-#
-b_clean %>% 
-  filter(year =="2022") %>%   
-  dplyr::mutate(Predators = Lycosidae + Formicidae + Carabidae + Thomisidae +
-                                       Staphylinidae + Opiliones + Gryllidae + Pterostichus + Tetragnathidae +
-                                       Cicindelidae + Gnaphosidae + Agelenidae + Lin + Chilopoda + Coleoptera) %>% 
-  dplyr::select(-Lycosidae , -Formicidae, -Carabidae, -Thomisidae,
-                -Staphylinidae, -Opiliones, -Gryllidae, -Pterostichus, -Tetragnathidae,
-                -Cicindelidae, -Gnaphosidae, -Agelenidae, -Lin, -Chilopoda, - Coleoptera) %>%
-  group_by(trt) %>% 
-  dplyr::summarise(sum = sum(Predators))
-#
-b_clean %>% 
-  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
-  relocate(Lycosidae, Formicidae, Carabidae, Thomisidae,
-           Staphylinidae, Opiliones, Gryllidae, Pterostichus, Tetragnathidae, 
-           Cicindelidae, Gnaphosidae, Agelenidae, Lin, Chilopoda, Coleoptera) %>% 
-  dplyr::mutate(tot = Lycosidae + Formicidae + Carabidae + Thomisidae +
-                  Staphylinidae + Opiliones + Gryllidae + Pterostichus + Tetragnathidae +
-                  Cicindelidae + Gnaphosidae + Agelenidae + Lin + Chilopoda + Coleoptera) %>% 
-  dplyr::select(trt, year, tot) %>% 
-  dplyr::group_by(year, trt) %>% 
-  dplyr::summarise(sums = sum(tot))
-#
-colmns<- c('Lycosidae', 'Formicidae', 'Carabidae', 'Thomisidae',
-         'Staphylinidae', 'Opiliones', 'Gryllidae', 'Pterostichus', 'Tetragnathidae', 
-         'Cicindelidae', 'Gnaphosidae', 'Agelenidae', 'Lin', 'Chilopoda', 'Coleoptera')
-
-b_clean %>% 
-  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
-  dplyr::group_by(year, trt) %>% 
-  dplyr::mutate(sum = rowSums())
-
-colnames(b_clean)
-b_clean$total <- rowSums(b_clean[6:24])
-print(b_clean$total)
-b_clean %>% 
-  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
-  group_by(year, trt) %>% 
-  summarise(sum = sum(total))
-
-
-# some high values in 2022
-b_clean %>% 
-  dplyr::filter(year == "2022") %>% 
-  rowwise() %>% 
-  mutate(sum = sum(c_across(6:22))) %>% 
-  dplyr::select(trt, sum) %>% 
-  dplyr::group_by(trt) %>% 
-  dplyr::summarise(sum = sum(sum))
-
-b_clean %>% 
-  dplyr::filter(year == "2023") %>% 
-  rowwise() %>% 
-  mutate(sum = sum(c_across(6:22), na.rm = T)) %>% 
-  dplyr::select(trt, sum) %>% 
-  dplyr::group_by(trt) %>% 
-  dplyr::summarise(sum = sum(sum))

@@ -130,23 +130,23 @@ m1_r <- binned_residuals(m1)
 plot(m1_r)
 
 
-# jw model attempt 
+# # jw model attempt 
+# 
+# lme_df <- na.omit(slug_clean)
+# jw_m <- nlme::lme(total_slug ~ treatment, random = ~ 1|year, 
+#              correlation = nlme::corCAR1(form=~1|year), 
+#              data = lme_df)
+# 
+# summary(jw_m)
+# check_singularity(jw_m)
+# r2_nakagawa(jw_m)
+# binned_residuals(jw_m)
+# jw_m_r <- binned_residuals(jw_m)
+# plot(jw_m_r)
 
-lme_df <- na.omit(slug_clean)
-jw_m <- nlme::lme(total_slug ~ treatment, random = ~ 1|year, 
-             correlation = nlme::corCAR1(form=~1|year), 
-             data = lme_df)
-
-summary(jw_m)
-check_singularity(jw_m)
-r2_nakagawa(jw_m)
-binned_residuals(jw_m)
-jw_m_r <- binned_residuals(jw_m)
-plot(jw_m_r)
 
 
-
-# plots ####
+# plots corn slugs ####
 ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = season))+
   geom_boxplot()+
   facet_wrap(~year)+
@@ -171,3 +171,110 @@ ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
   xlab("")+
   theme(axis.text.x = element_text(size=12),
         axis.text.y = element_text(size = 12))
+
+# slugs X predators data ####
+slug_clean %>% 
+replace(is.na(.),0)%>% 
+  group_by(year, treatment) %>% 
+  summarise(slug_total_trt = sum(total_slug))
+
+slug_tot_corn <- slug_clean %>% 
+  filter(year != "2021") %>% 
+  replace(is.na(.),0)%>% 
+  group_by(year, treatment) %>% 
+  summarise(slug_total_trt = sum(total_slug))
+
+# abundance df code 
+
+pf <- corn_pf
+
+pf_wide <- pf %>% 
+  dplyr::select(-split, -life_stage, -sp, -genus) %>% 
+  group_by(date, plot) %>% 
+  pivot_wider(names_from = family, 
+              values_from = family,
+              values_fn = list(family = length)) %>% 
+  print(n = Inf)
+
+colnames(pf_wide)
+pf_wider <- pf_wide  %>% 
+  replace(is.na(.),0) %>% 
+  mutate(Lyn = Liniphiidae + Lyniphiidae + Linyphiidae, 
+         Staph= Staphylinidae + Staphylinidaa) %>% 
+  dplyr::select(-Liniphiidae, -Lyniphiidae, -Linyphiidae, -Staphylinidae, -Staphylinidaa, -na) %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"), 
+         year = format(date, "%Y")) %>% 
+  relocate(year) %>% 
+  mutate(year = as.factor(year)) %>% 
+  mutate_at(3:5, as.factor) 
+colnames(pf_wide)
+
+cpf_clean <- pf_wider %>% 
+  mutate(trt = as.factor(case_when(plot %in% c(101,203,304,401,503) ~ 1,
+                         plot %in% c(103,204,302,403,501) ~ 2,
+                         plot %in% c(102,201,303,402,502) ~ 3, 
+                         plot %in% c(104,202,301,404,504) ~ 4))) %>% 
+  na.omit() %>%
+  print(n = Inf)
+colnames(pf_clean)
+
+pred_tot_corn <- cpf_clean %>% 
+  mutate(Predators = Lycosidae + Formicidae + Opiliones + Carabidae + Thomisidae +
+           Staph+ Gryllidae + Gyrillidae + Cicindelidae + Tetrgnathidae + Chilopoda +
+           Cicindelidae + Gnaphosidae+ Lyn + Araneae + Salticidae) %>% 
+  group_by(year, trt) %>% 
+  summarise(total = sum(Predators))
+
+
+c_slug_pres <- cbind(pred_tot_corn, slug_tot_corn) %>% 
+  dplyr::select(year...1, trt, total, slug_total_trt) %>% 
+  rename(year = year...1, 
+         pred_tot = total) %>% 
+  mutate(pred_tot = as.numeric(pred_tot))
+
+
+# slugs x predators models ####
+# 
+# pred_tot_corn.model <- cpf_clean %>% 
+#   mutate(Predators = Lycosidae + Formicidae + Opiliones + Carabidae + Thomisidae +
+#            Staph+ Gryllidae + Gyrillidae + Cicindelidae + Tetrgnathidae + Chilopoda +
+#            Cicindelidae + Gnaphosidae+ Lyn + Araneae + Salticidae)
+# colnames(pred_tot_corn.model)
+# 
+# corn_slugs_clean.model<- slugs %>% 
+#   replace(is.na(.),0)
+# colnames(slugs_clean.model)
+# slugs_preds
+
+
+
+poisson_model.3 <- glm(slug_total_trt ~ pred_tot,
+                       data = c_slug_pres,
+                       family = poisson)
+
+nb_model_trt.3 <- glm.nb(slug_total_trt ~ pred_tot, 
+                         data = c_slug_pres) 
+
+lrtest(poisson_model.3,nb_model_trt.3)
+# the negative binomial has the higher likelihood score, so we will use that
+
+pred_slug.2 <- glm.nb(slug_total_trt ~ pred_tot, 
+                      data = c_slug_pres)
+summary(pred_slug.2)
+hist(residuals(pred_slug.2))
+
+# weird relationship with slugs 
+
+
+# slugs x predators plots ####
+
+test <- ggplot(c_slug_pres, aes(x = pred_tot, y = slug_total_trt, color = trt, shape = year))+
+  geom_point(size = 6)+
+  geom_smooth(method = 'lm')+
+  facet_wrap(~year, scales = "free")+
+  labs(title = "Corn Slug x Predator Population",
+       x = "Predator Total", 
+       y = "Slug Population")
+
+
+ggplotly(test)

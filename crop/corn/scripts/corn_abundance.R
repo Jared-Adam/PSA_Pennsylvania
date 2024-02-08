@@ -17,14 +17,14 @@ pf <- pf %>%
 test <- pf[1:95, ]
 
 # pivot <- test %>% 
-#   select(-split, -life_stage, -sp, -genus) %>% 
+#   dplyr::select(-split, -life_stage, -sp, -genus) %>% 
 #   group_by(date, plot, family) %>% 
 #   summarise(n_dist_families = n_distinct(family)) %>% 
 #   pivot_wider(names_from = family, 
 #               values_from = n_dist_families)
 
 pivot<-test %>% 
-  select(-split, -life_stage, -sp, -genus) %>% 
+  dplyr::select(-split, -life_stage, -sp, -genus) %>% 
   group_by(date, plot) %>% 
   pivot_wider(names_from = family, 
               values_from = family,
@@ -32,7 +32,7 @@ pivot<-test %>%
 # wrangling ####
 # whole data set 
 pf_wide <- pf %>% 
-  select(-split, -life_stage, -sp, -genus) %>% 
+  dplyr::select(-split, -life_stage, -sp, -genus) %>% 
   group_by(date, plot) %>% 
   pivot_wider(names_from = family, 
               values_from = family,
@@ -44,7 +44,7 @@ pf_wide <- pf_wide  %>%
   replace(is.na(.),0) %>% 
   mutate(Lyn = Liniphiidae + Lyniphiidae + Linyphiidae, 
          Staph= Staphylinidae + Staphylinidaa) %>% 
-  select(-Liniphiidae, -Lyniphiidae, -Linyphiidae, -Staphylinidae, -Staphylinidaa, -na) %>% 
+  dplyr::select(-Liniphiidae, -Lyniphiidae, -Linyphiidae, -Staphylinidae, -Staphylinidaa, -na) %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"), 
          year = format(date, "%Y")) %>% 
   relocate(year) %>% 
@@ -97,36 +97,43 @@ perm_2_2
 cord_22_3 <- metaMDS(c_family_names_22, k = 3)
 cord_22_3$stress
 
-# plot 
+# plot
+scrs_c22 <- scores(cord_22_3, display = "sites")
+c_22_scrs <- cbind(as.data.frame(scrs_c22), trt = cpf_2022$trt)
+# 
 
-c_22_fsc <- as.data.frame(scores(cord_22_3, 'species'))
-c_22_fsc$species <- rownames(c_22_fsc)
+c_22.fig <- plot_ly(c_22_scrs, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~trt)
+c_22.fig <- c_22.fig %>% 
+  add_markers()
+c_22.fig
 
-ordiplot3d(cord_22_3)
-tc_1 <- with(cpf_2022, ordiplot3d(cord_22_3, col = timing, pch = 16, angle = 50))
-with(cpf_2022, ordihull(tc_1, groups = cpf_2022$timing, draw = "poly", 
-                        col = 3:4, 
-                        label = F,
-                        border = F,
-                        alpha = 50))
-text(tc_1$xyz.convert(c_22_fsc), rownames(c_22_fsc), cex = 1.2)
-legend(x = -3, y = -0.5, legend = c("2022-05-28", "2022-07-01"), col = 1:2, pch = 16, cex = 2)
-legend(0.5, -0.5, "Stress: 0.1284837",
-       xjust = 0.5,
-       yjust = 3, 
-       x.intersp = -0.5,
-       y.intersp = 0.1, 
-       adj = c(0,0.5), 
-       cex = 1.5)
-legend(0.5, -0.5, "Timing p-value: 0.0001***",
-       xjust = 0.5,
-       yjust = 4.5, 
-       x.intersp = -0.5,
-       y.intersp = 0.1, 
-       adj = c(0,0.5), 
-       cex = 1.5)
-title(main ="NMDS of corn 2022 population distributions by timing",
-      cex.main = 2)
+# 
+
+# ordiplot3d(cord_22_3)
+# tc_1 <- with(cpf_2022, ordiplot3d(cord_22_3, col = timing, pch = 16, angle = 50))
+# with(cpf_2022, ordihull(tc_1, groups = cpf_2022$timing, draw = "poly", 
+#                         col = 3:4, 
+#                         label = F,
+#                         border = F,
+#                         alpha = 50))
+# text(tc_1$xyz.convert(c_22_fsc), rownames(c_22_fsc), cex = 1.2)
+# legend(x = -3, y = -0.5, legend = c("2022-05-28", "2022-07-01"), col = 1:2, pch = 16, cex = 2)
+# legend(0.5, -0.5, "Stress: 0.1284837",
+#        xjust = 0.5,
+#        yjust = 3, 
+#        x.intersp = -0.5,
+#        y.intersp = 0.1, 
+#        adj = c(0,0.5), 
+#        cex = 1.5)
+# legend(0.5, -0.5, "Timing p-value: 0.0001***",
+#        xjust = 0.5,
+#        yjust = 4.5, 
+#        x.intersp = -0.5,
+#        y.intersp = 0.1, 
+#        adj = c(0,0.5), 
+#        cex = 1.5)
+# title(main ="NMDS of corn 2022 population distributions by timing",
+#       cex.main = 2)
 
 ###
 ##
@@ -177,31 +184,31 @@ c_23_fsc <- as.data.frame(scores(cord_23_3, 'species'))
 c_23_fsc$species <- rownames(c_23_fsc)
 
 
-ordiplot3d(cord_23_3)
-tc_2 <- with(cpf_2023, ordiplot3d(cord_23_3, col = timing, pch = 16, angle = 50))
-with(cpf_2023, ordihull(tc_2, groups = cpf_2023$timing, draw = "poly", 
-                        col = 1:3, 
-                        label = F,
-                        border = F,
-                        alpha = 50))
-text(tc_2$xyz.convert(c_23_fsc), rownames(c_23_fsc), cex = 1.2)
-legend(x = -2, y = -0.5, legend = c("2023-06-26", "2023-07-28"), col = 1:2, pch = 16, cex = 2)
-legend(0.5, -0.5, "Stress: 0.162313",
-       xjust = 0.2,
-       yjust = 3, 
-       x.intersp = -0.5,
-       y.intersp = 0.1, 
-       adj = c(0,0.5), 
-       cex = 1.5)
-legend(0.5, -0.5, "Timing p-value: 0.0001***",
-       xjust = 0.2,
-       yjust = 4.5, 
-       x.intersp = -0.5,
-       y.intersp = 0.1, 
-       adj = c(0,0.5), 
-       cex = 1.5)
-title(main ="NMDS of corn 2023 population distributions by timing",
-      cex.main = 2)
+# ordiplot3d(cord_23_3)
+# tc_2 <- with(cpf_2023, ordiplot3d(cord_23_3, col = timing, pch = 16, angle = 50))
+# with(cpf_2023, ordihull(tc_2, groups = cpf_2023$timing, draw = "poly", 
+#                         col = 1:3, 
+#                         label = F,
+#                         border = F,
+#                         alpha = 50))
+# text(tc_2$xyz.convert(c_23_fsc), rownames(c_23_fsc), cex = 1.2)
+# legend(x = -2, y = -0.5, legend = c("2023-06-26", "2023-07-28"), col = 1:2, pch = 16, cex = 2)
+# legend(0.5, -0.5, "Stress: 0.162313",
+#        xjust = 0.2,
+#        yjust = 3, 
+#        x.intersp = -0.5,
+#        y.intersp = 0.1, 
+#        adj = c(0,0.5), 
+#        cex = 1.5)
+# legend(0.5, -0.5, "Timing p-value: 0.0001***",
+#        xjust = 0.2,
+#        yjust = 4.5, 
+#        x.intersp = -0.5,
+#        y.intersp = 0.1, 
+#        adj = c(0,0.5), 
+#        cex = 1.5)
+# title(main ="NMDS of corn 2023 population distributions by timing",
+#       cex.main = 2)
 
 ###
 ##
@@ -256,39 +263,39 @@ c_fsc <- as.data.frame(scores(cord_3, 'species'))
 c_fsc$species <- rownames(c_fsc)
 
 
-ordiplot3d(cord_3)
-tc_3 <- with(cpf_clean, ordiplot3d(cord_3, col = year, pch = 16, angle = 50))
-with(cpf_clean, ordihull(tc_3, groups = cpf_clean$year, draw = "poly", 
-                        col = 1:3, 
-                        label = F,
-                        border = F,
-                        alpha = 50))
-#text(tc_3$xyz.convert(c_fsc), rownames(c_fsc), cex = 1.2)
-legend(x = -2, y = -0.5, legend = c("2022", "2023"), col = 1:2, pch = 16, cex = 2)
-legend(0.5, -0.5, "Stress: 0.1681593",
-       xjust = 0.2,
-       yjust = 3, 
-       x.intersp = -0.5,
-       y.intersp = 0.1, 
-       adj = c(0,0.5), 
-       cex = 1.5)
-legend(0.5, -0.5, "Timing p-value: 0.0001***",
-       xjust = 0.2,
-       yjust = 4.5, 
-       x.intersp = -0.5,
-       y.intersp = 0.1, 
-       adj = c(0,0.5), 
-       cex = 1.5)
-legend(0.5, -0.5, "Year p-value: 0.0001***",
-       xjust = 0.2,
-       yjust = 6.5, 
-       x.intersp = -0.5,
-       y.intersp = 0.1, 
-       adj = c(0,0.5), 
-       cex = 1.5)
-title(main ="NMDS of corn 2022 x 2023 population distributions by year",
-      cex.main = 2)
-
+# ordiplot3d(cord_3)
+# tc_3 <- with(cpf_clean, ordiplot3d(cord_3, col = year, pch = 16, angle = 50))
+# with(cpf_clean, ordihull(tc_3, groups = cpf_clean$year, draw = "poly", 
+#                         col = 1:3, 
+#                         label = F,
+#                         border = F,
+#                         alpha = 50))
+# #text(tc_3$xyz.convert(c_fsc), rownames(c_fsc), cex = 1.2)
+# legend(x = -2, y = -0.5, legend = c("2022", "2023"), col = 1:2, pch = 16, cex = 2)
+# legend(0.5, -0.5, "Stress: 0.1681593",
+#        xjust = 0.2,
+#        yjust = 3, 
+#        x.intersp = -0.5,
+#        y.intersp = 0.1, 
+#        adj = c(0,0.5), 
+#        cex = 1.5)
+# legend(0.5, -0.5, "Timing p-value: 0.0001***",
+#        xjust = 0.2,
+#        yjust = 4.5, 
+#        x.intersp = -0.5,
+#        y.intersp = 0.1, 
+#        adj = c(0,0.5), 
+#        cex = 1.5)
+# legend(0.5, -0.5, "Year p-value: 0.0001***",
+#        xjust = 0.2,
+#        yjust = 6.5, 
+#        x.intersp = -0.5,
+#        y.intersp = 0.1, 
+#        adj = c(0,0.5), 
+#        cex = 1.5)
+# title(main ="NMDS of corn 2022 x 2023 population distributions by year",
+#       cex.main = 2)
+# 
 
 ###
 ##
