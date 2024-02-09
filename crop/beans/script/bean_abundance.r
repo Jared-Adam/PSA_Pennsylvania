@@ -260,14 +260,14 @@ b_trt <- cbind(as.data.frame(b_scrs), trt = bpf_year$trt)
 b_fsc <- as.data.frame(scores(bord_3, 'species'))
 b_fsc$species <- rownames(b_fsc)
 
+b_years <- scores(bord_3 , display = "sites")
+b_years <- cbind(as.data.frame(b_years), year = bpf_year$year)
 
+plot_year <- plot_ly(b_years, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~year)
+plot_year <- plot_year %>% 
+  add_markers()
+plot_year
 
-
-b_all_fsc <- as.data.frame(scores(bord_3, 'species'))
-b_all_fsc$species <- rownames(b_all_fsc)
-
-
-###
 ##
 #
 # anova ####

@@ -13,7 +13,7 @@ slugs <- PSA_PA_slugs
 # clean this jawn ####
 slugs
 
-# cleaning_the_slug <-
+# test ####
   
 colnames(slugs)
 test_slug <- slugs[1:200,]
@@ -39,25 +39,28 @@ test_slug %>%
 
 
 
-# whole data set 
+# whole data set ####
 
 slug_clean <- slugs %>% 
-  dplyr::select(-location, -shingle_id, -time, -temp, -row) %>% 
+  dplyr::select(-location, -shingle_id, -time, -row) %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
   rename(precip = "7day_precip") %>% 
-  dplyr::select(-date, -precip) %>% 
+  dplyr::select(-date) %>% 
   mutate(year = as.factor(year), 
        treatment = as.factor(treatment))%>% 
-  group_by(season, year, month, plot_id, treatment, block) %>% 
+  group_by(season, year, month, plot_id, treatment, block, precip, temp) %>% 
   summarise(total_slug =  sum(slug_count))%>% 
+  replace(is.na(.),0)
   print(n = Inf)
 
 #subset by season
 
 fall_slugs <- subset(slug_clean, season == "fall")
 spring_slugs <- subset(slug_clean, season == "spring")
-
+cs_21 <- subset(slug_clean, year == "2021")
+cs_22 <- subset(slug_clean, year == "2022")
+cs_23 <- subset(slug_clean, year == "2023")
 # models ####
 
 # look at overdispersion: variance > mean?
@@ -119,7 +122,7 @@ lrtest(poisson_model,nb_model_trt)
 
 # with random of block, plot, and season: the models are singular 
 m1 <- glmer.nb(total_slug ~ treatment +
-                 (1|year), data = slug_clean) 
+                 (1|year) + (1|precip), data = slug_clean) 
 
 
 summary(m1)
@@ -129,21 +132,11 @@ binned_residuals(m1)
 m1_r <- binned_residuals(m1)
 plot(m1_r)
 
-
-# # jw model attempt 
-# 
-# lme_df <- na.omit(slug_clean)
-# jw_m <- nlme::lme(total_slug ~ treatment, random = ~ 1|year, 
-#              correlation = nlme::corCAR1(form=~1|year), 
-#              data = lme_df)
-# 
-# summary(jw_m)
-# check_singularity(jw_m)
-# r2_nakagawa(jw_m)
-# binned_residuals(jw_m)
-# jw_m_r <- binned_residuals(jw_m)
-# plot(jw_m_r)
-
+# checking for trt differences in slug populations 
+# none
+m2 <- kruskal.test(total_slug ~ treatment, data = cs_21)
+m3 <- kruskal.test(total_slug ~ treatment, data  = cs_22)
+m4 <- kruskal.test(total_slug ~ treatment, data = cs_23)
 
 
 # plots corn slugs ####
@@ -157,11 +150,6 @@ ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = season))+
   theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 12))
 
-
-
-
-
-
 ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
   geom_boxplot()+
   facet_wrap(~year)+
@@ -171,6 +159,28 @@ ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
   xlab("")+
   theme(axis.text.x = element_text(size=12),
         axis.text.y = element_text(size = 12))
+
+# slugs and precip ####
+precip_slug <- slug_clean %>% 
+  group_by(season, year, treatment) %>% 
+  summarise(precip_tot = sum(precip),
+            slug_tot = sum(total_slug)) 
+
+precip <- kruskal.test(precip_tot ~ year, data = precip_slug)
+precip
+pairwise.wilcox.test(precip_slug$precip_tot, precip_slug$year)
+hist(residuals(precip))
+
+ggplot(precip_slug, aes(x = precip_tot, y = slug_tot))+
+  geom_point()+
+  facet_wrap(~year + season)
+
+ggplot(precip_slug, aes(x = year, y = precip_tot, fill = year))+
+  geom_bar(position = "dodge", stat = "identity")+
+  facet_wrap(~season)
+
+
+
 
 # slugs X predators data ####
 slug_clean %>% 
