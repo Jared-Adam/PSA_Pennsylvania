@@ -14,7 +14,7 @@ library(lmtest)
 
 
 # data ####
-slugs = slugs_beans_all %>% 
+slugs <- slugs_beans_all %>% 
   mutate(slug_count = as.numeric(slug_count)) %>% 
   rename(precip = '7_day_precip_in') %>% 
   mutate(temp = as.numeric(temp)) %>% 
@@ -22,12 +22,12 @@ slugs = slugs_beans_all %>%
                                plot %in% c(103,204,302,403,501) ~ 2,
                                plot %in% c(102,201,303,402,502) ~ 3, 
                                plot %in% c(104,202,301,404,504) ~ 4)) %>% 
-  mutate(block = as.factor(block)) %>% 
   mutate(block = case_when(plot %in% c(101,102,103,104) ~ 1,
                            plot %in% c(201,202,203,204) ~ 2,
                            plot %in% c(301,302,303,304) ~ 3,
                            plot %in% c(401,402,403,404) ~ 4,
                            plot %in% c(501,502,503,504) ~ 5)) %>% 
+  mutate(block = as.factor(block)) %>%
   dplyr::select(-location, -shingle_id, -time, -temp, -row) %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y'))  %>% 
@@ -39,7 +39,11 @@ slugs = slugs_beans_all %>%
   summarise(total_slug =  sum(slug_count))%>% 
   print(n = Inf)
 slugs <- slugs[1:160,]
+slugs <- slugs %>% 
+  replace(is.na(.),0) %>% 
+  print(n = Inf)
 unique(slugs$treatment)
+unique(slugs$season)
 
 
 #subset by season
@@ -86,7 +90,7 @@ unique(slugs$season)
 is.factor(slugs$season)
 slugs <- slugs %>% 
   mutate(season = as.factor(season))
-model_1 <- glmer.nb(total_slug ~ treatment + (1|year), 
+model_1 <- glmer.nb(total_slug ~ treatment + (1|year/block), 
                     data = slugs)
 summary(model_1)
 r2_nakagawa(model_1)
@@ -100,11 +104,28 @@ model_2 <- MASS::glm.nb(total_slug ~ treatment + season, data = slugs)
 summary(model_2)
 hist(residuals(model_2))
 
+# spring sig diff than fall and trt 4 sig diff from 1
+total_slug_22 <- dplyr::filter(slugs, year == "2022")
+model_3 <- MASS::glm.nb(total_slug ~ treatment + season,
+                        data = total_slug_22)
+summary(model_3)
+hist(residuals(model_3))
+
+# sping sig from fall 
+total_slug_23 <- filter(slugs, year == "2023")
+model_4 <- MASS::glm.nb(total_slug ~ treatment + season, 
+                       data = total_slug_23)
+summary(model_4)
+hist(residuals(model_4))
+
+
+
 
 # significance between fall and spring, but not year or treatment
 
 # plots for slug populations  ####
-ggplot(slugs, aes(x = treatment, y = total_slug, fill = treatment))+
+# add sig values in ppt: confusing with two factor facets
+ggplot(slugs, aes(x = as.character(treatment), y = total_slug, fill = treatment))+
   geom_boxplot()+
   facet_wrap(~year + season)+
   scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
@@ -113,7 +134,6 @@ ggplot(slugs, aes(x = treatment, y = total_slug, fill = treatment))+
         title = "Total Spring Slugs by Treatment")+
   theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 12))
-
 
 # slugs x predators data ####
 colnames(slugs)
