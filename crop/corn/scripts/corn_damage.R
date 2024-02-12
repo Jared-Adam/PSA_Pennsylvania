@@ -196,7 +196,7 @@ multiple_saved['pest'] <- ('multiple')
 other_saved <- as.data.frame(other_saved$emmeans)
 other_saved['pest'] <- ('other')
 
-all_emmeans <- rbind(bcw_saved, s_saved, sb_saved, taw_saved, multiple_saved, other_saved)
+all_emmeans <- rbind(bcw_saved, s_saved, sb_saved, taw_saved, multiple_saved) #, other_saved
 as_tibble(all_emmeans)
 all_emmeans$pest <- as.factor(all_emmeans$pest)
 
@@ -205,7 +205,7 @@ all_emmeans$pest <- as.factor(all_emmeans$pest)
 # all years
 #facet order
 all_emmeans$pest_f <- factor(all_emmeans$pest, levels =c('slug', 'stink bug', 'bcw', 'taw',
-                                                'other', 'multiple'))
+                                               'multiple')) #'other', 
 # data_text <- data.frame(
 #   label = c('test', 'test2'),
 #   pest_f = c('slug', 'stink bug'),
