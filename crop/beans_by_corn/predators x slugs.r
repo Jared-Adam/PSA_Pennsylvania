@@ -77,7 +77,7 @@ unique(final_slug$year)
 
 sum_slug <- final_slug %>% 
   ungroup() %>% 
-  group_by(crop, year) %>% 
+  group_by(crop, year, treatment) %>% 
   summarise(slugs = sum(total_slug))
 
   
@@ -182,6 +182,7 @@ pf_all <- rbind(b_clean, c_clean) %>%
   mutate_at(vars(6:25), as.numeric)
 colnames(pf_all)
 
+
 pf_clean <- pf_all %>% 
   dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae, -Coreidae) %>% 
   mutate(predators = Lycosidae + Formicidae + Thomisidae + `Coleoptera larvae` + Staphylinidae + Opiliones + Gryllidae +
@@ -191,3 +192,107 @@ pf_clean <- pf_all %>%
   group_by(crop, year, trt) %>% 
   summarise(pred = sum(predators))
 
+# checking sum functions ####
+#matches above
+b_clean %>% 
+  ungroup() %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
+  mutate(total = rowSums(pick(where(is.numeric)))) %>% 
+  group_by(year, crop) %>% 
+  summarise(sum = sum(total))
+
+b_clean %>% 
+  ungroup() %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>% 
+  rowwise(crop) %>% 
+  mutate(total = sum(c_across(where(is.numeric))))
+
+# look to see which columns are driving these numbers
+b_clean %>% 
+  filter(year == "2022") %>% 
+  ungroup() %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>%
+  group_by(crop, year) %>% 
+  summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE))) %>% 
+  mutate(total = sum(c_across(where(is.numeric)))) %>% 
+  relocate(crop, year, total)
+
+bpf_clean %>% 
+  filter(year == "2022") %>% 
+  ungroup() %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae) %>%
+  group_by(crop, year) %>% 
+  summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE)))
+
+# plots ####
+# slugs : 
+sum_slug
+# pf : 
+pf_clean
+
+# beans # 
+sum_sb <- sum_slug %>% 
+  filter(crop == "bean") %>% 
+  rename(trt = treatment)
+pf_sb <- pf_clean %>% 
+  filter(crop == "beans")
+s_plot <- cbind(sum_sb, pf_sb) %>% 
+  rename(crop = crop...1,
+         year = year...2,
+         trt = trt...3) %>% 
+  select(-crop...5, - year...6, -trt...7)
+
+ggplot(s_plot, aes(x = pred, y = slugs))+
+  geom_point(size = 5) +
+  geom_smooth(method = "lm", linewidth = 1.5)+
+  labs(title = "Beans: Total Slug by predator populations",
+       x = "Predator population",
+       y = "Slug population")+
+  annotate("text", x = 400, y = 200, label = "0.00162 **", size = 8)
+
+# Karn #
+sum_c <- sum_slug %>% 
+  filter(crop == "corn") %>% 
+  rename(trt = treatment)
+pf_c <- pf_clean %>% 
+  filter(crop == "corn")
+c_plot <- cbind(sum_c, pf_c) %>% 
+  rename(crop = crop...1,
+         year = year...2, 
+         trt = trt...3) %>% 
+  select(-crop...5, -year...6, -trt...7)
+
+ggplot(c_plot, aes(x = pred, y = slugs))+
+  geom_point(size = 5) + 
+  geom_smooth(method = "lm", linewidth = 1.5)+
+  labs(title = "Corn: Total Slug by predator populations",
+      x = "Predator population",
+      y = "Slug population")
+
+# all #
+all_plot <- cbind(sum_slug, pf_clean) %>% 
+  rename(crop = crop...1, 
+         year = year...2) %>% 
+  select(-crop...5, -year...6, -treatment)
+
+ggplot(all_plot, aes(x = pred, y = slugs))+
+  geom_point(size = 5)+
+  geom_smooth(method = "lm", linewidth = 1.5)+
+  labs(title = "Total Slug by predator populations",
+       x = "Predator population",
+       y = "Slug population")+
+  annotate("text", x = 400, y = 400, label = "0.0311 *", size = 8)
+
+# stats on this ####
+bm <- glm(slugs ~ pred, data = s_plot)
+summary(bm)
+hist(residuals(bm))
+
+cm <- glm(slugs ~ pred, data = c_plot)
+summary(cm)
+hist(residuals(cm))
+
+
+all_m <- glm(slugs ~ pred, data = all_plot)
+summary(all_m)
+hist(residuals(all_m))
