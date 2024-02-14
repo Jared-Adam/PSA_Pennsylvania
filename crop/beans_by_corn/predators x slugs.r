@@ -225,6 +225,16 @@ bpf_clean %>%
   summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE)))
 
 # plots ####
+library(ggpubr)
+library(RColorBrewer)
+
+display.brewer.all(colorblindFriendly = TRUE)
+display.brewer.pal(n=4, name = "Dark2")
+brewer.pal(n=4, name = "Dark2")
+
+
+
+
 # slugs : 
 sum_slug
 # pf : 
@@ -243,12 +253,30 @@ s_plot <- cbind(sum_sb, pf_sb) %>%
   select(-crop...5, - year...6, -trt...7)
 
 ggplot(s_plot, aes(x = pred, y = slugs))+
-  geom_point(size = 5) +
-  geom_smooth(method = "lm", linewidth = 1.5)+
+  geom_point(size = 5,aes(color = trt)) +
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
+                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  guides(color=guide_legend("Treatment"))+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
   labs(title = "Beans: Total Slug by predator populations",
+       subtitle = "Years: 2022-2023",
        x = "Predator population",
        y = "Slug population")+
-  annotate("text", x = 400, y = 200, label = "0.00162 **", size = 8)
+  annotate("text", x = 400, y = 150, label = "p = 0.00162 **", size = 8)+
+  theme(
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 20),
+    plot.title = element_text(size = 24),
+    plot.subtitle = element_text(size = 18),
+    axis.line = element_line(size = 1.25),
+    axis.ticks = element_line(size = 1.25),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.key.size = unit(1.5, "cm"),
+    legend.title = element_text(size = 18), 
+    legend.text = element_text(size =16)
+  )
 
 # Karn #
 sum_c <- sum_slug %>% 
@@ -262,12 +290,29 @@ c_plot <- cbind(sum_c, pf_c) %>%
          trt = trt...3) %>% 
   select(-crop...5, -year...6, -trt...7)
 
-ggplot(c_plot, aes(x = pred, y = slugs))+
-  geom_point(size = 5) + 
-  geom_smooth(method = "lm", linewidth = 1.5)+
+ggplot(c_plot, aes(x = pred, y = slugs, color = trt))+
+  geom_point(size = 5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
+                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  guides(color=guide_legend("Treatment"))+
   labs(title = "Corn: Total Slug by predator populations",
+       subtitle = "Years: 2022-2023",
       x = "Predator population",
-      y = "Slug population")
+      y = "Slug population")+
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 16),
+    plot.title = element_text(size = 20),
+    plot.subtitle = element_text(size = 16),
+    axis.line = element_line(size = 1.25),
+    axis.ticks = element_line(size = 1.25),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.key.size = unit(1.5, "cm"),
+    legend.title = element_text(size = 14), 
+    legend.text = element_text(size =12)
+  )
 
 # all #
 all_plot <- cbind(sum_slug, pf_clean) %>% 
@@ -276,12 +321,30 @@ all_plot <- cbind(sum_slug, pf_clean) %>%
   select(-crop...5, -year...6, -treatment)
 
 ggplot(all_plot, aes(x = pred, y = slugs))+
-  geom_point(size = 5)+
-  geom_smooth(method = "lm", linewidth = 1.5)+
+  geom_point(size = 5, aes(color = trt))+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
+                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  guides(color=guide_legend("Treatment"))+
+  geom_smooth(method = "lm", linewidth = 1.5, color = "black")+
   labs(title = "Total Slug by predator populations",
+       subtitle = "Years: 2022-2023",
        x = "Predator population",
        y = "Slug population")+
-  annotate("text", x = 400, y = 400, label = "0.0311 *", size = 8)
+  annotate("text", x = 400, y = 350, label = "p = 0.0311 *", size = 8)+
+  theme(
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 20),
+    plot.title = element_text(size = 24),
+    plot.subtitle = element_text(size = 18),
+    axis.line = element_line(size = 1.25),
+    axis.ticks = element_line(size = 1.25),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.key.size = unit(1.5, "cm"),
+    legend.title = element_text(size = 18), 
+    legend.text = element_text(size =16)
+  )
 
 # stats on this ####
 bm <- glm(slugs ~ pred, data = s_plot)
