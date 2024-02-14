@@ -182,22 +182,25 @@ filter(crop == "beans") %>%
   mutate(trt = as.factor(trt)) %>% 
   arrange(trt, year)
 
-b_mpf <- cbind(pf_bean, micro_bean) %>% 
+b_plot <- cbind(pf_bean, micro_bean) %>% 
   rename(crop = crop...1, 
          year = year...2, 
          trt = trt...3) %>% 
   select(-crop...5, -year...6, -trt...7)
 
-ggplot(b_mpf, aes(x = pred, y = total))+
+library(ggpmisc)
+
+ggplot(b_plot, aes(x = total, y = pred))+
   geom_point(size = 5,aes(color = trt)) +
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
                      labels=c("Check", "Brown", "Green", "GrBr"))+
   guides(color=guide_legend("Treatment"))+
   geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
-  labs(title = "Beans: Total Micro by predator populations",
+  stat_poly_eq(label.x = "right", label.y = "top", size = 6)+
+  labs(title = "Beans: Total Predator by micro populations",
        subtitle = "Years: 2022-2023",
-       x = "Predator population",
-       y = "Micro population")+
+       x = "Micro population",
+       y = "Predator population")+
   theme(
     axis.text = element_text(size = 18),
     axis.title = element_text(size = 20),
@@ -227,22 +230,23 @@ micro_corn <- micros_clean %>%
   mutate(trt = as.factor(trt)) %>% 
   arrange(trt, year)
 
-c_mpf <- cbind(pf_corn, micro_corn) %>% 
+c_plot <- cbind(pf_corn, micro_corn) %>% 
   rename(crop = crop...1, 
          year = year...2, 
          trt = trt...3) %>% 
   select(-crop...5, -year...6, -trt...7)
 
-ggplot(c_mpf, aes(x = pred, y = total))+
+ggplot(c_plot, aes(x = total, y = pred))+
   geom_point(size = 5,aes(color = trt)) +
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
                      labels=c("Check", "Brown", "Green", "GrBr"))+
+  stat_poly_eq(label.x = "left", label.y = "top", size = 6)+
   guides(color=guide_legend("Treatment"))+
   geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
-  labs(title = "Corn: Total Micro by predator populations",
+  labs(title = "Corn: Total Predator by micro populations",
        subtitle = "Years: 2022-2023",
-       x = "Predator population",
-       y = "Micro population")+
+       x = "Micro population",
+       y = "Predator population")+
   theme(
     axis.text = element_text(size = 18),
     axis.title = element_text(size = 20),
@@ -257,3 +261,65 @@ ggplot(c_mpf, aes(x = pred, y = total))+
     legend.title = element_text(size = 18), 
     legend.text = element_text(size =16)
   )
+
+# ALL # 
+
+c_f_p <- pf_clean %>% 
+  arrange(factor(trt, levels = c("1","2","3","4")))
+
+micro_all <- micros_clean %>% 
+  filter(year != "2021") %>% 
+  mutate(trt = case_when(trt == "Check" ~ 1,
+                         trt == "Brown" ~ 2,
+                         trt == "Green" ~ 3,
+                         trt == "Gr-Br" ~ 4)) %>% 
+  mutate(trt = as.factor(trt)) %>% 
+  arrange(trt, crop)
+
+all_plot <- cbind(c_f_p, micro_all) %>% 
+  rename(crop = crop...1, 
+         year = year...2, 
+         trt = trt...3) %>% 
+  select(-crop...5, -year...6, -trt...7)
+
+ggplot(all_plot, aes(x = total, y = pred))+
+  geom_point(size = 5,aes(color = trt)) +
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
+                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  stat_poly_eq(label.x = "right", label.y = "top", size = 6)+
+  guides(color=guide_legend("Treatment"))+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  scale_y_continuous(limits = c(0,550),
+                     breaks = seq(0,550,100))+
+  labs(title = "Total Predator by micro populations",
+       subtitle = "Years: 2022-2023",
+       x = "Micro population",
+       y = "Predator population")+
+  theme(
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 20),
+    plot.title = element_text(size = 24),
+    plot.subtitle = element_text(size = 18),
+    axis.line = element_line(size = 1.25),
+    axis.ticks = element_line(size = 1.25),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.key.size = unit(1.5, "cm"),
+    legend.title = element_text(size = 18), 
+    legend.text = element_text(size =16)
+  )
+
+
+# stats on this ####
+bm <- glm(pred ~ total, data = b_plot)
+summary(bm)
+hist(residuals(bm))
+
+cm <- glm(pred ~ total, data = c_plot)
+summary(cm)
+hist(residuals(cm))
+
+all_m <- glm(pred ~ total, data = all_plot)
+summary(all_m)
+hist(residuals(all_m))
