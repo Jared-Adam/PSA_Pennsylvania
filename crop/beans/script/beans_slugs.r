@@ -33,8 +33,10 @@ slugs <- slugs_beans_all %>%
          year = format(date, '%Y'))  %>% 
   dplyr::select(-date, -precip) %>% 
   mutate(year = as.factor(year), 
-       treatment = as.factor(treatment))%>%
+       treatment = as.factor(treatment))%>% 
   rename(season = seaon) %>% 
+  mutate(season = case_when(season == "fall" ~ "Fall",
+                            season == "spring" ~ "Spring"))%>% 
   group_by(season, year, month, plot, treatment, block) %>% 
   summarise(total_slug =  sum(slug_count))%>% 
   print(n = Inf)
@@ -127,13 +129,22 @@ hist(residuals(model_4))
 # add sig values in ppt: confusing with two factor facets
 ggplot(slugs, aes(x = as.character(treatment), y = total_slug, fill = treatment))+
   geom_boxplot()+
-  facet_wrap(~year + season)+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
+  facet_wrap(~year + season, scales = "free_y")+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "GrBr"))+
   labs( x = 'Treatment',
         y = 'Total Slug Counts', 
-        title = "Total Spring Slugs by Treatment")+
-  theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 12))
+        title = "Beans: Total Spring Slugs by Treatment",
+        subtitle = " Years: 2022-2023")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 
 # slugs x predators data ####
 colnames(slugs)
@@ -229,7 +240,8 @@ ggplot(slugs_preds, aes(x = pred_total, y = slug_total_trt, color = trt, shape =
   facet_wrap(~year, scales = "free")+
   labs(title = "Soybean Slug x Predator Population",
        x = "Predator Total", 
-       y = "Slug Population")
+       y = "Slug Population")+
+  theme(strip.text = element_text(size = 10))
   
 
 
