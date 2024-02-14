@@ -127,7 +127,7 @@ c_clean <- cpf_clean %>%
          Tetragnathidae = Tetrgnathidae) %>% 
   mutate(Carabidae_new = Carabidae + Cicindelidae,
          Gryll = Gryllidae +Gyrillidae) %>% 
-  select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
+  dplyr::select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
   rename(Carabidae = Carabidae_new,
          Gryllidae = Gryll) %>%
   print(n = Inf) 
@@ -174,7 +174,7 @@ b_clean <- bpf_clean %>%
   rename('Coleoptera larvae' = Coleoptera)%>% 
   rename(Lyniphiidae = Lin) %>%
   mutate(Carabidae_new = Carabidae + Pterostichus +Cicindelidae) %>% 
-  select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  dplyr::select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Carabidae = Carabidae_new) %>% 
   print(n = Inf)
 
@@ -227,6 +227,7 @@ bpf_clean %>%
   summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE)))
 
 # plots ####
+library(ggpmisc)
 
 display.brewer.all(colorblindFriendly = TRUE)
 display.brewer.pal(n=4, name = "Dark2")
@@ -250,7 +251,7 @@ s_plot <- cbind(sum_sb, pf_sb) %>%
   rename(crop = crop...1,
          year = year...2,
          trt = trt...3) %>% 
-  select(-crop...5, - year...6, -trt...7)
+  dplyr::select(-crop...5, - year...6, -trt...7)
 
 ggplot(s_plot, aes(x = pred, y = slugs))+
   geom_point(size = 5,aes(color = trt)) +
@@ -258,11 +259,12 @@ ggplot(s_plot, aes(x = pred, y = slugs))+
                      labels=c("Check", "Brown", "Green", "GrBr"))+
   guides(color=guide_legend("Treatment"))+
   geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  stat_poly_eq(label.x = "right", label.y = "top", size = 8)+
   labs(title = "Beans: Total Slug by predator populations",
        subtitle = "Years: 2022-2023",
        x = "Predator population",
        y = "Slug population")+
-  annotate("text", x = 400, y = 150, label = "p = 0.00162 **", size = 8)+
+  annotate("text", x = 470, y = 240, label = "p = 2.6e-07 ***", size = 8)+
   theme(
     axis.text = element_text(size = 18),
     axis.title = element_text(size = 20),
@@ -288,17 +290,20 @@ c_plot <- cbind(sum_c, pf_c) %>%
   rename(crop = crop...1,
          year = year...2, 
          trt = trt...3) %>% 
-  select(-crop...5, -year...6, -trt...7)
+  dplyr::select(-crop...5, -year...6, -trt...7)
 
-ggplot(c_plot, aes(x = pred, y = slugs, color = trt))+
-  geom_point(size = 5)+
+ggplot(c_plot, aes(x = pred, y = slugs))+
+  geom_point(size = 5, aes(color = trt))+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
                      labels=c("Check", "Brown", "Green", "GrBr"))+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  stat_poly_eq(size = 8)+
   guides(color=guide_legend("Treatment"))+
   labs(title = "Corn: Total Slug by predator populations",
        subtitle = "Years: 2022-2023",
       x = "Predator population",
       y = "Slug population")+
+  annotate("text", x = 80, y = 650, label = "p = 0.00901 **", size = 8)+
   theme(
     axis.text = element_text(size = 12),
     axis.title = element_text(size = 16),
@@ -318,7 +323,7 @@ ggplot(c_plot, aes(x = pred, y = slugs, color = trt))+
 all_plot <- cbind(sum_slug, pf_clean) %>% 
   rename(crop = crop...1, 
          year = year...2) %>% 
-  select(-crop...5, -year...6, -treatment)
+  dplyr::select(-crop...5, -year...6, -treatment)
 
 ggplot(all_plot, aes(x = pred, y = slugs))+
   geom_point(size = 5, aes(color = trt))+
@@ -326,11 +331,12 @@ ggplot(all_plot, aes(x = pred, y = slugs))+
                      labels=c("Check", "Brown", "Green", "GrBr"))+
   guides(color=guide_legend("Treatment"))+
   geom_smooth(method = "lm", linewidth = 1.5, color = "black")+
+  stat_poly_eq(label.x = "right", label.y = "top", size = 8)+
   labs(title = "Total Slug by predator populations",
        subtitle = "Years: 2022-2023",
        x = "Predator population",
        y = "Slug population")+
-  annotate("text", x = 400, y = 350, label = "p = 0.0311 *", size = 8)+
+  annotate("text", x = 465, y = 500, label = "p = 0.0311 *", size = 8)+
   theme(
     axis.text = element_text(size = 18),
     axis.title = element_text(size = 20),
@@ -347,11 +353,24 @@ ggplot(all_plot, aes(x = pred, y = slugs))+
   )
 
 # stats on this ####
-bm <- glm(slugs ~ pred, data = s_plot)
+poisson_model.2 <- glm(slugs ~ pred,
+                       data = all_plot,
+                       family = poisson)
+
+nb_model_trt.2 <- glm.nb(slugs ~ pred, 
+                         data = all_plot) 
+
+lrtest(poisson_model.2,nb_model_trt.2)
+# the negative binomial has the higher likelihood score, so we will use that
+
+
+
+
+bm <- glm.nb(slugs ~ pred, data = s_plot)
 summary(bm)
 hist(residuals(bm))
 
-cm <- glm(slugs ~ pred, data = c_plot)
+cm <- glm.nb(slugs ~ pred, data = c_plot)
 summary(cm)
 hist(residuals(cm))
 
