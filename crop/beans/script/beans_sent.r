@@ -1,6 +1,7 @@
 # Jared Adam 
 # sent prey for beans 
 # on a plain
+# revisiting 2/14/2024
 
 # packages ####
 library(tidyverse)
@@ -24,6 +25,7 @@ sent_years <- beans_sent %>%
   mutate(n.pred = as.double(n.pred),
          d.pred = as.double(d.pred),
          to.predated = as.double(to.predated)) %>% 
+  mutate(growth_stage = as.factor(growth_stage)) %>% 
   print(n = Inf)
 
 pred_tot <- sent_years %>% 
@@ -52,8 +54,10 @@ sent_years
 
 sent_years$growth_stage <- as.factor(sent_years$growth_stage)
 sent_years$block <- as.factor(sent_years$block)
-test <- glmer(to.predated ~ as.factor(treatment)*growth_stage +
-                            (1|year/block/plot_id), data = sent_years,
+
+# cannot get a binned residual off this model
+test <- glmer(to.predated ~ as.factor(treatment) +
+                            (1|year/growth_stage/block/plot_id), data = sent_years,
                           family = binomial)
 
 summary(test)
@@ -61,6 +65,83 @@ r2_nakagawa(test)
 result <- binned_residuals(test)
 plot(result)
 
+# cannot get a binned residual off this model
+m1 <- glmer(to.predated ~ as.factor(treatment)*growth_stage +
+              (1|year/block), 
+            data = sent_years, 
+            family = binomial)
+check_model(m1)
+summary(m1)
+binned_residuals(m1)
+r2_nakagawa(m1)
+?emmeans
+m1_emm <- emmeans(m1, pairwise ~ as.factor(treatment), type = 'response')
+m1_plot <- as.data.frame(m1_emm$emmeans)
+
+
+# plot for total/ all data ####
+m1_plot
+ggplot(m1_plot, aes(x = factor(treatment), y = prob))+
+  geom_point(aes(color = factor(treatment)), alpha = 1, size = 5, position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = factor(treatment),ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0, linewidth = 1.5)+
+  geom_errorbar(aes(x = factor(treatment),ymin = asymp.LCL, ymax = asymp.UCL), 
+                alpha = .6, width = 0, linewidth = 1)+
+  scale_x_discrete(labels=c("Check","Brown","Green","GrBr"))+ 
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 20),
+        axis.line = element_line(color = "black", size = 1.25))+
+  annotate("text", x = 2, y = 1.01, label = "p = 0.00107**", size = 6)+
+  annotate("text", x = 3, y = 1.01, label = "p = 2.04e-05***", size = 6)+
+  annotate("text", x = 4, y = 1.01, label = "p = 0.03882*", size = 6)+
+  labs(
+    title = "Beans: Mean predation",
+    subtitle = "Years: 2022-2023",
+    y = "Mean predation",
+    x = "Treatment"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 18),
+        plot.title = element_text(size = 24),
+        axis.line = element_line(size = 1.25),
+        axis.ticks = element_line(size = 1.25),
+        axis.ticks.length = unit(.25, "cm"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+  )
+
+
+
+
+# nest for growth stage ####
+# sent_22
+# unique(sent_22$growth_stage)
+# sent_23
+# 
+# nest_22 <- sent_22 %>% 
+#   group_by(growth_stage) %>% 
+#   nest()
+# 
+# gs_model <- function(gs_data){
+#   glmer(to.predated ~ as.factor(treatment) +
+#         (1|year/block/plot_id), 
+#       data = gs_data, 
+#       family = binomial)
+# }
+# 
+# em_fxn <- function(sent_model){
+#   emmeans(sent_model, pairwise ~ as.factor(treatment), type = "response")
+# }
+# 
+# sent_22_gs <- nest_22 %>% 
+#   mutate(models = map(data, gs_model),
+#          emmeans_comb = map(models, em_fxn),
+#          emmeans = map(.x = emmeans_comb, ~.x$emmeans))
+
+
+# models that did not fit ####
 #not a good fit 
 block_md <- glmer(to.predated ~ as.factor(treatment) +
                 (1|year/block), data = sent_years,
@@ -90,38 +171,3 @@ summary(growth_md)
 that <- binned_residuals(growth_md)
 plot(that)
 r2_nakagawa(growth_md)
-
-# cannot get a binned residual off this model
-m1 <- glmer(to.predated ~ as.factor(treatment) +
-              (1|year/growth_stage/block), 
-            data = sent_years, 
-            family = binomial)
-check_model(m1)
-summary(m1)
-binned_residuals(m1)
-r2_nakagawa(m1)
-?emmeans
-m1_emm <- emmeans(m1, pairwise ~ as.factor(treatment), type = 'response')
-m1_plot <- as.data.frame(m1_emm$emmeans)
-
-# plots ####
-m1_plot
-ggplot(m1_plot, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = prob), size = 3,
-             position = position_dodge(width = .75))+
-  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
-                color = "black", alpha = 1, width = 0, linewidth = 1.5)+
-  geom_errorbar(aes(x = treatment,ymin = asymp.LCL, ymax = asymp.UCL), 
-                alpha = .6, width = 0, linewidth = 1)+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
-        axis.text.y = element_text(size = 12))+
-  annotate("text", x = 2, y = 1.01, label = "t2:p = 0.00107**")+
-  annotate("text", x = 3, y = 1.01, label = "t3:p = 2.04e-05***")+
-  annotate("text", x = 4, y = 1.01, label = "t4:p = 0.03882*")+
-  labs(
-    title = "Beans sent prey both years",
-    y = "Mean predation",
-    x = "Treatment"
-  )+
-  theme(legend.position = 'none')
