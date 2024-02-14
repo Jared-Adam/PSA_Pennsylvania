@@ -10,6 +10,8 @@
 library(tidyverse)
 library(vegan)
 library(vegan3d)
+library(ggpubr)
+library(RColorBrewer)
 
 # data ####
 corn_pf
@@ -225,8 +227,6 @@ bpf_clean %>%
   summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE)))
 
 # plots ####
-library(ggpubr)
-library(RColorBrewer)
 
 display.brewer.all(colorblindFriendly = TRUE)
 display.brewer.pal(n=4, name = "Dark2")
