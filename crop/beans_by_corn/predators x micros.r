@@ -139,10 +139,14 @@ micros_set <- micros_ready %>%
                          plot %in% c(102,201,303,402,502) ~ 'Green',
                          plot %in% c(103,204,302,403,501) ~ 'Brown',
                          plot %in% c(104,202,301,404,504) ~ 'Gr-Br')) %>% 
-  mutate_at(vars(1:3), as.factor) %>% 
-  mutate_at(vars(43), as.factor) %>% 
+  mutate_at(vars(2:3), as.factor) %>% 
+  mutate_at(vars(43), as.factor) %>%
   filter(!row_number() %in% c(46,47,71,83)) %>% # these rows are all NA, so when I replace with 0, they become all 0 and then vegdist cannot function. removing them early
   replace(is.na(.),0) %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, "%Y"),
+         year = as.factor(year)) %>%
+  relocate(date, year, crop, trt, plot) %>% 
   print(n = Inf)
 # check to make sure these changes worked
 colnames(micros_set)
@@ -151,3 +155,105 @@ unique(micros_set$plot)
 which(micros_set$trt == 'NA')
 which(micros_set$trt == 'Green')
 class(micros_set$trt)
+
+micros_clean <- micros_set %>% 
+  mutate(total = rowSums(pick(where(is.numeric)))) %>% 
+  group_by(crop, year, trt) %>% 
+  summarise(total = sum(total))
+
+# plots ####
+
+# preds: 
+pf_clean
+# micros: 
+micros_clean
+
+# BEANS #
+
+pf_bean <- pf_clean %>% 
+  filter(crop == "beans") %>% 
+  arrange(factor(trt, levels = c("1","2","3","4")))
+micro_bean <- micros_clean %>% 
+filter(crop == "beans") %>% 
+  mutate(trt = case_when(trt == "Check" ~ 1,
+                         trt == "Brown" ~ 2,
+                         trt == "Green" ~ 3,
+                         trt == "Gr-Br" ~ 4)) %>% 
+  mutate(trt = as.factor(trt)) %>% 
+  arrange(trt, year)
+
+b_mpf <- cbind(pf_bean, micro_bean) %>% 
+  rename(crop = crop...1, 
+         year = year...2, 
+         trt = trt...3) %>% 
+  select(-crop...5, -year...6, -trt...7)
+
+ggplot(b_mpf, aes(x = pred, y = total))+
+  geom_point(size = 5,aes(color = trt)) +
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
+                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  guides(color=guide_legend("Treatment"))+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  labs(title = "Beans: Total Micro by predator populations",
+       subtitle = "Years: 2022-2023",
+       x = "Predator population",
+       y = "Micro population")+
+  theme(
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 20),
+    plot.title = element_text(size = 24),
+    plot.subtitle = element_text(size = 18),
+    axis.line = element_line(size = 1.25),
+    axis.ticks = element_line(size = 1.25),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.key.size = unit(1.5, "cm"),
+    legend.title = element_text(size = 18), 
+    legend.text = element_text(size =16)
+)
+
+# CORN #
+
+pf_corn <- pf_clean %>% 
+  filter(crop == "corn") %>% 
+  arrange(factor(trt, levels = c("1","2","3","4")))
+micro_corn <- micros_clean %>% 
+  filter(crop == "corn" & year != "2021") %>% 
+  mutate(trt = case_when(trt == "Check" ~ 1,
+                         trt == "Brown" ~ 2,
+                         trt == "Green" ~ 3,
+                         trt == "Gr-Br" ~ 4)) %>% 
+  mutate(trt = as.factor(trt)) %>% 
+  arrange(trt, year)
+
+c_mpf <- cbind(pf_corn, micro_corn) %>% 
+  rename(crop = crop...1, 
+         year = year...2, 
+         trt = trt...3) %>% 
+  select(-crop...5, -year...6, -trt...7)
+
+ggplot(c_mpf, aes(x = pred, y = total))+
+  geom_point(size = 5,aes(color = trt)) +
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
+                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  guides(color=guide_legend("Treatment"))+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  labs(title = "Corn: Total Micro by predator populations",
+       subtitle = "Years: 2022-2023",
+       x = "Predator population",
+       y = "Micro population")+
+  theme(
+    axis.text = element_text(size = 18),
+    axis.title = element_text(size = 20),
+    plot.title = element_text(size = 24),
+    plot.subtitle = element_text(size = 18),
+    axis.line = element_line(size = 1.25),
+    axis.ticks = element_line(size = 1.25),
+    axis.ticks.length = unit(.25, "cm"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.key.size = unit(1.5, "cm"),
+    legend.title = element_text(size = 18), 
+    legend.text = element_text(size =16)
+  )
