@@ -85,6 +85,8 @@ check_model(m1)
 summary(m1)
 binned_residuals(m1)
 r2_nakagawa(m1)
+# Conditional R2: 0.372
+# Marginal R2: 0.242
 ?emmeans
 m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'response')
 m1_plot <- as.data.frame(m1_emm)
