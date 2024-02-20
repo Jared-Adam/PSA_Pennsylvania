@@ -7,9 +7,12 @@
 
 # packages ####
 library(tidyverse)
-library(lme4)
+library(MASS)
 library(performance)
-library(see)
+library(lme4)
+library(emmeans)
+library(lmtest)
+library(nlme)
 
 # data ####
 sent <- PSA_PA_Sent_prey
@@ -29,7 +32,7 @@ sent_years <- sent %>%
   print(n = Inf)
 
 pred_tot <- sent_years %>% 
-  select(-n.absent, -n.partial, -d.absent, -d.partial, -d.predated)
+  dplyr::select(-n.absent, -n.partial, -d.absent, -d.partial, -d.predated)
   
  
   
@@ -37,10 +40,11 @@ sent_prop <- sent %>%
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
   dplyr::select(-location, -date) %>% 
-  group_by(year, block, treatment, growth_stage, plot_id) %>% 
-  summarise(pred_tot = sum(to.predated)) %>% 
-  mutate(total = 6) %>% 
-  mutate(prop_pred = (pred_tot/total)) %>% 
+  group_by(growth_stage) %>% 
+  summarise(prop = mean(to.predated),
+            sd = sd(to.predated),
+            n = n(),
+            se = sd/sqrt(n)) %>% 
   print(n= Inf)
 
 
@@ -48,6 +52,95 @@ sent_prop <- sent %>%
 sent_21 <- subset(sent_years, year == '2021')
 sent_22 <- subset(sent_years, year == '2022')
 sent_23 <- subset(sent_years, year == '2023')
+
+
+# all years for fuck sake ####
+sent_years
+pred_tot
+sent_prop
+sent_years <- sent_years %>% 
+  mutate_at(vars(1:6), as.factor)
+
+# model I am using for now 
+# plot here did not work: over fit? 
+m1 <- glmer(to.predated ~ treatment*growth_stage +
+              (1|year/block), 
+            data = sent_years, 
+            family = binomial)
+check_model(m1)
+summary(m1)
+binned_residuals(m1)
+r2_nakagawa(m1)
+#   Conditional R2: 0.298
+#   Marginal R2: 0.074
+m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'response')
+m1_plot <- as.data.frame(m1_emm)
+
+
+
+# null <- glmer(to.predated ~ as.factor(treatment) +
+#                 (1|year), data = sent_years,
+#               family = binomial)
+# summary(null)
+# r2_nakagawa(null)
+# result_null <- binned_residuals(null)
+# plot(result_null)
+# 
+# block_md <- glmer(to.predated ~ as.factor(treatment) +
+#                 (1|year/block), data = sent_years,
+#               family = binomial)
+# check_model(block_md)
+# summary(block_md)
+# r2_nakagawa(block_md)
+# result_block <- binned_residuals(block_md)
+# plot(result_block)
+# 
+# plot_md <- glmer(to.predated ~ as.factor(treatment) +
+#                    (1|year/block/plot_id) , data = sent_years, 
+#                  family = binomial)
+# check_model(plot_md)
+# summary(plot_md)
+# this <- binned_residuals(plot_md)
+# plot(this)
+# r2_nakagawa(plot_md)
+# 
+# 
+# growth_md <-  glmer(to.predated ~ as.factor(treatment)*growth_stage +
+#                       (1|year/block/plot_id) , data = sent_years, 
+#                     family = binomial)
+# check_model(growth_md)
+# summary(growth_md)
+# that <- binned_residuals(growth_md)
+# plot(that)
+# r2_nakagawa(growth_md)
+
+
+
+# plots ####
+
+ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =  prop))+
+  geom_point(aes(size = 5))+
+  geom_errorbar(aes(x = factor(growth_stage),ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  labs(
+    title = "Corn: Mean predation",
+    subtitle = "Years: 2021-2023",
+    x = "Growth Stage",
+    y = "Mean proportion predated (x/1)"
+  )+
+  annotate("text", x = 1, y = 0.68, label = "0.00108 **", size = 6)+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 18),
+        plot.title = element_text(size = 24),
+        axis.line = element_line(size = 1.25),
+        axis.ticks = element_line(size = 1.25),
+        axis.ticks.length = unit(.25, "cm"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18)
+  )
 
 # 2021 ####
 sent_21
@@ -83,7 +176,7 @@ for(i in 1:length(v3_time_list)){ # for each iteration across the length of the 
   print(i) # print each iteration
   col <- v3_time_list[i] #place the iterations into an object named col
   print(col) # print them to make sure it works
-  sent_21_v3 <- subset(sent_21_v3_loop, select = c("plot_id", "row", "treatment",'block', col)) # subset what I want to use in the model plus the new col I made
+  sent_21_v3 <- subset(sent_21_v3_loop, dplyr::select = c("plot_id", "row", "treatment",'block', col)) # subset what I want to use in the model plus the new col I made
   colnames(sent_21_v3) <- c("plot_id", "row", "treatment", 'block', "col") # add this as a column name for the model
   #print sent_21_V3 to make sure it works
   sent_21_v3_model <- glmer(col ~ as.factor(treatment) +
@@ -113,7 +206,7 @@ for(i in 1:length(v5_time_list)){
   print(i)
   col <- v5_time_list[i]
   print(col)
-  sent_21_v5 <- subset(sent_21_v5_loop, select = c("plot_id", "row", "treatment",'block', col))
+  sent_21_v5 <- subset(sent_21_v5_loop, dplyr::select = c("plot_id", "row", "treatment",'block', col))
   colnames(sent_21_v5) <- c('plot_id', 'row', 'treatment','block', 'col')
   sent_21_v5_model <- glmer(col ~ as.factor(treatment)+
                               (1|block), data = sent_21_v5, 
@@ -143,7 +236,7 @@ for(i in 1:length(r3_time_list)){
   print(i)
   col <- r3_time_list[i]
   print(col)
-  sent_21_r3 <- subset(sent_21_r3_loop, select = c("plot_id", "row", "treatment", "block", col))
+  sent_21_r3 <- subset(sent_21_r3_loop, dplyr::select = c("plot_id", "row", "treatment", "block", col))
   colnames(sent_21_r3) <- c('plot_id', 'row', 'treatment', 'block', 'col')
   sent_21_r3_model <- glmer(col ~ as.factor(treatment)+
                               (1|block), data = sent_21_r3, # nesting year in the future
@@ -197,7 +290,7 @@ for(i in 1:length(time_list)){
   growth <- growth_list[j]
   print(col) # print them to make sure it works
   print(growth)
-  sent_22_whole_md <- subset(sent_22, select = c("plot_id", "row", "treatment",'block', col)) # subset what I want to use in the model plus the new col I made
+  sent_22_whole_md <- subset(sent_22, dplyr::select = c("plot_id", "row", "treatment",'block', col)) # subset what I want to use in the model plus the new col I made
   colnames(sent_22_whole_md) <- c("plot_id", "row", "treatment", 'block', "col") # add this as a column name for the model
   #print sent_21_V3 to make sure it works
   sent_22_v3_model <- glmer(col ~ as.factor(treatment) +
@@ -239,7 +332,7 @@ binned_residuals <- list()
     growth <- growth_list[j]
     # print(col) # print them to make sure it works
     print(growth)
-    sent_22_mdf <- subset(sent_22_loop, select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
+    sent_22_mdf <- subset(sent_22_loop, dplyr::select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
     colnames(sent_22_v3) <- c("plot_id", "treatment", 'block', 'prop_pred', 'total') # add this as a column name for the model
     #print sent_21_V3 to make sure it works
     sent_22_model <- glmer(prop_pred ~ as.factor(treatment) +
@@ -279,7 +372,7 @@ binned_residuals <- list()
     growth <- growth_list[j]
     # print(col) # print them to make sure it works
     print(growth)
-    sent_23_mdf <- subset(sent_23_loop, select = c("plot_id", "row", "treatment",'block', 'to.predated')) # subset what I want to use in the model plus the new col I made
+    sent_23_mdf <- subset(sent_23_loop, dplyr::select = c("plot_id", "row", "treatment",'block', 'to.predated')) # subset what I want to use in the model plus the new col I made
     colnames(sent_23_mdf) <- c("plot_id", "row", "treatment", 'block', 'to.predated') # add this as a column name for the model
     #print sent_21_V3 to make sure it works
     sent_23_v3_model <- glmer(to.predated ~ as.factor(treatment) +
@@ -311,7 +404,7 @@ for (i in 1:length(unique(test_loop$growth_stage))) {
   growth <- growth_list[j]
   # print(col) # print them to make sure it works
   print(growth)
-  test_mdf <- subset(test_loop, select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
+  test_mdf <- subset(test_loop, dplyr::select = c("plot_id", "treatment",'block', 'prop_pred', 'total')) # subset what I want to use in the model plus the new col I made
   colnames(test_mdf) <- c("plot_id", "treatment", 'block', 'prop_pred', 'total') # add this as a column name for the model
   #print sent_21_V3 to make sure it works
   test_model <- glmer(prop_pred ~ as.factor(treatment) +
@@ -363,61 +456,7 @@ broom_test <- test_loop %>%
 # 1/22/2023 : done with this shit for a while 
 
 
-# all years for fuck sake ####
-sent_years
-pred_tot
-sent_prop
-sent_years$growth_stage <- as.factor(sent_years$growth_stage)
-test <- glmer(to.predated ~ as.factor(treatment)*growth_stage +
-                            (1|year/block/plot_id), data = sent_years,
-                          family = binomial)
-
-summary(test)
-r2_nakagawa(test)
-result <- binned_residuals(test)
-plot(result)
-
-null <- glmer(to.predated ~ as.factor(treatment) +
-                (1|year), data = sent_years,
-              family = binomial)
-summary(null)
-r2_nakagawa(null)
-result_null <- binned_residuals(null)
-plot(result_null)
-
-block_md <- glmer(to.predated ~ as.factor(treatment) +
-                (1|year/block), data = sent_years,
-              family = binomial)
-check_model(block_md)
-summary(block_md)
-r2_nakagawa(block_md)
-result_block <- binned_residuals(block_md)
-plot(result_block)
-
-plot_md <- glmer(to.predated ~ as.factor(treatment) +
-                   (1|year/block/plot_id) , data = sent_years, 
-                 family = binomial)
-check_model(plot_md)
-summary(plot_md)
-this <- binned_residuals(plot_md)
-plot(this)
-r2_nakagawa(plot_md)
-
-
-growth_md <-  glmer(to.predated ~ as.factor(treatment)*growth_stage +
-                      (1|year/block/plot_id) , data = sent_years, 
-                    family = binomial)
-check_model(growth_md)
-summary(growth_md)
-that <- binned_residuals(growth_md)
-plot(that)
-r2_nakagawa(growth_md)
-
-
-
-
-
-# jw method? 
+# jw method? ####
 install.packages("nlme")
 library(nlme)
 help(lme)
@@ -441,28 +480,3 @@ m3 <- nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|plo
                 correlation = nlme::corCAR1(form=~1|plot_id), data = sent_years)
 summary(m3)
 
-
-
-
-
-# 
-# m2 <-nlme::lme(to.predated ~ as.factor(treatment)*growth_stage, random = ~1|year/block/plot_id, 
-#          data = sent_years)
-# summary(m2)
-# r2_nakagawa(m2)
-# 
-# additive <- update(m2, correlation = nlme::corCAR1(form=~growth_stage|year/block/plot_id))
-
-
-
-# plots ####
-sent_prop
-
-
-
-
-
-ggplot(sent_prop, aes(x = treatment, y = prop_pred, fill = as.factor(treatment)))+
-  geom_boxplot()+
-  coord_flip()+
-  facet_grid(~year)
