@@ -52,6 +52,8 @@ unique(slugs$season)
 
 fall_slugs <- subset(slugs, season == "fall")
 spring_slugs <- subset(slugs, season == "spring")
+bs_22 <- subset(slugs, year == "2022")
+bs_23 <- subset(slugs, year == "2023")
 
 # models ####
 
@@ -99,6 +101,11 @@ r2_nakagawa(model_1)
 binned_residuals(model_1)
 br_1 <- binned_residuals(model_1)
 plot(br_1)
+
+
+# confirming trt differences 
+m3 <- kruskal.test(total_slug ~ treatment, data  = bs_22)
+m4 <- kruskal.test(total_slug ~ treatment, data = bs_23)
 
 
 # glm for trt*szn no random 
