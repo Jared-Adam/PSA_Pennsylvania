@@ -12,12 +12,12 @@ library(lme4)
 library(MASS)
 library(performance)
 library(emmeans)
-
+library(ggpubr)
 # data ####
 damage_type <- PSA_PA_damage
 
 
-# wrangling ####
+
 damage_type
 
 unique(damage_type$treatment)
@@ -37,6 +37,7 @@ unique(damage_type$damage_type)
 # we need to create a new column for each damage type. 
 # this will be accomplished by splitting the damage into new columns 
 
+# test ####
 test <- damage_type[1:300,]
 unique(test$damage_type)
 
@@ -55,6 +56,7 @@ look <- df %>%
   mutate_if(is.double, ~replace(., is.na(.), 0))
 sum(look$multiple)
 
+# wrangling ####
 # try on full data set 
 dmg <- damage_type
 
@@ -129,15 +131,35 @@ hist(residuals(test_m3))
 ###
 ##
 #
-# model other (singularity in the loop)
+# model other, slug, and taw (singularity in the loop)
 other <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, other))
 other_m1 <- glmer(other ~ treatment +
                    (1|year), data = dmg_model,
                  family = binomial)
 other_saved <- emmeans(other_m1, pairwise ~ treatment, type = 'response')
+other_saved <- as.data.frame(other_saved$emmeans)
 summary(other_m1)
 r2_nakagawa(other_m1)
 model_performance(other_m1)
+
+# slug model # 
+slug <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, s))
+slug_m1 <- glmer(s ~ treatment +
+                   (1|year/block), data = dmg_model,
+                 family = binomial)
+slug_saved <- emmeans(slug_m1, pairwise ~ treatment, type = 'response')
+slug_saved <- as.data.frame(slug_saved$emmeans)
+summary(slug_m1)
+r2_nakagawa(slug_m1)
+
+taw <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, taw))
+taw_m1 <- glmer(taw ~ treatment+
+                    (1|year/block), data = dmg_model,
+                  family = binomial)
+taw_saved <- emmeans(taw_m1, pairwise ~ treatment, type = 'response')
+taw_saved <- as.data.frame(taw_saved$emmeans)
+summary(taw_m1)
+r2_nakagawa(taw_m1)
 
 #
 ##
@@ -149,7 +171,7 @@ model_performance(other_m1)
 # dmg_model <- dmg_model %>% 
 #   filter(treatment != 0)
 
-pest_columns <- c('bcw','s','sb', 'taw', 'multiple')
+pest_columns <- c('bcw','sb', 'multiple')
 summary_list <- list()
 r2_list <- list()
 emms_mod <- list()
@@ -177,26 +199,26 @@ bcw_saved <- emms_mod[[1]]
 bcw_saved <- as.data.frame(bcw_saved$emmeans)
 bcw_saved['pest'] <- ("bcw")
 
-s_saved <- emms_mod[[2]]
-s_saved <- as.data.frame(s_saved$emmeans)
-s_saved['pest'] <- ('slug')
+# s_saved <- emms_mod[[2]]
+# s_saved <- as.data.frame(s_saved$emmeans)
+# s_saved['pest'] <- ('slug')
 
-sb_saved <- emms_mod[[3]]
+sb_saved <- emms_mod[[2]]
 sb_saved <- as.data.frame(sb_saved$emmeans)
 sb_saved['pest'] <- ('stink bug')
 
-taw_saved <- emms_mod[[4]]
-taw_saved <- as.data.frame(taw_saved$emmeans)
-taw_saved['pest'] <- ('taw')
+# taw_saved <- emms_mod[[4]]
+# taw_saved <- as.data.frame(taw_saved$emmeans)
+# taw_saved['pest'] <- ('taw')
 
-multiple_saved <- emms_mod[[5]]
+multiple_saved <- emms_mod[[3]]
 multiple_saved <- as.data.frame(multiple_saved$emmeans)
 multiple_saved['pest'] <- ('multiple')
 
-other_saved <- as.data.frame(other_saved$emmeans)
-other_saved['pest'] <- ('other')
+# other_saved <- as.data.frame(other_saved$emmeans)
+# other_saved['pest'] <- ('other')
 
-all_emmeans <- rbind(bcw_saved, s_saved, sb_saved, taw_saved, multiple_saved) #, other_saved
+all_emmeans <- rbind(bcw_saved, sb_saved, multiple_saved) #, other_saved
 as_tibble(all_emmeans)
 all_emmeans$pest <- as.factor(all_emmeans$pest)
 
@@ -206,12 +228,6 @@ all_emmeans$pest <- as.factor(all_emmeans$pest)
 #facet order
 all_emmeans$pest_f <- factor(all_emmeans$pest, levels =c('slug', 'stink bug', 'bcw', 'taw',
                                                'multiple')) #'other', 
-# data_text <- data.frame(
-#   label = c('test', 'test2'),
-#   pest_f = c('slug', 'stink bug'),
-#   x = c('Green', 'Green'),
-#   y = c(0.7, .15)
-# )
 
 ggplot(all_emmeans, aes(color = treatment))+
   geom_point(aes(x = treatment, y = prob), size = 3,
@@ -224,17 +240,171 @@ ggplot(all_emmeans, aes(color = treatment))+
   scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
         axis.text.y = element_text(size = 12))
-  
 
-tag_facet(plot)
-install.packages('egg')
-library(egg)
+# each plot individually then added together 
+# template will be slug
+
+slug_saved
+slug_fig <- ggplot(slug_saved, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  labs(
+    title = "Slug damage",
+    subtitle = "Years: 2021-2023",
+    #x = "Treatment",
+    y = "Damage probability"
+  )+
+  annotate("text", x = 2, y = 0.68, label = "***", size = 8)+
+  annotate("text", x = 3, y = 0.62, label = "**", size = 8)+
+  annotate("text", x = 4, y = 0.61, label = "*", size = 8)+
+  theme(axis.text.x = element_blank(), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+bcw_saved
+bcw_fig <- ggplot(bcw_saved, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  labs(
+    title = "Black Cutworm damage",
+    subtitle = "Years: 2021-2023",
+    #x = "Treatment",
+    y = "Damage probability"
+  )+
+  annotate("text", x = 2, y = 0.045, label = "**", size = 8)+
+  # annotate("text", x = 3, y = 0.62, label = "p = 1.59e-15 ***", size = 6)+
+  annotate("text", x = 4, y = 0.036, label = "***", size = 8)+
+  theme(axis.text.x = element_blank(), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+taw_saved
+taw_fig <- ggplot(taw_saved, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  labs(
+    title = "True Armyworm damage",
+    subtitle = "Years: 2021-2023",
+    #x = "Treatment",
+    y = "Damage probability"
+  )+
+  # annotate("text", x = 2, y = 0.68, label = "p = 7.54e-10 ***", size = 6)+
+  # annotate("text", x = 3, y = 0.62, label = "p = 1.59e-15 ***", size = 6)+
+  annotate("text", x = 4, y = 0.05, label = "*", size = 8)+
+  theme(axis.text.x = element_blank(), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 
 
+sb_saved
+sb_fig <- ggplot(sb_saved, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  labs(
+    title = "Stink bug damage",
+    subtitle = "Years: 2022-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  annotate("text", x = 2, y = 0.005, label = "***", size = 8)+
+  # annotate("text", x = 3, y = 0.62, label = "p = 1.59e-15 ***", size = 6)+
+  annotate("text", x = 4, y = 0.006, label = "*", size = 8)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 
 
+multiple_saved
+mult_fig <- ggplot(multiple_saved, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  labs(
+    title = "Multiple damage",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  # annotate("text", x = 2, y = 0.005, label = "p = 0.000644 ***", size = 6)+
+  annotate("text", x = 3, y = 0.105, label = "***", size = 8)+
+  # annotate("text", x = 4, y = 0.006, label = "p = 0.017202 *", size = 6)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.y = element_blank(),
+        axis.title.x = element_text(size = 18),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 
-  # +
-  # geom_errorbar(ymax = all_emmeans$asymp.UCL, ymin = all_emmeans$asymp.LCL)
-  # 
-?geom_errorbar
+other_saved
+other_fig <- ggplot(other_saved, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  labs(
+    title = "Other damage",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  # annotate("text", x = 2, y = 0.68, label = "p = 7.54e-10 ***", size = 6)+
+  # annotate("text", x = 3, y = 0.62, label = "p = 1.59e-15 ***", size = 6)+
+  # annotate("text", x = 4, y = 0.61, label = "p = 0.01319 *", size = 6)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.y = element_blank(),
+        axis.title.x = element_text(size = 18),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+ggarrange(slug_fig, bcw_fig, taw_fig, sb_fig, mult_fig, other_fig)
