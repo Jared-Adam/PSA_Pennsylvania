@@ -130,6 +130,13 @@ m1 <- glmer.nb(total_slug ~ treatment +
 summary(m1)
 check_singularity(m1)
 r2_nakagawa(m1)
+#  Conditional R2: 0.813
+#  Marginal R2: 0.002
+
+# without precip: 
+# Conditional R2: 0.035
+# Marginal R2: 0.007
+
 binned_residuals(m1)
 m1_r <- binned_residuals(m1)
 plot(m1_r)
