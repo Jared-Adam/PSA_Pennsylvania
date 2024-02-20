@@ -54,7 +54,7 @@ sent_22 <- subset(sent_years, year == '2022')
 sent_23 <- subset(sent_years, year == '2023')
 
 
-# all years for fuck sake ####
+# all years  ####
 sent_years
 pred_tot
 sent_prop
@@ -64,15 +64,15 @@ sent_years <- sent_years %>%
 # model I am using for now 
 # plot here did not work: over fit? 
 m1 <- glmer(to.predated ~ treatment*growth_stage +
-              (1|year/block), 
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
 check_model(m1)
 summary(m1)
 binned_residuals(m1)
 r2_nakagawa(m1)
-#   Conditional R2: 0.298
-#   Marginal R2: 0.074
+#   Conditional R2: 0.350
+#   Marginal R2: 0.076
 m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'response')
 m1_plot <- as.data.frame(m1_emm)
 
@@ -128,7 +128,7 @@ ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =
     x = "Growth Stage",
     y = "Mean proportion predated (x/1)"
   )+
-  annotate("text", x = 1, y = 0.68, label = "0.00108 **", size = 6)+
+  annotate("text", x = 1, y = 0.68, label = "p = 0.000854 ***", size = 6)+
   theme(legend.position = 'none',
         axis.title = element_text(size = 20),
         plot.subtitle = element_text(size = 18),
