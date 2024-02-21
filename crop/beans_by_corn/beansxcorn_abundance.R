@@ -8,7 +8,7 @@
 library(tidyverse)
 library(vegan)
 library(vegan3d)
-
+library(plotly)
 # data ####
 beans <- bean_pf
 corn <- corn_pf
@@ -373,11 +373,124 @@ tot_se_years_bc_df <- tot_all_years %>%
 ggplot(tot_se_years_bc_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
-  annotate("text", x = 1.9, y=18, label = "***", size = 6)+
-  labs(title = "Total arthropod by crop (all timings)",
+  annotate("text", x = 1.8, y=18, label = "***", size = 6)+
+  labs(title = "Total arthropod by crop",
+       subtitle = "Years: 2022-2023",
        x = 'Crop',
        y = 'Mean Arthropod population')+
-  scale_x_discrete(labels=c('Corn', 'Beans'))
+  scale_x_discrete(labels=c('Corn', 'Beans'))+
+  scale_fill_manual(values = c("#1B9E77","#D95F02"))+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+# loop to look at pops by crop ####
+
+#test aov 
+test_spider <- aov(Aranaeomorphae ~ crop, func_tot)
+summary(test_spider)
+TukeyHSD(test_spider)
+
+test_carab <- aov(Carabidae ~ crop, func_tot)
+summary(test_carab)
+
+
+all_sp_list <- func_tot[6:14]
+all_summary_list <- list()
+all_tukey_list <- list()
+# crop_p <- list()
+# trt_p <- list()
+for(i in 1:9){
+  print(i)
+  spss <- colnames(all_sp_list[i])
+  print(spss)
+  all_loop <- subset(func_tot, select = c("crop", "trt", spss))
+  colnames(all_loop) <- c("crop", "trt", "spss")
+  
+  model <- aov(spss ~ crop, all_loop)
+  
+  aov_summary <- summary(model)
+  all_summary_list[[i]] <- aov_summary
+  
+  aov_tukey <- TukeyHSD(model)
+  all_tukey_list[[i]] <- aov_tukey
+  
+  # print(ggplot(all_loop, aes(x = crop, y = sps, fill = crop))+
+  #         geom_bar(position = 'dodge', stat= 'identity'))
+  # 
+  
+}
+colnames(all_sp_list)
+all_summary_list[[5]]
+all_summary_list[[6]]
+# groups w sig values : 
+  # 1,3,5,6,7,8
+# formicidae, ensifera, carabidae, araneomorphae, non, other_c, other_i
+
+# Carabid plot 
+cartabid_plot <- func_tot %>% 
+  dplyr::select(year, crop, Carabidae) %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(Carabidae),
+            sd = sd(Carabidae), 
+            n = n(),
+            se = sd/sqrt(n))
+
+ggplot(cartabid_plot, aes(x = reorder(crop, mean), y = mean, fill = crop))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 1.8, y=7.5, label = "***", size = 12)+
+  labs(title = "Total Carabidae by crop",
+       subtitle = "Years: 2022-2023",
+       x = 'Crop',
+       y = 'Mean Carabidae population')+
+  scale_x_discrete(labels=c('Corn', 'Beans'))+
+  scale_fill_manual(values = c("#1B9E77","#D95F02"))+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+# Arane plot
+arane_plot <- func_tot %>% 
+  dplyr::select(year, crop, Aranaeomorphae) %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(Aranaeomorphae),
+            sd = sd(Aranaeomorphae), 
+            n = n(),
+            se = sd/sqrt(n))
+
+ggplot(arane_plot, aes(x = reorder(crop, mean), y = mean, fill = crop))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 1.8, y=6.5, label = "*", size = 12)+
+  labs(title = "Total Aranaeomorphae by crop",
+       subtitle = "Years: 2022-2023",
+       x = 'Crop',
+       y = 'Mean Aranaeomorphae population')+
+  scale_x_discrete(labels=c('Corn', 'Beans'))+
+  scale_fill_manual(values = c("#1B9E77","#D95F02"))+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
 
 
 
@@ -400,6 +513,7 @@ all_years_p1
 #
 
 # nmds all years ####
+
 #
 ##
 ###
@@ -407,6 +521,17 @@ all_years_p1
 nmds_all_years <- metaMDS(all_years_arth, k = 3)
 nmds_all_years$stress
 stressplot(nmds_all_years)
+
+scores_all <- scores(nmds_all_years, display = "sites")
+scores_all <- cbind(as.data.frame(scores_all), crop = all_arth_bc$crop)
+
+
+# plot
+
+fig <- plot_ly(scores_all, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~crop, colors = c("#1B9E77","#D95F02"))
+fig <- fig %>% add_markers()
+fig
+
 
 ###
 ##
@@ -429,35 +554,27 @@ legend(x = 'right', legend = levels(all_arth_bc$crop), col = 1:3, pch = 16, cex 
 
 
 # plotly ####
-rgl_pops <- all_arth_bc[6:25]
+# rgl_pops <- all_arth_bc[6:25]
+# 
+# rgl_nmds <- metaMDS(rgl_pops, k=3)
+# 
+# # trts
+# scrs <- scores(rgl_nmds, display = "sites")
+# rgl_trts <- cbind(as.data.frame(scrs), trt = all_arth_bc$trt)
+# 
+# # species names 
+# rgl_fsc <- as.data.frame(scores(rgl_nmds, 'species'))
+# rgl_fsc$species <- rownames(rgl_fsc)
+# 
+# Check <- rgl_trts[rgl_trts$trt == "1",][chull(rgl_trts[rgl_trts$trt == "1", c("NMDS1", "NMDS2", "NMDS3")]),]
+# Brown <- rgl_trts[rgl_trts$trt == "2",][chull(rgl_trts[rgl_trts$trt == "2", c("NMDS1", "NMDS2", "NMDS3")]),]
+# Green <- rgl_trts[rgl_trts$trt == "3",][chull(rgl_trts[rgl_trts$trt == "3", c("NMDS1", "NMDS2", "NMDS3")]),]
+# GrBr <- rgl_trts[rgl_trts$trt == "4",][chull(rgl_trts[rgl_trts$trt == "4", c("NMDS1", "NMDS2", "NMDS3")]),]
+# 
+# hull_rgl <- rbind(Check, Brown, Green, GrBr)
+# 
+# # so, now I have species names and treatments values (this is their location in the nmds) 
+# hull_rgl
+# rgl_fsc
 
-rgl_nmds <- metaMDS(rgl_pops, k=3)
 
-# trts
-scrs <- scores(rgl_nmds, display = "sites")
-rgl_trts <- cbind(as.data.frame(scrs), trt = all_arth_bc$trt)
-
-# species names 
-rgl_fsc <- as.data.frame(scores(rgl_nmds, 'species'))
-rgl_fsc$species <- rownames(rgl_fsc)
-
-Check <- rgl_trts[rgl_trts$trt == "1",][chull(rgl_trts[rgl_trts$trt == "1", c("NMDS1", "NMDS2", "NMDS3")]),]
-Brown <- rgl_trts[rgl_trts$trt == "2",][chull(rgl_trts[rgl_trts$trt == "2", c("NMDS1", "NMDS2", "NMDS3")]),]
-Green <- rgl_trts[rgl_trts$trt == "3",][chull(rgl_trts[rgl_trts$trt == "3", c("NMDS1", "NMDS2", "NMDS3")]),]
-GrBr <- rgl_trts[rgl_trts$trt == "4",][chull(rgl_trts[rgl_trts$trt == "4", c("NMDS1", "NMDS2", "NMDS3")]),]
-
-hull_rgl <- rbind(Check, Brown, Green, GrBr)
-
-# so, now I have species names and treatments values (this is their location in the nmds) 
-hull_rgl
-rgl_fsc
-
-
-# plotly 
-install.packages("plotly")
-library(plotly)
-
-fig <- plot_ly(rgl_crop, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~crop, colors = c("blue", "red"))
-fig <- fig %>% add_markers()
-fig
-htmlwidgets::saveWidget(fig, "test.htlm")
