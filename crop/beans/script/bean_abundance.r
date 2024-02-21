@@ -96,12 +96,12 @@ bord_22_3$stress
 
 # plot
 b_22_scrs <- scores(bord_22_3, display = "sites")
-b_22_trt <- cbind(as.data.frame(b_22_scrs), trt = bpf_2022$trt)
+b_22_trt <- cbind(as.data.frame(b_22_scrs), timing = bpf_2022$timing)
 
-b_22_fsc <- as.data.frame(scores(bord_22_3, "species"))
-b_22_fsc$species <- rownames(b_22_fsc)
+# b_22_fsc <- as.data.frame(scores(bord_22_3, "species"))
+# b_22_fsc$species <- rownames(b_22_fsc)
 
-plot_22 <- plot_ly(b_22_trt, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~trt)
+plot_22 <- plot_ly(b_22_trt, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~timing)
 plot_22 <- plot_22 %>% 
   add_markers()
 plot_22
@@ -175,13 +175,13 @@ b_23_fsc <- as.data.frame(scores(bord_23_3, 'species'))
 b_23_fsc$species <- rownames(b_23_fsc)
 
 b_23_date_scrs <- scores(bord_23_3, display = "sites")
-b_23_date <- cbind(as.data.frame(b_23_date_scrs), date = bpf_2023$date)
+b_23_date <- cbind(as.data.frame(b_23_date_scrs), time = bpf_2023$timing)
 
-testy<- cbind(b_23_trt, b_23_date) %>% 
-  distinct(NMDS1, NMDS2, NMDS3, trt, date) %>% 
-  mutate(date = case_when(date == "2023-06-26" ~ "1",
-                          date == "2023-07-28" ~ "2"),
-         date = as.factor(date))
+# testy<- cbind(b_23_trt, b_23_date) %>% 
+#   distinct(NMDS1, NMDS2, NMDS3, trt, date) %>% 
+#   mutate(date = case_when(date == "2023-06-26" ~ "1",
+#                           date == "2023-07-28" ~ "2"),
+#          date = as.factor(date))
 
 
 
@@ -194,25 +194,24 @@ plot_23 <- plot_23 %>%
 plot_23
 
 
-plot_date <- plot_ly(testy, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~date)
-plot_date <- plot_date %>% 
+fig.23 <- plot_ly(b_23_date, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~time)
+fig.23 <- fig.23 %>% 
   add_markers()
+fig.23
 
-plot_date
-
-?htmlwidgets::saveWidget
-# checking size of the html
-widget_file_size <- function(plot_date) {
-  d <- tempdir()
-  withr::with_dir(d, htmlwidgets::saveWidget(plot_date, "index.html"))
-  f <- file.path(d, "index.html")
-  mb <- round(file.info(f)$size / 1e6, 3)
-  message("File is: ", mb," MB")
-}
-widget_file_size(plot_date)
-
-# saving widget to folder PSA_Pennsylvania
-htmlwidgets::saveWidget(plot_date, "plant_date.html", selfcontained = F, libdir = "lib")
+# ?htmlwidgets::saveWidget
+# # checking size of the html
+# widget_file_size <- function(plot_date) {
+#   d <- tempdir()
+#   withr::with_dir(d, htmlwidgets::saveWidget(plot_date, "index.html"))
+#   f <- file.path(d, "index.html")
+#   mb <- round(file.info(f)$size / 1e6, 3)
+#   message("File is: ", mb," MB")
+# }
+# widget_file_size(plot_date)
+# 
+# # saving widget to folder PSA_Pennsylvania
+# htmlwidgets::saveWidget(plot_date, "plant_date.html", selfcontained = F, libdir = "lib")
 
 
 
