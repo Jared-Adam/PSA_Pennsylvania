@@ -99,10 +99,12 @@ cord_22_3$stress
 
 # plot
 scrs_c22 <- scores(cord_22_3, display = "sites")
-c_22_scrs <- cbind(as.data.frame(scrs_c22), trt = cpf_2022$trt)
+# c_22_scrs <- cbind(as.data.frame(scrs_c22), trt = cpf_2022$trt)
+c_22_scrs <- cbind(as.data.frame(scrs_c22), time = cpf_2022$timing)
+
 # 
 
-c_22.fig <- plot_ly(c_22_scrs, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~trt)
+c_22.fig <- plot_ly(c_22_scrs, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~time)
 c_22.fig <- c_22.fig %>% 
   add_markers()
 c_22.fig
@@ -180,8 +182,16 @@ cord_23_3$stress
 
 # plot 
 
-c_23_fsc <- as.data.frame(scores(cord_23_3, 'species'))
-c_23_fsc$species <- rownames(c_23_fsc)
+c_23_fsc <- as.data.frame(scores(cord_23_3, 'sites'))
+c_23_fsc <- cbind(as.data.frame(c_23_fsc),time = cpf_2023$timing)
+# c_23_fsc$species <- rownames(c_23_fsc)
+
+c_23.fig <- plot_ly(c_23_fsc, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~time)
+c_23.fig <- c_23.fig %>% 
+  add_markers()
+c_23.fig
+
+
 
 
 # ordiplot3d(cord_23_3)
@@ -258,9 +268,25 @@ perm_4
 cord_3 <- metaMDS(c_family_names, k = 3)
 cord_3$stress
 
-# plot 
+# plot speciees
 c_fsc <- as.data.frame(scores(cord_3, 'species'))
 c_fsc$species <- rownames(c_fsc)
+
+# no
+# c.fig <- plot_ly(c_fsc, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~species)
+# c.fig <- c.fig %>% 
+#   add_markers()
+# c.fig
+
+# plot year
+scrs_yr <- scores(cord_3, display = "sites")
+# c_22_scrs <- cbind(as.data.frame(scrs_c22), trt = cpf_2022$trt)
+scrs_yr <- cbind(as.data.frame(scrs_yr), year = cpf_year$year)
+
+c.fig <- plot_ly(scrs_yr, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~year)
+c.fig <- c.fig %>% 
+  add_markers()
+c.fig
 
 
 # ordiplot3d(cord_3)
