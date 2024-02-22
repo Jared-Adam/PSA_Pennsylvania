@@ -6,7 +6,7 @@
 library(tidyverse)
 library(vegan)
 library(vegan3d)
-
+library(plotly)
 # data ####
 pf <- corn_pf
 
@@ -104,7 +104,8 @@ c_22_scrs <- cbind(as.data.frame(scrs_c22), time = cpf_2022$timing)
 
 # 
 
-c_22.fig <- plot_ly(c_22_scrs, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~time)
+c_22.fig <- plot_ly(c_22_scrs, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~time,
+                    colors = c("#D95F02", "#1B9E77"))
 c_22.fig <- c_22.fig %>% 
   add_markers()
 c_22.fig
@@ -186,7 +187,8 @@ c_23_fsc <- as.data.frame(scores(cord_23_3, 'sites'))
 c_23_fsc <- cbind(as.data.frame(c_23_fsc),time = cpf_2023$timing)
 # c_23_fsc$species <- rownames(c_23_fsc)
 
-c_23.fig <- plot_ly(c_23_fsc, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~time)
+c_23.fig <- plot_ly(c_23_fsc, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~time,
+                    colors = c("#D95F02", "#1B9E77"))
 c_23.fig <- c_23.fig %>% 
   add_markers()
 c_23.fig
@@ -283,7 +285,8 @@ scrs_yr <- scores(cord_3, display = "sites")
 # c_22_scrs <- cbind(as.data.frame(scrs_c22), trt = cpf_2022$trt)
 scrs_yr <- cbind(as.data.frame(scrs_yr), year = cpf_year$year)
 
-c.fig <- plot_ly(scrs_yr, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~year)
+c.fig <- plot_ly(scrs_yr, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~year,
+                 colors = c("#D95F02", "#1B9E77"))
 c.fig <- c.fig %>% 
   add_markers()
 c.fig
