@@ -6,7 +6,7 @@
 library(tidyverse)
 library(vegan)
 library(vegan3d)
-
+library(plotly)
 # data ####
 bpf <- bean_pf
 unique(bpf$crop)
@@ -101,7 +101,8 @@ b_22_trt <- cbind(as.data.frame(b_22_scrs), timing = bpf_2022$timing)
 # b_22_fsc <- as.data.frame(scores(bord_22_3, "species"))
 # b_22_fsc$species <- rownames(b_22_fsc)
 
-plot_22 <- plot_ly(b_22_trt, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~timing)
+plot_22 <- plot_ly(b_22_trt, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~timing, 
+                   colors = c("#D95F02", "#1B9E77","#E7298A"))
 plot_22 <- plot_22 %>% 
   add_markers()
 plot_22
@@ -194,7 +195,8 @@ plot_23 <- plot_23 %>%
 plot_23
 
 
-fig.23 <- plot_ly(b_23_date, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~time)
+fig.23 <- plot_ly(b_23_date, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~time,
+                  colors = c("#D95F02", "#1B9E77"))
 fig.23 <- fig.23 %>% 
   add_markers()
 fig.23
@@ -262,7 +264,8 @@ b_fsc$species <- rownames(b_fsc)
 b_years <- scores(bord_3 , display = "sites")
 b_years <- cbind(as.data.frame(b_years), year = bpf_year$year)
 
-plot_year <- plot_ly(b_years, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~year)
+plot_year <- plot_ly(b_years, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~year,
+                     colors = c("#D95F02", "#1B9E77"))
 plot_year <- plot_year %>% 
   add_markers()
 plot_year
