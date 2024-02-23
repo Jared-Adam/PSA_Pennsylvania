@@ -91,13 +91,24 @@ cc_yield <- cc_bind %>%
 
 beans_yield_plot <- ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
+  scale_fill_manual(values = c("#E7298A", "#1B9E77","#D95F02",  "#7570B3"))
   facet_wrap(~year)+
    geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
-                 colour="orange", alpha=0.9, size=1.3)+
-  labs(y = "Mean (bu/ac) by treatment",
+                 colour="black", alpha=0.9, size=1.3)+
+  labs(y = "Mean (bu/ac)",
        x = 'Treatment',
-       title = 'Rough plot of yield by year and treatment with standard error bars')+
-  theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))
+       title = 'Soybean: Yield by treatment',
+       subtitle = "Years: 2022-2023")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+  # theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))
 # green outcompeted other treatments in both 2022 and 2023
   # this is important!
 
