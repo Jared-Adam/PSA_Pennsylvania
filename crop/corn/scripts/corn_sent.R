@@ -40,11 +40,12 @@ sent_prop <- sent %>%
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
   dplyr::select(-location, -date) %>% 
-  group_by(growth_stage) %>% 
+  group_by(growth_stage, treatment) %>% 
   summarise(prop = mean(to.predated),
             sd = sd(to.predated),
             n = n(),
             se = sd/sqrt(n)) %>% 
+  mutate_at(vars(1:2), factor) %>% 
   print(n= Inf)
 
 
@@ -93,19 +94,20 @@ pwpm(m2_emm)
 
 # plots ####
 
-ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =  prop))+
-  geom_point(aes(size = 5))+
-  geom_errorbar(aes(x = factor(growth_stage),ymin = prop - se, ymax = prop + se),
+ggplot(sent_prop, aes(x = treatment, y =  prop))+
+  geom_point(aes(size = 5, color = treatment))+
+  facet_wrap(~factor(growth_stage, level = c("V3", "V5", "R3")))+
+  geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(labels=c("Check","Brown","GrBr","Green"),
+                   limits = c("1", "2", "4", "3"))+ 
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   labs(
     title = "Corn: Mean predation",
     subtitle = "Years: 2021-2023",
-    x = "Growth Stage",
+    x = "Treatment",
     y = "Mean proportion predated (x/1)"
   )+
-  annotate("text", x = 1, y = 0.675, label = "a", size = 6)+
-  annotate("text", x = 2, y = .82, label = "b", size = 6)+
-  annotate("text", x = 3, y = .835, label = "b", size = 6)+
   theme(legend.position = 'none',
         axis.title = element_text(size = 20),
         plot.subtitle = element_text(size = 18),
@@ -116,7 +118,8 @@ ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         axis.text.x = element_text(size = 18),
-        axis.text.y = element_text(size = 18)
+        axis.text.y = element_text(size = 18),
+        strip.text.x = element_text(size = 16)
   )
 
 # 2021 ####
