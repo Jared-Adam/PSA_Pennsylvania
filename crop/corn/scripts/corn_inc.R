@@ -56,10 +56,16 @@ dmg_2021_clean <- dmg_clean %>%
             prop_damaged = damaged_sum/total_sum) %>%
   print(n = Inf)
 
-damage_done <- rbind(dmg_2021_clean, dmg_sum)
+damage_done <- rbind(dmg_2021_clean, dmg_sum) %>% 
+  mutate(growth = case_when(growth == "v3" ~ "V3", 
+                            growth == "v5" ~ "V5", 
+                            .default = as.factor(growth))) %>% 
+  mutate(growth = as.factor(growth))
+unique(damage_done$treatment)
+
 
 dam_plot <- damage_done %>% 
-  group_by(treatment) %>% 
+  group_by(growth, treatment) %>% 
   summarise(mean = mean(prop_damaged),
             sd = sd(prop_damaged),
             n = n(),
@@ -69,53 +75,48 @@ dam_plot <- damage_done %>%
 # model ####
 damage_done
 
-m1_full <- glmer(prop_damaged ~ treatment + (1|year/growth/block/plotid), 
+m1_full <- glmer(prop_damaged ~ treatment*growth + (1|year/block/plotid/growth), 
                  data = damage_done, family = binomial, 
                  weights = total_sum)
 summary(m1_full)
 r2_nakagawa(m1_full)
-# Conditional R2: 0.234
-# Marginal R2: 0.020
-m1_em <- emmeans(m1_full, pairwise~treatment, type = 'response')
-plot_emm <- as.data.frame(m1_em$emmeans)
-
-# # nope
-# m2_grow <- glmer(prop_damaged ~ treatment*growth + (1|year/block/plotid), 
-#                  data = damage_done, family = binomial, 
-#                  weights = total_sum)
-# summary(m2_grow)
-
-
+# Conditional R2: 0.129
+# Marginal R2: 0.062
+m1_em <- emmeans(m1_full, ~treatment*growth, type = 'response')
+pairs(m1_em)
+plot_emm <- as.data.frame(m1_em)
+pwpm(m1_em)
 
 # plot ####
 
-ggplot(plot_emm, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = prob), size = 5,
-             position = position_dodge(width = .75))+
-  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
-                color = "black", alpha = 1, width = 0, linewidth = 2)+
-  geom_errorbar(aes(x = treatment,ymin = asymp.LCL, ymax = asymp.UCL), 
-                alpha = .6, width = 0, linewidth = 1.5)+
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
-        axis.text.y = element_text(size = 12))+
-  annotate("text", x = 3.25, y = 0.9, label = "p = 0.000522 ***", size = 6)+
-  labs(
-    title = "Corn: Damage incidence by treatment",
-    subtitle = "Years: 2021-2023",
-    y = "Proportion damaged (damaged / total)",
-    x = "Treatment"
-  )+
-  theme(legend.position = 'none',
-        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+# ggplot(plot_emm, aes(color = treatment))+
+#   geom_point(aes(x = treatment, y = prob), size = 5,
+#              position = position_dodge(width = .75))+
+#   facet_wrap(~growth)
+#   geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+#                 color = "black", alpha = 1, width = 0, linewidth = 2)+
+#   geom_errorbar(aes(x = treatment,ymin = asymp.LCL, ymax = asymp.UCL), 
+#                 alpha = .6, width = 0, linewidth = 1.5)+
+#   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+#   scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12), 
+#         axis.text.y = element_text(size = 12))+
+#   annotate("text", x = 3.25, y = 0.9, label = "p = 0.000522 ***", size = 6)+
+#   labs(
+#     title = "Corn: Damage incidence by treatment",
+#     subtitle = "Years: 2021-2023",
+#     y = "Proportion damaged (damaged / total)",
+#     x = "Treatment"
+#   )+
+#   theme(legend.position = 'none',
+#         axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+#         axis.text.y = element_text(size = 18),
+#         strip.text = element_text(size = 16),
+#         axis.title = element_text(size = 20),
+#         plot.title = element_text(size = 20),
+#         plot.subtitle = element_text(s = 16), 
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank())
 
 ggplot(dam_plot, aes(color = treatment))+
   geom_point(aes(x = treatment, y = mean), size = 5,
@@ -123,10 +124,11 @@ ggplot(dam_plot, aes(color = treatment))+
   geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 2)+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+ 
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+ 
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
         axis.text.y = element_text(size = 18))+
-  annotate("text", x = 3, y = 0.82, label = "p = 0.000522 ***", size = 6)+
+  annotate("text", x = 4, y = 0.82, label = "b", size = 6)+
   labs(
     title = "Corn: Damage incidence by treatment",
     subtitle = "Years: 2021-2023",
@@ -140,3 +142,30 @@ ggplot(dam_plot, aes(color = treatment))+
         plot.subtitle = element_text(s = 16), 
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
+
+
+ggplot(dam_plot, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = mean), size = 5,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth)+
+  geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 2)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+ 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18))+
+  labs(
+    title = "Corn: Damage",
+    subtitle = "Years: 2021-2023",
+    y = "Mean proportion damaged (damaged / total)",
+    x = "Treatment"
+  )+
+  theme(legend.position = 'none',
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
