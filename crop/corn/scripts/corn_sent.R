@@ -64,56 +64,18 @@ sent_years <- sent_years %>%
 # model I am using for now 
 # plot here did not work: over fit? 
 m1 <- glmer(to.predated ~ treatment*growth_stage +
-              (1|year/block/plot_id),
+              (1|year/block/plot_id/growth_stage),
             data = sent_years, 
             family = binomial)
 check_model(m1)
 summary(m1)
 binned_residuals(m1)
 r2_nakagawa(m1)
-#   Conditional R2: 0.350
-#   Marginal R2: 0.076
-m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'response')
+#   Conditional R2: 0.555
+#   Marginal R2: 0.101
+m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'pairwise')
 m1_plot <- as.data.frame(m1_emm)
-
-
-
-# null <- glmer(to.predated ~ as.factor(treatment) +
-#                 (1|year), data = sent_years,
-#               family = binomial)
-# summary(null)
-# r2_nakagawa(null)
-# result_null <- binned_residuals(null)
-# plot(result_null)
-# 
-# block_md <- glmer(to.predated ~ as.factor(treatment) +
-#                 (1|year/block), data = sent_years,
-#               family = binomial)
-# check_model(block_md)
-# summary(block_md)
-# r2_nakagawa(block_md)
-# result_block <- binned_residuals(block_md)
-# plot(result_block)
-# 
-# plot_md <- glmer(to.predated ~ as.factor(treatment) +
-#                    (1|year/block/plot_id) , data = sent_years, 
-#                  family = binomial)
-# check_model(plot_md)
-# summary(plot_md)
-# this <- binned_residuals(plot_md)
-# plot(this)
-# r2_nakagawa(plot_md)
-# 
-# 
-# growth_md <-  glmer(to.predated ~ as.factor(treatment)*growth_stage +
-#                       (1|year/block/plot_id) , data = sent_years, 
-#                     family = binomial)
-# check_model(growth_md)
-# summary(growth_md)
-# that <- binned_residuals(growth_md)
-# plot(that)
-# r2_nakagawa(growth_md)
-
+pairs(m1_emm, simple = "each")
 
 
 # plots ####
