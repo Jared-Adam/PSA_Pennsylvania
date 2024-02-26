@@ -152,7 +152,7 @@ ggplot(sent_prop, aes(x = treatment, y =  prop))+
   labs(
     title = "Beans: Mean predation",
     subtitle = "Years: 2022-2023",
-    x = "Growth Stage",
+    x = "Treatment",
     y = "Mean proportion predated (x/1)"
   )+
   theme(legend.position = 'none',
