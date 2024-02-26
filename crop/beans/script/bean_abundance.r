@@ -107,27 +107,67 @@ plot_22 <- plot_22 %>%
   add_markers()
 plot_22
 
+# loop 
+
+bpf_2022
+
+bpf_2022_tot <- bpf_2022 %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Agelenidae +
+           Linyphiidae,
+         Carabid = Carabidae + Pterostichus, Cicindelidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Other_insects = Dermaptera) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+         -Linyphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Dermaptera, -Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae)
 
 
-# ordiplot3d(bord_22_3)
-# tpl <- with(bpf_2022, ordiplot3d(bord_22_3, col = timing, pch = 16, angle = 50))
-# with(bpf_2022, ordihull(tpl, groups = bpf_2022$timing, draw = "poly", 
-#                         col = 1:3, 
-#                         label = F,
-#                         border = F,
-#                         alpha = 50))
-# text(tpl$xyz.convert(b_22_fsc), rownames(b_22_fsc), cex = 1.2)
-# legend(x = 'right', legend = c("2022-05-28", "2022-07-01", "2022-08-18"), col = 1:3, pch = 16, cex = 2)
-# legend(0, -0.5, "Stress: 0.118642",
-#        xjust = 0.5,
-#        yjust = 3, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# title(main ="NMDS of 2022 population distributions by timing",
-#       cex.main = 2)
-# 
+sp_list <- bpf_2022_tot[7:15]
+summary_list <- list()
+tukey_list <- list()
+
+for(i in 1:9){
+  print(i)
+  spss <- colnames(sp_list[i])
+  print(spss)
+  loop <- subset(bpf_2022_tot, select = c("timing", "trt", spss))
+  colnames(loop) <- c("timing", "trt", "spss")
+  
+  model <- aov(spss ~ timing + trt, loop)
+  
+  aov_summary <- summary(model)
+  summary_list[[i]] <- aov_summary
+  
+  aov_tukey <- TukeyHSD(model)
+  tukey_list[[i]] <- aov_tukey
+  
+  
+}
+colnames(sp_list)
+# spider = 5 carabid = 6
+tukey_list[[5]]
+tukey_list[[6]]
+
+unique(bpf_2022_tot$timing)
+unique(bpf_2022_tot$crop)
+carab_22 <- bpf_2022_tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Carabid), 
+            sd = sd(Carabid), 
+            n = n(), 
+            se = sd / sqrt(n))
+plot(carab_22$timing, carab_22$mean)
+
+spider_22 <- bpf_2022_tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Aranaeomorphae),
+            sd = sd(Aranaeomorphae),
+            n = n(), 
+            se = sd / sqrt(n))
+plot(spider_22$timing, spider_22$mean)
 
 ###
 ##
@@ -272,5 +312,4 @@ plot_year
 
 ##
 #
-# anova ####
-bpf_clean
+
