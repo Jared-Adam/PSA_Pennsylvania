@@ -39,7 +39,7 @@ sent_prop <- beans_sent %>%
          year = format(date, '%Y')) %>% 
   dplyr::select(-location, -date) %>% 
   rename(plot_id = ploitid) %>% 
-  group_by(growth_stage) %>% 
+  group_by(growth_stage, treatment) %>% 
   summarise(prop = mean(to.predated),
             sd = sd(to.predated),
             n = n(),
@@ -52,45 +52,35 @@ sent_22 <- subset(sent_years, year == '2022')
 sent_23 <- subset(sent_years, year == '2023')
 
 # models all ####
-sent_years
+sent_years <- sent_years %>% 
+  mutate_at(vars(1:5), as_factor)
 
-sent_years$growth_stage <- as.factor(sent_years$growth_stage)
-sent_years$block <- as.factor(sent_years$block)
-sent_years$plot_id <- as.factor(sent_years$plot_id)
-sent_years$treatment <- as.factor(sent_years$treatment)
 
-# cannot get a binned residual off this model
-test <- glmer(to.predated ~ as.factor(treatment) +
-                            (1|year/growth_stage/block/plot_id), data = sent_years,
+test <- glmer(to.predated ~ treatment * growth_stage+
+                            (1|year/block/plot_id/growth_stage), data = sent_years,
                           family = binomial)
 
 summary(test)
 r2_nakagawa(test)
 result <- binned_residuals(test)
 plot(result)
-
-# JW
-mjw <- lme(to.predated ~ treatment*growth_stage, random = ~1|year/block/plot_id,
-           correlation = corCAR1(form = ~ growth_stage|year/block/plot_id), 
-           data = sent_years)
-
+t1_emm <- emmeans(test, ~treatment * growth_stage, type = "response")
+pairs(t1_emm, simple = "each")
+pwpm(t1_emm)
+t1_plot <- data.frame(t1_emm)
 
 
-# model I am using for now 
-m1 <- glmer(to.predated ~ treatment*growth_stage +
-              (1|year/block/plot_id), 
-            data = sent_years, 
-            family = binomial)
-check_model(m1)
-summary(m1)
-binned_residuals(m1)
-r2_nakagawa(m1)
-# Conditional R2: 0.372
-# Marginal R2: 0.242
-?emmeans
-m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'response')
-m1_plot <- as.data.frame(m1_emm)
 
+test2 <- glmer(to.predated ~ growth_stage +
+                (1|year/block/plot_id/growth_stage), data = sent_years,
+              family = binomial)
+
+summary(test2)
+r2_nakagawa(test2)
+
+m2_emm <- emmeans(test2, ~growth_stage, type = "pairwise")
+pairs(m2_emm, simple = "each")
+pwpm(m2_emm)
 
 # plot for total/ all data ####
 m1_plot
@@ -148,6 +138,38 @@ ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =
         axis.text.x = element_text(size = 18),
         axis.text.y = element_text(size = 18)
   )
+
+sent_prop <- sent_prop %>% 
+  mutate_at(vars(1:2), factor)
+ggplot(sent_prop, aes(x = treatment, y =  prop))+
+  geom_point(aes(size = 5, color = treatment))+
+  facet_wrap(~factor(growth_stage, level = c("V3", "V5", "R3")))+
+  geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(labels=c("Check","Brown","GrBr","Green"),
+                   limits = c("1", "2", "4", "3"))+ 
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  labs(
+    title = "Beans: Mean predation",
+    subtitle = "Years: 2022-2023",
+    x = "Growth Stage",
+    y = "Mean proportion predated (x/1)"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 18),
+        plot.title = element_text(size = 24),
+        axis.line = element_line(size = 1.25),
+        axis.ticks = element_line(size = 1.25),
+        axis.ticks.length = unit(.25, "cm"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18),
+        strip.text.x = element_text(size = 16)
+  )
+
+
 
 
 # nest for growth stage ####
