@@ -130,8 +130,11 @@ m1 <- glmer.nb(total_slug ~ treatment +
 summary(m1)
 check_singularity(m1)
 r2_nakagawa(m1)
-#  Conditional R2: 0.813
-#  Marginal R2: 0.002
+#  Conditional R2: 0.847
+#  Marginal R2: 0.162
+cm_emm <- emmeans(m1, ~treatment, type = "response")
+pairs(cm_emm)
+pwpm(cm_emm)
 
 # without precip: 
 # Conditional R2: 0.035
@@ -144,8 +147,13 @@ plot(m1_r)
 # checking for trt differences in slug populations 
 # none
 m2 <- kruskal.test(total_slug ~ treatment, data = cs_21)
+m5 <- kruskal.test(total_slug ~ season, data = cs_21)
+
 m3 <- kruskal.test(total_slug ~ treatment, data  = cs_22)
+m6 <- kruskal.test(total_slug ~ season, data  = cs_22)
+
 m4 <- kruskal.test(total_slug ~ treatment, data = cs_23)
+m7 <- kruskal.test(total_slug ~ season, data = cs_23)
 
 
 # plots corn slugs ####
@@ -169,11 +177,13 @@ ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
   theme(axis.text.x = element_text(size=12),
         axis.text.y = element_text(size = 12))
 
+slug_clean$szn <- factor(slug_clean$season, levels = c("Spring", "Fall"))
 test <- ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = treatment))+
   geom_boxplot()+
-  facet_wrap(year~season, scales = "free_y", ncol = 2)+
+  facet_wrap(year~szn, scales = "free_y", ncol = 2)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "GrBr"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+
   labs( x = 'Treatment',
         y = 'Total Slug Counts', 
         title = "Corn: Total Slugs by Treatment",

@@ -94,18 +94,22 @@ unique(slugs$season)
 is.factor(slugs$season)
 slugs <- slugs %>% 
   mutate(season = as.factor(season))
-model_1 <- glmer.nb(total_slug ~ treatment + (1|year/block), 
+model_1 <- glmer.nb(total_slug ~ treatment+ (1|year/block), 
                     data = slugs)
 summary(model_1)
 r2_nakagawa(model_1)
 binned_residuals(model_1)
 br_1 <- binned_residuals(model_1)
 plot(br_1)
-
+s_emm <- emmeans(model_1, ~treatment, type = "response")
+pairs(s_emm)
 
 # confirming trt differences 
 m3 <- kruskal.test(total_slug ~ treatment, data  = bs_22)
+m5 <- kruskal.test(total_slug ~ season, data  = bs_22)
+
 m4 <- kruskal.test(total_slug ~ treatment, data = bs_23)
+m6 <- kruskal.test(total_slug ~ season, data = bs_23)
 
 
 # glm for trt*szn no random 
@@ -134,11 +138,13 @@ hist(residuals(model_4))
 
 # plots for slug populations  ####
 # add sig values in ppt: confusing with two factor facets
+slugs$szn <- factor(slugs$season, levels = c("Spring", "Fall"))
 ggplot(slugs, aes(x = as.character(treatment), y = total_slug, fill = treatment))+
   geom_boxplot()+
-  facet_wrap(~year + season, scales = "free_y")+
+  facet_wrap(~year + szn, scales = "free_y")+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "GrBr"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+
   labs( x = 'Treatment',
         y = 'Total Slug Counts', 
         title = "Beans: Total Slugs by Treatment",
