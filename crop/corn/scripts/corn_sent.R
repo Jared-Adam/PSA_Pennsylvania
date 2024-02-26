@@ -76,6 +76,19 @@ r2_nakagawa(m1)
 m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'pairwise')
 m1_plot <- as.data.frame(m1_emm)
 pairs(m1_emm, simple = "each")
+plot(m1_plot)
+
+# trt did not drive much change here, so I removed it 
+m2 <- glmer(to.predated ~ growth_stage +
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years, 
+            family = binomial)
+check_model(m2)
+summary(m2)
+r2_nakagawa(m2)
+m2_emm <- emmeans(m2, ~growth_stage, type = "pairwise")
+pairs(m2_emm, simple = "each")
+pwpm(m2_emm)
 
 
 # plots ####
@@ -90,7 +103,9 @@ ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =
     x = "Growth Stage",
     y = "Mean proportion predated (x/1)"
   )+
-  annotate("text", x = 1, y = 0.68, label = "p = 0.000854 ***", size = 6)+
+  annotate("text", x = 1, y = 0.675, label = "a", size = 6)+
+  annotate("text", x = 2, y = .82, label = "b", size = 6)+
+  annotate("text", x = 3, y = .835, label = "b", size = 6)+
   theme(legend.position = 'none',
         axis.title = element_text(size = 20),
         plot.subtitle = element_text(size = 18),
