@@ -112,31 +112,113 @@ c_22.fig
 
 # 
 
-# ordiplot3d(cord_22_3)
-# tc_1 <- with(cpf_2022, ordiplot3d(cord_22_3, col = timing, pch = 16, angle = 50))
-# with(cpf_2022, ordihull(tc_1, groups = cpf_2022$timing, draw = "poly", 
-#                         col = 3:4, 
-#                         label = F,
-#                         border = F,
-#                         alpha = 50))
-# text(tc_1$xyz.convert(c_22_fsc), rownames(c_22_fsc), cex = 1.2)
-# legend(x = -3, y = -0.5, legend = c("2022-05-28", "2022-07-01"), col = 1:2, pch = 16, cex = 2)
-# legend(0.5, -0.5, "Stress: 0.1284837",
-#        xjust = 0.5,
-#        yjust = 3, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# legend(0.5, -0.5, "Timing p-value: 0.0001***",
-#        xjust = 0.5,
-#        yjust = 4.5, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# title(main ="NMDS of corn 2022 population distributions by timing",
-#       cex.main = 2)
+# df for loop by year 
+
+cpf_22__tot <- cpf_2022 %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Araneae +
+           Lyniphiidae + Salticidae,
+         Carabid = Carabidae + Cicindelidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda + Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Gryllidae = Gryllidae + Gyrillidae) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Araneae, -Salticidae, 
+         -Lyniphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Carabidae, -Cicindelidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae)
+
+
+sp_list <- cpf_22__tot[7:15]
+summary_list <- list()
+tukey_list <- list()
+
+for(i in 1:9){
+  print(i)
+  spss <- colnames(sp_list[i])
+  print(spss)
+  loop <- subset(cpf_22__tot, select = c("timing", spss))
+  colnames(loop) <- c("timing", "spss")
+  
+  model <- aov(spss ~ timing, loop)
+  
+  aov_summary <- summary(model)
+  summary_list[[i]] <- aov_summary
+  
+  aov_tukey <- TukeyHSD(model)
+  tukey_list[[i]] <- aov_tukey
+  
+  
+}
+colnames(sp_list)
+tukey_list[[6]]
+tukey_list[[7]]
+
+carab_tot <- cpf_22__tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Carabid), 
+            sd = sd(Carabid), 
+            n = n(), 
+            se = sd/sqrt(n))
+# diff       lwr       upr     p adj
+# 2-1 -0.8 -1.887198 0.2871978 0.1445771
+
+aran_tot <- cpf_22__tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Aranaeomorphae), 
+            sd = sd(Aranaeomorphae), 
+            n = n(), 
+            se = sd/ sqrt(n))
+# diff      lwr      upr     p adj
+# 2-1  2.1 0.132338 4.067662 0.0371008
+
+unique(cpf_22__tot$date)
+ggplot(carab_tot, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  scale_x_discrete(labels = c("2022-05-28", "2022-07-01"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Corn: Carabidae population over time",
+    subtitle = "Year: 2022",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+ggplot(aran_tot, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  scale_x_discrete(labels = c("2022-05-28", "2022-07-01"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Corn: Araneomorphae population over time",
+    subtitle = "Year: 2022",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1.2, y = 6, label = "a", size = 6)+
+  annotate("text", x = 2.2, y = 8, label = "b", size = 6)
+
+
+
+
 
 ###
 ##
@@ -194,33 +276,109 @@ c_23.fig <- c_23.fig %>%
 c_23.fig
 
 
+# df for loop by year 
+
+cpf_23_tot <- cpf_2023 %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Araneae +
+           Lyniphiidae + Salticidae,
+         Carabid = Carabidae + Cicindelidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda + Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Gryllidae = Gryllidae + Gyrillidae) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Araneae, -Salticidae, 
+         -Lyniphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Carabidae, -Cicindelidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae)
 
 
-# ordiplot3d(cord_23_3)
-# tc_2 <- with(cpf_2023, ordiplot3d(cord_23_3, col = timing, pch = 16, angle = 50))
-# with(cpf_2023, ordihull(tc_2, groups = cpf_2023$timing, draw = "poly", 
-#                         col = 1:3, 
-#                         label = F,
-#                         border = F,
-#                         alpha = 50))
-# text(tc_2$xyz.convert(c_23_fsc), rownames(c_23_fsc), cex = 1.2)
-# legend(x = -2, y = -0.5, legend = c("2023-06-26", "2023-07-28"), col = 1:2, pch = 16, cex = 2)
-# legend(0.5, -0.5, "Stress: 0.162313",
-#        xjust = 0.2,
-#        yjust = 3, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# legend(0.5, -0.5, "Timing p-value: 0.0001***",
-#        xjust = 0.2,
-#        yjust = 4.5, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# title(main ="NMDS of corn 2023 population distributions by timing",
-#       cex.main = 2)
+sp_list <- cpf_23_tot[7:15]
+summary_list <- list()
+tukey_list <- list()
+
+for(i in 1:9){
+  print(i)
+  spss <- colnames(sp_list[i])
+  print(spss)
+  loop <- subset(cpf_23_tot, select = c("timing", spss))
+  colnames(loop) <- c("timing", "spss")
+  
+  model <- aov(spss ~ timing, loop)
+  
+  aov_summary <- summary(model)
+  summary_list[[i]] <- aov_summary
+  
+  aov_tukey <- TukeyHSD(model)
+  tukey_list[[i]] <- aov_tukey
+  
+  
+}
+colnames(sp_list)
+tukey_list[[6]]
+tukey_list[[7]]
+
+carab_tot <- cpf_23_tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Carabid), 
+            sd = sd(Carabid), 
+            n = n(), 
+            se = sd/sqrt(n)) %>% 
+  print(n = Inf)
+# diff        lwr      upr     p adj
+# 2-1 0.85 -0.1272317 1.827232 0.0863142
+
+aran_tot <- cpf_23_tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Aranaeomorphae), 
+            sd = sd(Aranaeomorphae), 
+            n = n(), 
+            se = sd/ sqrt(n)) %>% 
+  print(n = Inf)
+# diff        lwr       upr     p adj
+# 2-1  0.2 -0.5488674 0.9488674 0.5919007
+
+unique(cpf_23_tot$date)
+ggplot(carab_tot, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  scale_x_discrete(labels = c("2023-06-26", "2023-07-28"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Corn: Carabidae population over time",
+    subtitle = "Year: 2023",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+ggplot(aran_tot, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  scale_x_discrete(labels = c("2023-06-26", "2023-07-28"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Corn: Araneomorphae population over time",
+    subtitle = "Year: 2023",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 
 ###
 ##
@@ -274,12 +432,6 @@ cord_3$stress
 c_fsc <- as.data.frame(scores(cord_3, 'species'))
 c_fsc$species <- rownames(c_fsc)
 
-# no
-# c.fig <- plot_ly(c_fsc, x = ~NMDS1, y = ~NMDS2, z= ~NMDS3, color = ~species)
-# c.fig <- c.fig %>% 
-#   add_markers()
-# c.fig
-
 # plot year
 scrs_yr <- scores(cord_3, display = "sites")
 # c_22_scrs <- cbind(as.data.frame(scrs_c22), trt = cpf_2022$trt)
@@ -291,47 +443,109 @@ c.fig <- c.fig %>%
   add_markers()
 c.fig
 
+# df for loop by year 
 
-# ordiplot3d(cord_3)
-# tc_3 <- with(cpf_clean, ordiplot3d(cord_3, col = year, pch = 16, angle = 50))
-# with(cpf_clean, ordihull(tc_3, groups = cpf_clean$year, draw = "poly", 
-#                         col = 1:3, 
-#                         label = F,
-#                         border = F,
-#                         alpha = 50))
-# #text(tc_3$xyz.convert(c_fsc), rownames(c_fsc), cex = 1.2)
-# legend(x = -2, y = -0.5, legend = c("2022", "2023"), col = 1:2, pch = 16, cex = 2)
-# legend(0.5, -0.5, "Stress: 0.1681593",
-#        xjust = 0.2,
-#        yjust = 3, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# legend(0.5, -0.5, "Timing p-value: 0.0001***",
-#        xjust = 0.2,
-#        yjust = 4.5, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# legend(0.5, -0.5, "Year p-value: 0.0001***",
-#        xjust = 0.2,
-#        yjust = 6.5, 
-#        x.intersp = -0.5,
-#        y.intersp = 0.1, 
-#        adj = c(0,0.5), 
-#        cex = 1.5)
-# title(main ="NMDS of corn 2022 x 2023 population distributions by year",
-#       cex.main = 2)
-# 
+cpf_tot <- cpf_clean %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Araneae +
+           Lyniphiidae + Salticidae,
+         Carabid = Carabidae + Cicindelidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda + Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Gryllidae = Gryllidae + Gyrillidae) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Araneae, -Salticidae, 
+         -Lyniphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Carabidae, -Cicindelidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae)
 
+
+sp_list <- cpf_tot[6:14]
+summary_list <- list()
+tukey_list <- list()
+
+for(i in 1:9){
+  print(i)
+  spss <- colnames(sp_list[i])
+  print(spss)
+  loop <- subset(cpf_tot, select = c("year", spss))
+  colnames(loop) <- c("year", "spss")
+  
+  model <- aov(spss ~ year, loop)
+  
+  aov_summary <- summary(model)
+  summary_list[[i]] <- aov_summary
+  
+  aov_tukey <- TukeyHSD(model)
+  tukey_list[[i]] <- aov_tukey
+  
+  
+}
+colnames(sp_list)
+tukey_list[[6]]
+tukey_list[[7]]
+
+carab_tot <- cpf_tot %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(Carabid), 
+            sd = sd(Carabid), 
+            n = n(), 
+            se = sd/sqrt(n)) %>% 
+  print(n = Inf)
+# diff        lwr      upr     p adj
+# 2023-2022 0.575 -0.1585217 1.308522 0.1226656
+
+aran_tot <- cpf_tot %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(Aranaeomorphae), 
+            sd = sd(Aranaeomorphae), 
+            n = n(), 
+            se = sd/ sqrt(n)) %>% 
+  print(n = Inf)
+# diff       lwr       upr p adj
+# 2023-2022 -4.85 -5.925771 -3.774229     0
+
+ggplot(carab_tot, aes(x = year, y = mean, fill = year))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Corn: Carabidae population by year",
+    # subtitle = "Years: 2022-2023",
+    x = "Year",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        # plot.subtitle = element_text(size = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+
+ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Corn: Araneomorphae population by year",
+    # subtitle = "Years: 2022-2023",
+    x = "Year",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        # plot.subtitle = element_text(size = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1.2, y = 6.5, label = "a", size = 6)+
+  annotate("text", x = 2.2, y = 1.5, label = "b", size = 6)
 ###
 ##
 #
-
-
-
-
-# anova ####
-pf_clean
