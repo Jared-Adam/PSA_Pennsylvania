@@ -160,6 +160,11 @@ carab_22 <- bpf_2022_tot %>%
             n = n(), 
             se = sd / sqrt(n))
 plot(carab_22$timing, carab_22$mean)
+# diff       lwr       upr     p adj
+# 2-1  0.9 -4.797151  6.597151 0.9233304
+# 3-1 13.8  8.102849 19.497151 0.0000009
+# 3-2 12.9  7.202849 18.597151 0.0000037
+
 
 spider_22 <- bpf_2022_tot %>% 
   group_by(timing) %>% 
@@ -168,7 +173,37 @@ spider_22 <- bpf_2022_tot %>%
             n = n(), 
             se = sd / sqrt(n))
 plot(spider_22$timing, spider_22$mean)
+# diff       lwr      upr     p adj
+# 2-1 2.30 -8.103933 12.70393 0.8556045
+# 3-1 5.45 -4.953933 15.85393 0.4223682
+# 3-2 3.15 -7.253933 13.55393 0.7470513
 
+unique(bpf_2022$date)
+ggplot(carab_22, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77","#E7298A"))+
+  scale_x_discrete(labels = c("2022-05-28", "2022-07-01", "2022-08-18"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Carabidae population over time",
+    subtitle = "Year: 2022",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+  
+  
+  
+  
+  
 ###
 ##
 #
