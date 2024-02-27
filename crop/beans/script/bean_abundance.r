@@ -449,6 +449,108 @@ plot_year <- plot_year %>%
   add_markers()
 plot_year
 
+
+# df for loop by year 
+
+bpf_tot <- bpf_clean %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Agelenidae +
+           Linyphiidae,
+         Carabid = Carabidae + Pterostichus, Cicindelidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Other_insects = Dermaptera) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+         -Linyphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Dermaptera, -Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae)
+
+
+sp_list <- bpf_tot[6:14]
+summary_list <- list()
+tukey_list <- list()
+
+for(i in 1:9){
+  print(i)
+  spss <- colnames(sp_list[i])
+  print(spss)
+  loop <- subset(bpf_tot, select = c("year", spss))
+  colnames(loop) <- c("year", "spss")
+  
+  model <- aov(spss ~ year, loop)
+  
+  aov_summary <- summary(model)
+  summary_list[[i]] <- aov_summary
+  
+  aov_tukey <- TukeyHSD(model)
+  tukey_list[[i]] <- aov_tukey
+  
+  
+}
+colnames(sp_list)
+tukey_list[[5]]
+tukey_list[[6]]
+
+carab_tot <- bpf_tot %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(Carabid), 
+            sd = sd(Carabid), 
+            n = n(), 
+            se = sd/sqrt(n))
+# diff       lwr       upr    p adj
+# 2023-2022 -3.3 -6.894079 0.2940793 0.071491
+
+aran_tot <- bpf_tot %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(Aranaeomorphae), 
+            sd = sd(Aranaeomorphae), 
+            n = n(), 
+            se = sd/ sqrt(n))
+# diff       lwr       upr     p adj
+# 2023-2022 -6.858333 -11.08464 -2.632028 0.0017375
+
+ggplot(carab_tot, aes(x = year, y = mean, fill = year))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Carabidae population by year",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        # plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1.2, y = 9.5, label = "a", size = 6)+
+  annotate("text", x = 2.2, y = 6, label = "b", size = 6)
+
+ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Araneomorphae population by year",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        # plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1.2, y = 9.5, label = "a", size = 6)+
+  annotate("text", x = 2.2, y = 3, label = "b", size = 6)
+
 ##
 #
 
