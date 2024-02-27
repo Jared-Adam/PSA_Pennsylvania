@@ -198,11 +198,34 @@ ggplot(carab_22, aes(x = timing, y = mean, fill = timing))+
         plot.title = element_text(size = 20),
         plot.subtitle = element_text(s = 16), 
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1.2, y = 6, label = "a", size = 6)+
+  annotate("text", x = 2.2, y = 7, label = "a", size = 6)+
+  annotate("text", x = 3.2, y = 18.5, label = "b", size = 6)
   
   
   
   
+ggplot(spider_22, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77","#E7298A"))+
+  scale_x_discrete(labels = c("2022-05-28", "2022-07-01", "2022-08-18"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Araneomorphae population over time",
+    subtitle = "Year: 2022",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) 
   
 ###
 ##
@@ -253,16 +276,6 @@ b_23_fsc$species <- rownames(b_23_fsc)
 b_23_date_scrs <- scores(bord_23_3, display = "sites")
 b_23_date <- cbind(as.data.frame(b_23_date_scrs), time = bpf_2023$timing)
 
-# testy<- cbind(b_23_trt, b_23_date) %>% 
-#   distinct(NMDS1, NMDS2, NMDS3, trt, date) %>% 
-#   mutate(date = case_when(date == "2023-06-26" ~ "1",
-#                           date == "2023-07-28" ~ "2"),
-#          date = as.factor(date))
-
-
-
-# ?inner_join
-# test_join <- full_join(b_23_fsc, b_23_trt)
 
 plot_23 <- plot_ly(b_23_trt, x = ~NMDS1, y = ~NMDS2, z = ~NMDS3, color = ~trt)
 plot_23 <- plot_23 %>% 
@@ -276,22 +289,113 @@ fig.23 <- fig.23 %>%
   add_markers()
 fig.23
 
-# ?htmlwidgets::saveWidget
-# # checking size of the html
-# widget_file_size <- function(plot_date) {
-#   d <- tempdir()
-#   withr::with_dir(d, htmlwidgets::saveWidget(plot_date, "index.html"))
-#   f <- file.path(d, "index.html")
-#   mb <- round(file.info(f)$size / 1e6, 3)
-#   message("File is: ", mb," MB")
-# }
-# widget_file_size(plot_date)
-# 
-# # saving widget to folder PSA_Pennsylvania
-# htmlwidgets::saveWidget(plot_date, "plant_date.html", selfcontained = F, libdir = "lib")
+
+# df for loop 
+
+bpf_2023_tot <- bpf_2023 %>% 
+  mutate(Aranaeomorphae = Lycosidae + Thomisidae + Tetragnathidae + Gnaphosidae + Agelenidae +
+           Linyphiidae,
+         Carabid = Carabidae + Pterostichus, Cicindelidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Other_insects = Dermaptera) %>% 
+  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+         -Linyphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+         -Elateridae, -Opiliones, -Dermaptera, -Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae)
+
+sp_list <- bpf_2023_tot[7:15]
+summary_list <- list()
+tukey_list <- list()
+
+for(i in 1:9){
+  print(i)
+  spss <- colnames(sp_list[i])
+  print(spss)
+  loop <- subset(bpf_2023_tot, select = c("timing", "trt", spss))
+  colnames(loop) <- c("timing", "trt", "spss")
+  
+  model <- aov(spss ~ timing + trt, loop)
+  
+  aov_summary <- summary(model)
+  summary_list[[i]] <- aov_summary
+  
+  aov_tukey <- TukeyHSD(model)
+  tukey_list[[i]] <- aov_tukey
+  
+  
+}
+colnames(sp_list)
+tukey_list[[5]]
+tukey_list[[6]]
+
+carab_23 <- bpf_2023_tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Carabid), 
+            sd = sd(Carabid), 
+            n = n(), 
+            se = sd/ sqrt(n))
+# diff      lwr      upr     p adj
+# 2-1  5.6 1.131917 10.06808 0.0155144
+
+aran_23 <- bpf_2023_tot %>% 
+  group_by(timing) %>% 
+  summarise(mean = mean(Aranaeomorphae), 
+            sd = sd(Aranaeomorphae), 
+            n = n(), 
+            se = sd/sqrt(n))
+# diff        lwr     upr     p adj
+# 2-1 0.75 -0.4380902 1.93809 0.2084307
 
 
-
+unique(bpf_2023$date)
+ggplot(carab_23, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  scale_x_discrete(labels = c("2023-06-26", "2023-07-28"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Carabidae population over time",
+    subtitle = "Year: 2023",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1.2, y = 4, label = "a", size = 6)+
+  annotate("text", x = 2.2, y = 9, label = "b", size = 6)
+  
+  
+  
+  
+ggplot(aran_23, aes(x = timing, y = mean, fill = timing))+
+  geom_bar(stat = "identity", position = "dodge")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  scale_x_discrete(labels = c("2023-06-26", "2023-07-28"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Araneomorphae population over time",
+    subtitle = "Year: 2023",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) 
 ###
 ##
 #
