@@ -5,7 +5,7 @@
 
 # Packages ####
 library(tidyverse)
-
+library(emmeans)
 # Data ####
 yield <- PSA_PA_yield
 weather <- PSA_PA_weather
@@ -215,10 +215,24 @@ ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
+# not enough df for this anova or lm p values 
+# will need to do a t test
+t.test(cc_aov$cc_mean, paired = FALSE)
+?t.test
+
 cc_aov <- filter(cc_clean, trt != "check")
-aov_cc1 <- aov(cc_mean ~ year, cc_aov)
-summary(aov_cc1)
-TukeyHSD(aov_cc1)
+cc_21 <- filter(cc_aov, year == "2021")
+
+aov_cc21 <- aov(cc_mean ~ trt, cc_21)
+summary(aov_cc21)
+TukeyHSD(aov_cc21)
+
+cc_lm_21 <- lm(cc_mean ~ trt, data = cc_21)
+summary(cc_lm_21)
+
+cc_ee <- emmeans(cc_lm_21, ~trt, type = "response")
+pairs(cc_ee)
+
 
 # add cc to weather and yield df
 cc_bind <- cc_clean 
