@@ -79,7 +79,8 @@ overall_yield <- yield_for_weather %>%
 ?geom_bar
 ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
-  scale_x_discrete(limits = c("Check", "Brown", "Gr-Br", "Green"))+
+  scale_x_discrete(limits = c("Check", "Brown", "Gr-Br", "Green"),
+                   labels =c("Check", "Brown", "GrBr", "Green"))+
   scale_fill_manual(values = c("#E7298A", "#1B9E77","#D95F02",  "#7570B3"))+
   facet_wrap(~year)+
    geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
@@ -193,11 +194,31 @@ cc_clean <- cc %>%
             cc_se = cc_sd/sqrt(n())) %>%
   arrange(year, factor(trt, c("check", "green", "brown", "gr-br")))
 
-ggplot(cc_clean, aes(x = trt, y = cc_mean, fill = trt))+
+ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
   facet_wrap(~year)+
+  scale_x_discrete(labels = c("Brown", "GrBr", "Green"))+
+  scale_fill_manual(values = c("#D95F02",  "#7570B3","#1B9E77"))+
   geom_bar(stat = 'identity', position = 'dodge')+
   geom_errorbar( aes(x=trt, ymin=cc_mean-cc_se, ymax=cc_mean+cc_se), width=0.4, 
-                 colour="orange", alpha=0.9, size=1.3)
+                 colour="black", alpha=0.9, size=1.3)+
+  labs(title = "Corn: Average cover crop biomass by treatment",
+       subtitle = "Years: 2021-2023",
+       x = "Treatment",
+       y = "Mean cover crop (g/m2)")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+cc_aov <- filter(cc_clean, trt != "check")
+aov_cc1 <- aov(cc_mean ~ year, cc_aov)
+summary(aov_cc1)
+TukeyHSD(aov_cc1)
 
 # add cc to weather and yield df
 cc_bind <- cc_clean 

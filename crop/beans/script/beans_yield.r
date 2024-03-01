@@ -89,9 +89,11 @@ cc_yield <- cc_bind %>%
 
 # yield 
 
-beans_yield_plot <- ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
+ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
-  scale_fill_manual(values = c("#E7298A", "#1B9E77","#D95F02",  "#7570B3"))
+  scale_x_discrete(limits = c("Check", "Brown", "Gr-Br", "Green"),
+                   labels = c("Check", "Brown", "GrBr", "Green"))+
+  scale_fill_manual(values = c("#E7298A", "#1B9E77","#D95F02",  "#7570B3"))+
   facet_wrap(~year)+
    geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
                  colour="black", alpha=0.9, size=1.3)+
@@ -127,7 +129,7 @@ beans_cc_x_yield <- ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yie
   scale_color_manual(values = c("Green" = 'green', "Brown" = 'brown', "Gr-Br" = "orange"))
 
 # Anovas of yield ####
-an_b1 <- aov(bu_ac_mean ~ trt + year, yield_clean)
+an_b1 <- aov(bu_ac_mean ~ trt, yield_clean)
 summary(an_b1)
 plot(residuals(an_b1))
 hist(residuals(an_b1))
