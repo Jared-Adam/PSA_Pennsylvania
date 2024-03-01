@@ -79,6 +79,7 @@ overall_yield <- yield_for_weather %>%
 ?geom_bar
 ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
+  scale_x_discrete(limits = c("Check", "Brown", "Gr-Br", "Green"))+
   scale_fill_manual(values = c("#E7298A", "#1B9E77","#D95F02",  "#7570B3"))+
   facet_wrap(~year)+
    geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
@@ -215,7 +216,7 @@ ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean
 ###
 
 # Anova ####
-anova_one <- aov(bu_ac_mean ~ trt + year, yield_clean)
+anova_one <- aov(bu_ac_mean ~ trt, yield_clean)
 summary(anova_one)
 plot(residuals(anova_one))
 hist(residuals(anova_one))
