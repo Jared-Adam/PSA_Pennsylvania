@@ -549,3 +549,73 @@ ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
 ###
 ##
 #
+
+# density plot test ####
+install.packages("hrbrthemes")
+install.packages("viridis")
+library(hrbrthemes)
+library(viridis)
+
+
+dpt <- cpf_tot %>% 
+  group_by(trt) %>% 
+  summarise(sum_for = sum(Formicidae),
+            sum_enf = sum(Ensifera),
+            sum_gryl = sum(Gyrillidae),
+            sum_aran = sum(Aranaeomorphae),
+            sum_car = sum(Carabid)) %>% 
+  print(n = Inf)
+
+# 2022 = 266
+# 2023 = 306
+sum(266 + 306)
+dpt_done <- dpt %>% 
+  ungroup() %>% 
+  mutate(tot = rowSums(across(where(is.numeric)))) %>% 
+  mutate(prop_for = sum_for/572, 
+         prop_enf = sum_enf/572,
+         prop_gyr = sum_gryl/572,
+         prop_aran = sum_aran/572, 
+         prop_car = sum_car/572) %>% 
+  dplyr::select(-sum_for, -sum_enf, -sum_aran, -sum_car, -sum_gryl, -tot)
+
+?pivot_longer
+test <- dpt_done %>% 
+  pivot_longer(
+    cols = where(is.numeric)) %>% 
+  mutate(name = as.factor(name)) %>% 
+  print(n = Inf)
+
+
+
+df %>%
+  ggplot(aes(x = var, group = id, fill = factor(id), weight = weight)) + 
+  geom_density(position = 'stack',alpha = .5)
+
+
+ggplot(test, aes(x = name, group = name, fill = name, weight = value))+
+  geom_density(position = "stack", alpha = 0.7)+
+  scale_fill_brewer(palette = "Dark2", labels = c("Araneomorphae", "Carabidae", "Ensifera", "Formicidae", "Gyrillidae"))+
+  labs(title = "Corn: Predator density",
+       subtitle = "Years: 2022-2023",
+       y = "Density",
+       fill = "Predator")+
+  theme(
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 18),
+    axis.title.y = element_text(size = 20),
+    plot.title = element_text(size = 20),
+    plot.subtitle = element_text(size = 16), 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 12))
+    
+
+install.packages('ggplot2movies')
+library(ggplot2movies)
+?movies
+ggplot(movies, aes(x=rating, y=..density..)) + 
+  geom_density(aes(fill=mpaa), position="stack")
