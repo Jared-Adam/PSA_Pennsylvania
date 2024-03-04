@@ -76,6 +76,7 @@ overall_yield <- yield_for_weather %>%
 #   distinct(trt, .keep_all = TRUE) 
 #   
 
+# early plots ####
 ?geom_bar
 ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
   geom_bar(position = 'dodge' , stat = 'identity')+
@@ -182,7 +183,7 @@ ggplot(filter(weather_yield, year  %in% '2022'), aes(x = overall_yield$overall_y
 ####
 
 
-# cover crop biomass
+# cover crop biomass ####
 # cc_clean <- 
   
 cc_clean <- cc %>% 
@@ -217,22 +218,35 @@ ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
 
 # not enough df for this anova or lm p values 
 # will need to do a t test
-t.test(cc_aov$cc_mean, paired = FALSE)
-?t.test
+cc_20 <- cc %>% 
+  mutate(plot = as.factor(plot)) %>% 
+  mutate(cc_biomass_g = as.numeric(cc_biomass_g)) %>% 
+  group_by(year,plot, trt) %>% 
+  summarise(cc_sum = sum(cc_biomass_g)) %>% 
+  print(n = Inf)
 
-cc_aov <- filter(cc_clean, trt != "check")
+cc_aov <- filter(cc_20, trt != "check")
 cc_21 <- filter(cc_aov, year == "2021")
 
-aov_cc21 <- aov(cc_mean ~ trt, cc_21)
+aov_cc21 <- aov(cc_sum ~ trt, cc_21)
 summary(aov_cc21)
 TukeyHSD(aov_cc21)
 
-cc_lm_21 <- lm(cc_mean ~ trt, data = cc_21)
-summary(cc_lm_21)
+cc_22 <- filter(cc_aov, year == "2022")
 
-cc_ee <- emmeans(cc_lm_21, ~trt, type = "response")
-pairs(cc_ee)
+aov_cc22 <- aov(cc_sum ~ trt, cc_22)
+summary(aov_cc22)
+TukeyHSD(aov_cc22)
 
+cc_23 <- filter(cc_aov, year == "2023")
+
+aov_cc23 <- aov(cc_sum ~ trt, cc_23)
+summary(aov_cc23)
+TukeyHSD(aov_cc23)
+
+cc_aov$year <- as.factor(cc_aov$year)
+aov_cc20 <- aov(cc_sum ~ year, cc_aov)
+TukeyHSD(aov_cc20)
 
 # add cc to weather and yield df
 cc_bind <- cc_clean 

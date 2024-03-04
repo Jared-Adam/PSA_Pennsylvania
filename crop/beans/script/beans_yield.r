@@ -141,16 +141,52 @@ an_b2 <- aov(bu_ac_mean ~ year, yield_clean)
 summary(an_b2)
 TukeyHSD(an_b2)
 
-# no diff in cc 
-an_cc1 <- aov(cc_mean ~ trt, cc_clean)
-summary(an_cc1)
-hist(residuals(an_cc1))
-TukeyHSD(an_cc1)
+# cc ####
 
-ggplot(yield_clean, aes(x = year, y = bu_ac_mean, fill = trt))+
-  geom_boxplot()
+cc_b <- cc %>% 
+  mutate_at(vars(1:3), as.factor) %>% 
+  group_by(year, plot, trt) %>% 
+  summarise(sum = sum(cc_g))
 
-# yield ~ precip
-# anova_three <- aov(overall_mean ~ avg_precip, weather_yield)
-# summary(anova_three)
-# hist(residuals(anova_three))
+cc_b_mean <- cc_b %>% 
+  ungroup() %>% 
+  group_by(trt, year) %>% 
+  summarise(mean = mean(sum), 
+            sd = sd(sum), 
+            n = n(), 
+            se = sd/sqrt(n))
+
+ggplot(cc_b_mean, aes(x = trt, y = mean, fill = trt))+
+  facet_wrap(~year)+
+  scale_x_discrete(labels = c("Brown", "GrBr", "Green"))+
+  scale_fill_manual(values = c("#D95F02",  "#7570B3","#1B9E77"))+
+  geom_bar(stat = 'identity', position = 'dodge')+
+  geom_errorbar( aes(x=trt, ymin=mean-se, ymax=mean+se), width=0.4, 
+                 colour="black", alpha=0.9, size=1.3)+
+  labs(title = "Soybean: Average cover crop biomass by treatment",
+       subtitle = "Years: 2022-2023",
+       x = "Treatment",
+       y = "Mean cover crop (g/m2)")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+
+
+
+cc_b_22 <- filter(cc_b, year == "2022")
+cc_b_aov_22 <- aov(sum ~ trt, cc_b_22)
+TukeyHSD(cc_b_aov_22)
+
+cc_b_23 <- filter(cc_b, year == "2023")
+cc_b_aov_23 <- aov(sum ~ trt, cc_b_23)
+TukeyHSD(cc_b_aov_23)
+
+cc_b_aov <- aov(sum ~ year, cc_b)
+TukeyHSD(cc_b_aov)
