@@ -63,7 +63,6 @@ sent_years <- sent_years %>%
   mutate_at(vars(1:6), as.factor)
 
 # model I am using for now 
-# plot here did not work: over fit? 
 m1 <- glmer(to.predated ~ treatment*growth_stage +
               (1|year/block/plot_id/growth_stage),
             data = sent_years, 
@@ -117,9 +116,9 @@ ggplot(sent_prop, aes(x = treatment, y =  prop))+
         axis.ticks.length = unit(.25, "cm"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 18),
+        axis.text.x = element_text(size = 18, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 16)
+        strip.text.x = element_text(size = 20)
   )
 
 # 2021 ####

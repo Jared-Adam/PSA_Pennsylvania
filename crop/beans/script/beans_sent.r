@@ -139,6 +139,8 @@ ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =
         axis.text.y = element_text(size = 18)
   )
 
+# the plot I used # 
+
 sent_prop <- sent_prop %>% 
   mutate_at(vars(1:2), factor)
 ggplot(sent_prop, aes(x = treatment, y =  prop))+
@@ -150,7 +152,7 @@ ggplot(sent_prop, aes(x = treatment, y =  prop))+
                    limits = c("1", "2", "4", "3"))+ 
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   labs(
-    title = "Beans: Mean predation",
+    title = "Soybean: Mean predation",
     subtitle = "Years: 2022-2023",
     x = "Treatment",
     y = "Mean proportion predated (x/1)"
@@ -164,9 +166,9 @@ ggplot(sent_prop, aes(x = treatment, y =  prop))+
         axis.ticks.length = unit(.25, "cm"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 18),
+        axis.text.x = element_text(size = 18, angle = 45, hjust = 1),
         axis.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 16)
+        strip.text.x = element_text(size = 20)
   )
 
 
