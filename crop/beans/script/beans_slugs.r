@@ -147,7 +147,7 @@ ggplot(slugs, aes(x = as.character(treatment), y = total_slug, fill = treatment)
                    labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   labs( x = 'Treatment',
         y = 'Total Slug Counts', 
-        title = "Beans: Total Slugs by Treatment",
+        title = "Soybean: Total Slugs by Treatment",
         subtitle = " Years: 2022-2023")+
   theme(legend.position = "none",
         axis.text.x = element_text(size=18),

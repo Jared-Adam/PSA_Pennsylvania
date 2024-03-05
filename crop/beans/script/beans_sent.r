@@ -148,7 +148,7 @@ ggplot(sent_prop, aes(x = treatment, y =  prop))+
   facet_wrap(~factor(growth_stage, level = c("V3", "V5", "R3")))+
   geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
-  scale_x_discrete(labels=c("Check","Brown","GrBr","Green"),
+  scale_x_discrete(labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"),
                    limits = c("1", "2", "4", "3"))+ 
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   labs(
@@ -161,15 +161,16 @@ ggplot(sent_prop, aes(x = treatment, y =  prop))+
         axis.title = element_text(size = 20),
         plot.subtitle = element_text(size = 18),
         plot.title = element_text(size = 24),
-        axis.line = element_line(size = 1.25),
-        axis.ticks = element_line(size = 1.25),
-        axis.ticks.length = unit(.25, "cm"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        axis.text.x = element_text(size = 18, angle = 45, hjust = 1),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 18),
         axis.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 20)
-  )
+        strip.text.x = element_text(size = 20), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())
+  
 
 
 
