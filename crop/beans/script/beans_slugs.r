@@ -140,23 +140,24 @@ hist(residuals(model_4))
 # add sig values in ppt: confusing with two factor facets
 slugs$szn <- factor(slugs$season, levels = c("Spring", "Fall"))
 ggplot(slugs, aes(x = as.character(treatment), y = total_slug, fill = treatment))+
-  geom_boxplot()+
+  geom_boxplot(alpha = 0.7)+
   facet_wrap(~year + szn, scales = "free_y")+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("Check", "Brown", "GrBr", "Green"))+
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   labs( x = 'Treatment',
         y = 'Total Slug Counts', 
         title = "Beans: Total Slugs by Treatment",
         subtitle = " Years: 2022-2023")+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.x = element_text(size=18),
         axis.text.y = element_text(size = 18),
         strip.text = element_text(size = 16),
         axis.title = element_text(size = 20),
         plot.title = element_text(size = 20),
-        plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())
 
 

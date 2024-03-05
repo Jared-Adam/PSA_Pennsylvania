@@ -203,7 +203,8 @@ cc_mg_ha <- cc %>%
 
 (200*1e-6)
 (2e-04/.0001)
-
+(200*40)
+(8000/1000)
 ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
   facet_wrap(~year)+
   scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DPP"))+
