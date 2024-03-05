@@ -79,26 +79,26 @@ overall_yield <- yield_for_weather %>%
 # early plots ####
 ?geom_bar
 ggplot(overall_yield, aes(x= trt, y = overall_yield_mean, fill = trt))+
-  geom_bar(position = 'dodge' , stat = 'identity')+
+  geom_bar(position = 'dodge' , stat = 'identity', alpha = .7)+
   scale_x_discrete(limits = c("Check", "Brown", "Gr-Br", "Green"),
-                   labels =c("Check", "Brown", "GrBr", "Green"))+
+                   labels =c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   scale_fill_manual(values = c("#E7298A", "#1B9E77","#D95F02",  "#7570B3"))+
   facet_wrap(~year)+
    geom_errorbar( aes(x=trt, ymin=overall_yield_mean-yield_se, ymax=overall_yield_mean+yield_se), width=0.4, 
                  colour="black", alpha=0.9, size=1.3)+
-  labs(y = "Mean (bu/ac)",
-       x = 'Treatment',
+  ylab(bquote("Mean"(bu / ac ^-1)))+
+  labs(x = 'Treatment',
        title = 'Corn: Yield by treatment',
        subtitle = "Years: 2021-2023")+
- # theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 12))+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.x = element_text(size=18),
         axis.text.y = element_text(size = 18),
         strip.text = element_text(size = 16),
         axis.title = element_text(size = 20),
         plot.title = element_text(size = 20),
-        plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())
 # green outcompeted other treatments in both 2022 and 2023
   # this is important!
@@ -195,16 +195,6 @@ cc_clean <- cc %>%
             cc_se = cc_sd/sqrt(n())) %>%
   arrange(year, factor(trt, c("check", "green", "brown", "gr-br")))
 
-cc_mg_ha <- cc %>% 
-  mutate_at(vars(1:4), as.factor) %>% 
-  mutate(cc_biomass_g = as.numeric(cc_biomass_g)) %>% 
-  group_by(year, trt) %>% 
-  summarise(mg_ha = cc_biomass_g*1e-9)
-
-(200*1e-6)
-(2e-04/.0001)
-(200*40)
-(8000/1000)
 ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
   facet_wrap(~year)+
   scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DPP"))+
@@ -225,6 +215,45 @@ ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
         plot.subtitle = element_text(s = 16), 
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
+
+
+cc_mg_ha <- cc %>% 
+  mutate_at(vars(1:4), as.factor) %>% 
+  mutate(cc_biomass_g = as.numeric(cc_biomass_g))%>% 
+  group_by(year, trt, plot) %>% 
+  summarise(mean_cc = mean(cc_biomass_g)) %>% 
+  mutate(mg_ha = mean_cc*0.04) %>% 
+  group_by(year, trt) %>% 
+  summarise(mean_mg = mean(mg_ha),
+            sd = sd(mg_ha), 
+            n = n(), 
+            se = sd/sqrt(n))
+
+ggplot(filter(cc_mg_ha, trt != "check"), aes(x = trt, y = mean_mg, fill = trt))+
+  facet_wrap(~year)+
+  scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_fill_manual(values = c("#D95F02",  "#7570B3","#1B9E77"))+
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.7)+
+  geom_errorbar( aes(x=trt, ymin=mean_mg-se, ymax=mean_mg+se), width=0.4, 
+                 colour="black", alpha=0.9, size=1.3)+
+  labs(title = "Corn: Average cover crop biomass by treatment",
+       subtitle = "Years: 2021-2023",
+       x = "Treatment")+
+  ylab(bquote("Mean cover crop" (Mg / ha ^-1)))+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())
+
+
+
+
 
 # not enough df for this anova or lm p values 
 # will need to do a t test
