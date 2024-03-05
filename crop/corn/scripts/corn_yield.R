@@ -36,7 +36,7 @@ test_mean %>%
   distinct(plot, .keep_all = TRUE) %>% 
   print(n = Inf)
 
-# all data cleaning ####
+# yield data cleaning ####
 yield
 
 yield$plot <- gsub('-[0-9.]','', yield$plot) # remove - and all numbers following
@@ -184,7 +184,7 @@ ggplot(filter(weather_yield, year  %in% '2022'), aes(x = overall_yield$overall_y
 
 
 # cover crop biomass ####
-# cc_clean <- 
+
   
 cc_clean <- cc %>% 
   mutate_at(vars(1:4), as.factor) %>% 
@@ -195,11 +195,20 @@ cc_clean <- cc %>%
             cc_se = cc_sd/sqrt(n())) %>%
   arrange(year, factor(trt, c("check", "green", "brown", "gr-br")))
 
+cc_mg_ha <- cc %>% 
+  mutate_at(vars(1:4), as.factor) %>% 
+  mutate(cc_biomass_g = as.numeric(cc_biomass_g)) %>% 
+  group_by(year, trt) %>% 
+  summarise(mg_ha = cc_biomass_g*1e-9)
+
+(200*1e-6)
+(2e-04/.0001)
+
 ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
   facet_wrap(~year)+
-  scale_x_discrete(labels = c("Brown", "GrBr", "Green"))+
+  scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DPP"))+
   scale_fill_manual(values = c("#D95F02",  "#7570B3","#1B9E77"))+
-  geom_bar(stat = 'identity', position = 'dodge')+
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.75)+
   geom_errorbar( aes(x=trt, ymin=cc_mean-cc_se, ymax=cc_mean+cc_se), width=0.4, 
                  colour="black", alpha=0.9, size=1.3)+
   labs(title = "Corn: Average cover crop biomass by treatment",
@@ -207,7 +216,7 @@ ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
        x = "Treatment",
        y = "Mean cover crop (g/m2)")+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
+        axis.text.x = element_text(size=18),
         axis.text.y = element_text(size = 18),
         strip.text = element_text(size = 16),
         axis.title = element_text(size = 20),
