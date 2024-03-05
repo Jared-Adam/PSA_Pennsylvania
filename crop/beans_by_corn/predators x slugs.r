@@ -255,30 +255,31 @@ s_plot <- cbind(sum_sb, pf_sb) %>%
 
 ggplot(s_plot, aes(x = pred, y = slugs))+
   geom_point(size = 5,aes(color = trt)) +
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
-                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  scale_color_manual(limits = c("1", "2", "4","3"),
+    values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
+                     labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   guides(color=guide_legend("Treatment"))+
   geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
   stat_poly_eq(label.x = "right", label.y = "top", size = 8)+
-  labs(title = "Beans: Total Slug by predator populations",
+  labs(title = "Soybean: Total Slug by predator populations",
        subtitle = "Years: 2022-2023",
        x = "Predator population",
        y = "Slug population")+
   annotate("text", x = 470, y = 240, label = "p = 2.6e-07 ***", size = 8)+
-  theme(
-    axis.text = element_text(size = 18),
-    axis.title = element_text(size = 20),
-    plot.title = element_text(size = 24),
-    plot.subtitle = element_text(size = 18),
-    axis.line = element_line(size = 1.25),
-    axis.ticks = element_line(size = 1.25),
-    axis.ticks.length = unit(.25, "cm"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.key.size = unit(1.5, "cm"),
-    legend.title = element_text(size = 18), 
-    legend.text = element_text(size =16)
-  )
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.25, 'cm'),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())
+  
 
 # Karn #
 sum_c <- sum_slug %>% 
@@ -294,8 +295,9 @@ c_plot <- cbind(sum_c, pf_c) %>%
 
 ggplot(c_plot, aes(x = pred, y = slugs))+
   geom_point(size = 5, aes(color = trt))+
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
-                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  scale_color_manual(limits = c("1", "2", "4","3"),
+                     values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
+                     labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
   stat_poly_eq(size = 8)+
   guides(color=guide_legend("Treatment"))+
@@ -304,20 +306,19 @@ ggplot(c_plot, aes(x = pred, y = slugs))+
       x = "Predator population",
       y = "Slug population")+
   annotate("text", x = 80, y = 650, label = "p = 0.00901 **", size = 8)+
-  theme(
-    axis.text = element_text(size = 12),
-    axis.title = element_text(size = 16),
-    plot.title = element_text(size = 20),
-    plot.subtitle = element_text(size = 16),
-    axis.line = element_line(size = 1.25),
-    axis.ticks = element_line(size = 1.25),
-    axis.ticks.length = unit(.25, "cm"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.key.size = unit(1.5, "cm"),
-    legend.title = element_text(size = 14), 
-    legend.text = element_text(size =12)
-  )
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.25, 'cm'),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())
 
 # all #
 all_plot <- cbind(sum_slug, pf_clean) %>% 
