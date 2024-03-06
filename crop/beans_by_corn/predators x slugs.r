@@ -12,6 +12,9 @@ library(vegan)
 library(vegan3d)
 library(ggpubr)
 library(RColorBrewer)
+library(MASS)
+library(emmeans)
+library(ggpmisc)
 
 # data ####
 corn_pf
@@ -110,7 +113,7 @@ cpf_wide <- cpf_wide  %>%
   relocate(year) %>% 
   mutate(year = as.factor(year)) %>% 
   mutate_at(3:5, as.factor) 
-colnames(pf_wide)
+colnames(cpf_wide)
 
 cpf_clean <- cpf_wide %>% 
   mutate(trt = as.factor(case_when(plot %in% c(101,203,304,401,503) ~ 1,
@@ -265,7 +268,7 @@ ggplot(s_plot, aes(x = pred, y = slugs))+
        subtitle = "Years: 2022-2023",
        x = "Predator population",
        y = "Slug population")+
-  annotate("text", x = 470, y = 240, label = "p = 2.6e-07 ***", size = 8)+
+  # annotate("text", x = 470, y = 240, label = "p = 2.6e-07 ***", size = 8)+
   theme(legend.position = "bottom",
         legend.key.size = unit(.25, 'cm'),
         legend.title = element_text(size = 16),
@@ -305,7 +308,7 @@ ggplot(c_plot, aes(x = pred, y = slugs))+
        subtitle = "Years: 2022-2023",
       x = "Predator population",
       y = "Slug population")+
-  annotate("text", x = 80, y = 650, label = "p = 0.00901 **", size = 8)+
+  # annotate("text", x = 80, y = 650, label = "p = 0.00901 **", size = 8)+
   theme(legend.position = "bottom",
         legend.key.size = unit(.25, 'cm'),
         legend.title = element_text(size = 16),
@@ -328,8 +331,9 @@ all_plot <- cbind(sum_slug, pf_clean) %>%
 
 ggplot(all_plot, aes(x = pred, y = slugs))+
   geom_point(size = 5, aes(color = trt))+
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"),
-                     labels=c("Check", "Brown", "Green", "GrBr"))+
+  scale_color_manual(limits = c("1", "2", "4","3"),
+                     values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
+                     labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   guides(color=guide_legend("Treatment"))+
   geom_smooth(method = "lm", linewidth = 1.5, color = "black")+
   stat_poly_eq(label.x = "right", label.y = "top", size = 8)+
@@ -337,21 +341,21 @@ ggplot(all_plot, aes(x = pred, y = slugs))+
        subtitle = "Years: 2022-2023",
        x = "Predator population",
        y = "Slug population")+
-  annotate("text", x = 465, y = 500, label = "p = 0.0311 *", size = 8)+
-  theme(
-    axis.text = element_text(size = 18),
-    axis.title = element_text(size = 20),
-    plot.title = element_text(size = 24),
-    plot.subtitle = element_text(size = 18),
-    axis.line = element_line(size = 1.25),
-    axis.ticks = element_line(size = 1.25),
-    axis.ticks.length = unit(.25, "cm"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    legend.key.size = unit(1.5, "cm"),
-    legend.title = element_text(size = 18), 
-    legend.text = element_text(size =16)
-  )
+  # annotate("text", x = 465, y = 500, label = "p = 0.0311 *", size = 8)+
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.25, 'cm'),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 16),
+        axis.text.x = element_text(size=18),
+        axis.text.y = element_text(size = 18),
+        strip.text = element_text(size = 16),
+        axis.title = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())
+  
 
 # stats on this ####
 poisson_model.2 <- glm(slugs ~ pred,
@@ -367,15 +371,24 @@ lrtest(poisson_model.2,nb_model_trt.2)
 
 
 
-bm <- glm.nb(slugs ~ pred, data = s_plot)
+bm <- glm(slugs ~ pred + trt, data = s_plot)
 summary(bm)
 hist(residuals(bm))
+bm_e <- emmeans(bm, pairwise ~ pred + trt)
+pwpm(bm_e)
 
-cm <- glm.nb(slugs ~ pred, data = c_plot)
+
+
+
+cm <- glm.nb(slugs ~ pred + trt, data = c_plot)
 summary(cm)
 hist(residuals(cm))
+cm_e <- emmeans(cm, pairwise ~ pred + trt)
+pwpm(cm_e)
 
-
-all_m <- glm(slugs ~ pred, data = all_plot)
+all_m <- glm(slugs ~ pred + trt, data = all_plot)
 summary(all_m)
 hist(residuals(all_m))
+all_e <- emmeans(all_m, ~pred+trt)
+all_e
+pwpm(all_e)
