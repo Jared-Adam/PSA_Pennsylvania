@@ -356,6 +356,172 @@ ggplot(other_em, aes(color = treatment))+
 
 ggarrange(slug_fig, bcw_fig, taw_fig, sb_fig, mult_fig, other_fig)
 
+# black and white figs for pubs ####
+slug_em
+pairs(emms_mod[[1]])
+ggplot(slug_em)+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  facet_wrap(~growth_stage)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Slug damage",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 18),
+        plot.title = element_text(size = 24),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18),
+        strip.text.x = element_text(size = 20), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())
+
+bcw_em
+pairs(emms_mod[[3]])
+pwpm(emms_mod[[3]])
+ggplot(bcw_em)+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  facet_wrap(~growth_stage)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+ 
+  labs(
+    title = "Black Cutworm damage",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+taw_em
+pairs(emms_mod[[2]])
+ggplot(taw_em)+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  facet_wrap(~growth_stage)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+
+  labs(
+    title = "True Armyworm damage",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+# stink bug not useful
+sb_em
+pairs(emms_mod[[4]])
+ggplot(sb_em)+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  facet_wrap(~growth_stage)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+ 
+  labs(
+    title = "Stink bug damage",
+    subtitle = "Years: 2022-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+
+m_em
+pairs(emms_mod[[5]])
+pwpm(emms_mod[[5]])
+ggplot(m_em)+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  facet_wrap(~growth_stage)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+ 
+  labs(
+    title = "Multiple damage",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+other_em
+pairs(emms_mod[[6]])
+ggplot(other_em)+
+  geom_point(aes(x = treatment, y = prob), size = 5,
+             position = position_dodge(width = .75))+
+  geom_errorbar(aes(x = treatment,ymin = prob - SE, ymax = prob + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  facet_wrap(~growth_stage)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("Check", "Brown", "GrBr", "Green"))+ 
+  labs(
+    title = "Other damage",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage probability"
+  )+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+        axis.text.y = element_text(size = 18),legend.position = "none",
+        strip.text = element_text(size = 16),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(s = 16), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+
 # old model code ####
 
 
