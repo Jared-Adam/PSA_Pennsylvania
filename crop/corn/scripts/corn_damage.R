@@ -83,6 +83,10 @@ new_dmg <- dmg %>%
          year = format(date, "%Y")) %>%
   dplyr::select(-date) %>% 
   relocate(year) %>% 
+  mutate(treatment = case_when(plot_id %in% c("101",'203','304','401', '503') ~ "1",
+                               plot_id %in% c('102', '201','303','402','502') ~ "3",
+                               plot_id %in% c('103','204', '302', '403', '501') ~ "2",
+                               plot_id %in% c('104', '202', '301', '404', '504') ~ "4")) %>% 
   mutate(growth_stage = as.factor(growth_stage),
          block = as.factor(block),
          treatment = as.factor(treatment),
@@ -97,6 +101,68 @@ sum(new_dmg$sb)
 sum(new_dmg$taw)
 sum(new_dmg$bcw)
 # these all have numbers 
+# slug models for esa pres ####
+
+slug_model <- new_dmg %>% 
+  dplyr::select(year, growth_stage, block, plot_id, treatment, s)
+unique(slug_model$treatment)
+m0 <- glmer(s ~ +
+        (1|year/block/plot_id/growth_stage), data = slug_model,
+      family = binomial)
+
+m1 <- glmer(s ~ treatment +
+              (1|year/block/plot_id/growth_stage), data = slug_model,
+            family = binomial)
+
+m2 <- glmer(s ~ treatment+growth_stage +
+              (1|year/block/plot_id/growth_stage), data = slug_model,
+            family = binomial)
+
+m3 <- glmer(s ~ treatment*growth_stage +
+              (1|year/block/plot_id/growth_stage), data = slug_model,
+            family = binomial)
+
+anova(m0, m1, m2, m3)
+summary(m3)
+r2_nakagawa(m3)
+m3_em <- emmeans(m3, ~treatment+growth_stage)
+cld(m3_em, Letters = letters)
+
+
+slug_em <- as.data.frame(m3_em)
+ggplot(slug_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage)+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Slug Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+
 
 # models ####
 # test model to look at variables before we run the loop
