@@ -156,7 +156,9 @@ ggplot(trt_prop, aes(x = treatment, y =  prop))+
     title = "Corn: Mean predation x Treatment",
     subtitle = "Years: 2021-2023",
     x = "Treatment",
-    y = "Mean proportion predated ( x / 1 )"
+    y = "Mean proportion predated ( x / 1 )",
+    caption = "DPP: Days pre plant
+DAP : Days after plant"
   )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
@@ -169,11 +171,13 @@ ggplot(trt_prop, aes(x = treatment, y =  prop))+
         axis.text.y = element_text(size = 26), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())+
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
   annotate("text", x = 1, y = .71, label = "a", size = 10)+
   annotate("text", x = 2, y = .77, label = "ab", size = 10)+
   annotate("text", x = 4, y = .82, label = "b", size = 10)+
   annotate("text", x = 3, y = .84, label = "ab", size = 10)
+
   
 
 
