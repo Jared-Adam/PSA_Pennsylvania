@@ -257,31 +257,33 @@ s_plot <- cbind(sum_sb, pf_sb) %>%
   dplyr::select(-crop...5, - year...6, -trt...7)
 
 ggplot(s_plot, aes(x = pred, y = slugs))+
-  geom_point(size = 5,aes(color = trt)) +
+  geom_point(size = 10,aes(color = trt)) +
   scale_color_manual(limits = c("1", "2", "4","3"),
     values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
                      labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   guides(color=guide_legend("Treatment"))+
-  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
-  stat_poly_eq(label.x = "right", label.y = "top", size = 8)+
-  labs(title = "Soybean: Total Slug by predator populations",
+  # geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  stat_poly_eq(label.x = "right", label.y = "top", size = 12)+
+  labs(title = "Soybean: Slug x Predator Populations",
        subtitle = "Years: 2022-2023",
        x = "Predator population",
-       y = "Slug population")+
+       y = "Slug population",
+       caption = "DPP: Days pre plant
+DAP: Days after plant")+
   # annotate("text", x = 470, y = 240, label = "p = 2.6e-07 ***", size = 8)+
   theme(legend.position = "bottom",
-        legend.key.size = unit(.25, 'cm'),
-        legend.title = element_text(size = 16),
-        legend.text = element_text(size = 16),
-        axis.text.x = element_text(size=18),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(size = 16), 
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
   
 
 # Karn #
@@ -297,31 +299,33 @@ c_plot <- cbind(sum_c, pf_c) %>%
   dplyr::select(-crop...5, -year...6, -trt...7)
 
 ggplot(c_plot, aes(x = pred, y = slugs))+
-  geom_point(size = 5, aes(color = trt))+
+  geom_point(size = 10, aes(color = trt))+
   scale_color_manual(limits = c("1", "2", "4","3"),
                      values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
                      labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
-  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
-  stat_poly_eq(size = 8)+
+  # geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  stat_poly_eq(size = 12)+
   guides(color=guide_legend("Treatment"))+
-  labs(title = "Corn: Total Slug by predator populations",
+  labs(title = "Corn: Slug x Predator Populations",
        subtitle = "Years: 2022-2023",
       x = "Predator population",
-      y = "Slug population")+
+      y = "Slug population",
+      caption = "DPP: Days pre plant
+DAP: Days after plant")+
   # annotate("text", x = 80, y = 650, label = "p = 0.00901 **", size = 8)+
   theme(legend.position = "bottom",
-        legend.key.size = unit(.25, 'cm'),
-        legend.title = element_text(size = 16),
-        legend.text = element_text(size = 16),
-        axis.text.x = element_text(size=18),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(size = 16), 
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 # all #
 all_plot <- cbind(sum_slug, pf_clean) %>% 
@@ -371,20 +375,31 @@ lrtest(poisson_model.2,nb_model_trt.2)
 
 
 
-bm <- glm(slugs ~ pred + trt, data = s_plot)
-summary(bm)
-hist(residuals(bm))
-bm_e <- emmeans(bm, pairwise ~ pred + trt)
+bm0 <- glm(slugs ~ pred, data = s_plot)
+
+bm1 <- glm(slugs ~ pred + trt, data = s_plot)
+?lme
+anova(bm0, bm1)
+bm_e <- emmeans(bm1, ~pred)
 pwpm(bm_e)
+summary(bm1)
+hist(residuals(bm1))
 
 
 
+cm0 <- glm.nb(slugs ~ pred, data = c_plot)
 
-cm <- glm.nb(slugs ~ pred + trt, data = c_plot)
-summary(cm)
-hist(residuals(cm))
-cm_e <- emmeans(cm, pairwise ~ pred + trt)
+
+cm1 <- glm.nb(slugs ~ pred + trt, data = c_plot)
+
+anova(cm0, cm1)
+summary(cm1)
+hist(residuals(cm1))
+cm_e <- emmeans(cm1, ~ pred + trt)
 pwpm(cm_e)
+
+
+
 
 all_m <- glm(slugs ~ pred + trt, data = all_plot)
 summary(all_m)

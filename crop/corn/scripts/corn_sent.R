@@ -158,7 +158,7 @@ ggplot(trt_prop, aes(x = treatment, y =  prop))+
     x = "Treatment",
     y = "Mean proportion predated ( x / 1 )",
     caption = "DPP: Days pre plant
-DAP : Days after plant"
+DAP: Days after plant"
   )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
