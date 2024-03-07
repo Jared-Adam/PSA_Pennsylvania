@@ -13,6 +13,7 @@ library(lme4)
 library(emmeans)
 library(lmtest)
 library(nlme)
+library(multcomp)
 
 # data ####
 sent <- PSA_PA_Sent_prey
@@ -63,32 +64,41 @@ sent_years <- sent_years %>%
   mutate_at(vars(1:6), as.factor)
 
 # model I am using for now 
-m1 <- glmer(to.predated ~ treatment*growth_stage +
+m0 <- glmer(to.predated ~ 
               (1|year/block/plot_id/growth_stage),
             data = sent_years, 
             family = binomial)
-check_model(m1)
-summary(m1)
-binned_residuals(m1)
-r2_nakagawa(m1)
+
+m1 <- glmer(to.predated ~ treatment +
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years, 
+            family = binomial)
+
+m2 <- glmer(to.predated ~ treatment+growth_stage +
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years, 
+            family = binomial)
+
+m3 <- glmer(to.predated ~ treatment*growth_stage +
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years, 
+            family = binomial)
+check_model(m3)
+anova(m0, m1, m2, m3)
+summary(m3)
+binned_residuals(m3)
+r2_nakagawa(m3)
 #   Conditional R2: 0.555
 #   Marginal R2: 0.101
-m1_emm <- emmeans(m1, ~ treatment*growth_stage, type = 'pairwise')
-m1_plot <- as.data.frame(m1_emm)
-pairs(m1_emm, simple = "each")
-plot(m1_plot)
+m_emm <- emmeans(m3, ~ treatment, type = 'pairwise')
+pairs(m_emm, simple = "each")
+pwpm(m_emm)
+cld(m_emm, Letters = letters)
 
-# trt did not drive much change here, so I removed it 
-m2 <- glmer(to.predated ~ growth_stage +
-              (1|year/block/plot_id/growth_stage),
-            data = sent_years, 
-            family = binomial)
-check_model(m2)
-summary(m2)
-r2_nakagawa(m2)
-m2_emm <- emmeans(m2, ~growth_stage, type = "pairwise")
-pairs(m2_emm, simple = "each")
-pwpm(m2_emm)
+mg_emm <- emmeans(m3, ~ growth_stage, type = 'pairwise')
+pairs(mg_emm, simple = "each")
+pwpm(mg_emm)
+cld(mg_emm, Letters = letters)
 
 
 # plots ####
@@ -120,7 +130,94 @@ ggplot(sent_prop, aes(x = treatment, y =  prop))+
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())
-  )
+  
+
+
+trt_prop <- sent %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  dplyr::select(-location, -date) %>% 
+  group_by(treatment) %>% 
+  summarise(prop = mean(to.predated),
+            sd = sd(to.predated),
+            n = n(),
+            se = sd/sqrt(n)) %>% 
+  mutate_at(vars(1), factor) %>% 
+  print(n= Inf)
+
+ggplot(trt_prop, aes(x = treatment, y =  prop))+
+  geom_point(aes(color = treatment), size = 10)+
+  geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"),
+                   limits = c("1", "2", "4", "3"))+ 
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  labs(
+    title = "Corn: Mean predation x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Mean proportion predated ( x / 1 )"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1, y = .71, label = "a", size = 10)+
+  annotate("text", x = 2, y = .77, label = "ab", size = 10)+
+  annotate("text", x = 4, y = .82, label = "b", size = 10)+
+  annotate("text", x = 3, y = .84, label = "ab", size = 10)
+  
+
+
+gs_prop <- sent %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  dplyr::select(-location, -date) %>% 
+  group_by(growth_stage) %>% 
+  summarise(prop = mean(to.predated),
+            sd = sd(to.predated),
+            n = n(),
+            se = sd/sqrt(n)) %>% 
+  mutate_at(vars(1), factor) %>% 
+  print(n= Inf)
+
+ggplot(gs_prop, aes(x = growth_stage, y =  prop))+
+  geom_point(aes(color = growth_stage), size = 10)+
+  geom_errorbar(aes(x = growth_stage,ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(limits = c("V3", "V5", "R3"))+ 
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77"))+
+  labs(
+    title = "Corn: Mean predation x Growth Stage",
+    subtitle = "Years: 2021-2023",
+    x = "Growth Stage",
+    y = "Mean proportion predated ( x / 1 )"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1, y = 0.68, label = "a", size = 10)+
+  annotate("text", x = 2, y = 0.825, label = "b", size = 10)+
+  annotate("text", x = 3, y = 0.84, label = "b", size = 10)
+  
+
 
 # 2021 ####
 sent_21
