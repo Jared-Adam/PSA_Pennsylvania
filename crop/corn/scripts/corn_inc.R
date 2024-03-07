@@ -60,7 +60,12 @@ damage_done <- rbind(dmg_2021_clean, dmg_sum) %>%
   mutate(growth = case_when(growth == "v3" ~ "V3", 
                             growth == "v5" ~ "V5", 
                             .default = as.factor(growth))) %>% 
-  mutate(growth = as.factor(growth))
+  mutate(treatment = case_when(plotid %in% c("101",'203','304','401', '503') ~ "1",
+                               plotid %in% c('102', '201','303','402','502') ~ "3",
+                               plotid %in% c('103','204', '302', '403', '501') ~ "2",
+                               plotid %in% c('104', '202', '301', '404', '504') ~ "4")) %>% 
+  mutate(growth = as.factor(growth)) %>% 
+  mutate(treatment = as.factor(treatment)) 
 unique(damage_done$treatment)
 
 
@@ -75,26 +80,43 @@ dam_plot <- damage_done %>%
 # model ####
 damage_done
 
-m1_full <- glmer(prop_damaged ~ treatment*growth + (1|year/block/plotid/growth), 
+m0 <- glmer(prop_damaged ~ 
+            (1|year/block/plotid/growth), 
+            data = damage_done, family = binomial, 
+            weights = total_sum)
+
+m1 <- glmer(prop_damaged ~ treatment + 
+              (1|year/block/plotid/growth), 
+            data = damage_done, family = binomial, 
+            weights = total_sum)
+
+m2 <- glmer(prop_damaged ~ treatment + growth + 
+              (1|year/block/plotid/growth), 
+            data = damage_done, family = binomial, 
+            weights = total_sum)
+
+m3 <- glmer(prop_damaged ~ treatment * growth + 
+              (1|year/block/plotid/growth), 
                  data = damage_done, family = binomial, 
                  weights = total_sum)
-summary(m1_full)
-r2_nakagawa(m1_full)
+summary(m3)
+
+anova(m0, m1, m2, m3)
+
+
+
+r2_nakagawa(m3)
 # Conditional R2: 0.129
 # Marginal R2: 0.062
-m1_em <- emmeans(m1_full, ~treatment*growth, type = 'response')
-pairs(m1_em)
-plot_emm <- as.data.frame(m1_em)
-pwpm(m1_em)
+m3_em <- emmeans(m3, ~growth)
+pairs(m3_em)
+pwpm(m3_em)
+cld(m3_em, Letters = letters)
 
 # plot ####
 
-
-
-
 ggplot(dam_plot, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = mean), size = 5,
-             position = position_dodge(width = .75))+
+  geom_point(aes(x = treatment, y = mean), size = 10)+
   facet_wrap(~growth)+
   geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 2)+
@@ -104,24 +126,27 @@ ggplot(dam_plot, aes(color = treatment))+
   theme(axis.text.x = element_text(size = 18), 
         axis.text.y = element_text(size = 18))+
   labs(
-    title = "Corn: Damage Incidence",
+    title = "Corn: Damage Incidence x Treatment",
     subtitle = "Years: 2021-2023",
     y = "Mean proportion damaged (damaged / total)",
-    x = "Treatment"
+    x = "Treatment",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
   )+
   theme(legend.position = 'none',
-        axis.title = element_text(size = 20),
-        plot.subtitle = element_text(size = 18),
-        plot.title = element_text(size = 24),
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
         # axis.line = element_line(size = 1.25),
         # axis.ticks = element_line(size = 1.25),
         # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 18),
-        axis.text.y = element_text(size = 18),
-        strip.text.x = element_text(size = 20), 
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 26, color = "grey25"))
 
 # For PUBs
 ggplot(dam_plot)+

@@ -12,6 +12,7 @@ library(lmtest)
 library(MASS)
 library(nlme)
 library(plotly)
+library(multcomp)
 # data ####
 slugs <- PSA_PA_slugs
 
@@ -122,19 +123,27 @@ lrtest(poisson_model,nb_model_trt)
 # the negative binomial has the higher likelihood score, so we will use that
 
 
-# with random of block, plot, and season: the models are singular 
+m0 <- glmer.nb(total_slug ~ +
+                 (1|year) + (1|precip),
+               data = slug_clean)
+
 m1 <- glmer.nb(total_slug ~ treatment +
                  (1|year) + (1|precip), data = slug_clean) 
 
-
+check_model(m1)
 summary(m1)
 check_singularity(m1)
 r2_nakagawa(m1)
-#  Conditional R2: 0.847
-#  Marginal R2: 0.162
-cm_emm <- emmeans(m1, ~treatment, type = "response")
+#  Conditional R2: 0.813
+#  Marginal R2: 0.002
+
+anova(m0, m1)
+
+
+cm_emm <- emmeans(m1, ~treatment)
 pairs(cm_emm)
 pwpm(cm_emm)
+cld(cm_emm, Letters = letters)
 
 # without precip: 
 # Conditional R2: 0.035
@@ -143,17 +152,6 @@ pwpm(cm_emm)
 binned_residuals(m1)
 m1_r <- binned_residuals(m1)
 plot(m1_r)
-
-# checking for trt differences in slug populations 
-# none
-m2 <- kruskal.test(total_slug ~ treatment, data = cs_21)
-m5 <- kruskal.test(total_slug ~ season, data = cs_21)
-
-m3 <- kruskal.test(total_slug ~ treatment, data  = cs_22)
-m6 <- kruskal.test(total_slug ~ season, data  = cs_22)
-
-m4 <- kruskal.test(total_slug ~ treatment, data = cs_23)
-m7 <- kruskal.test(total_slug ~ season, data = cs_23)
 
 
 # plots corn slugs ####
@@ -177,7 +175,7 @@ ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
   theme(axis.text.x = element_text(size=12),
         axis.text.y = element_text(size = 12))
 
-# final figure
+# final figure by season and year
 slug_clean$szn <- factor(slug_clean$season, levels = c("Spring", "Fall"))
 ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
@@ -202,6 +200,36 @@ ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = treatment))+
 
 
 
+slug_plot <- slug_clean %>% 
+  group_by(treatment) %>% 
+  summarise(mean = mean(total_slug), 
+            sd =  sd(total_slug),
+            n= n(), 
+            se = sd/sqrt(n))
+
+ggplot(slug_plot, aes(x = treatment, y = mean, fill = treatment))+
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7)+
+  geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+  labs( x = 'Treatment',
+        y = 'Total Slug Counts', 
+        title = "Corn: Average Slug Counts / Trap x Treatment",
+        subtitle = " Years: 2021-2023",
+        caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 ggplotly(test)
 # slugs and precip ####

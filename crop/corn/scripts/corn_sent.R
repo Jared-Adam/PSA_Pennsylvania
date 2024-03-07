@@ -175,8 +175,8 @@ DAP : Days after plant"
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
   annotate("text", x = 1, y = .71, label = "a", size = 10)+
   annotate("text", x = 2, y = .77, label = "ab", size = 10)+
-  annotate("text", x = 4, y = .82, label = "b", size = 10)+
-  annotate("text", x = 3, y = .84, label = "ab", size = 10)
+  annotate("text", x = 4, y = .82, label = "ab", size = 10)+
+  annotate("text", x = 3, y = .84, label = "b", size = 10)
 
   
 
