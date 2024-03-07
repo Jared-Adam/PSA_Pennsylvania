@@ -214,10 +214,30 @@ ggplot(filter(weather_yield, year  %in% '2022'), aes(x = overall_yield$overall_y
          geom_point(size = 4)
 ####
 
+# Anova ####
+anova_one <- aov(bu_ac_mean ~ trt, yield_clean)
+summary(anova_one)
+plot(residuals(anova_one))
+hist(residuals(anova_one))
+TukeyHSD(anova_one)
 
-# cover crop biomass ####
+anova_two <- aov(bu_ac_mean ~ year, yield_clean)
+summary(anova_two)
+hist(residuals(anova_two))
+TukeyHSD(anova_two)
 
-  
+ggplot(yield_clean, aes(x = year, y = bu_ac_mean, fill = trt))+
+  geom_boxplot()
+
+# yield ~ precip
+anova_three <- aov(overall_mean ~ avg_precip, weather_yield)
+summary(anova_three)
+hist(residuals(anova_three))
+shapiro.test(residuals(anova_three))
+
+
+
+# cover crop data and stats ####
 cc_clean <- cc %>% 
   mutate_at(vars(1:4), as.factor) %>% 
   mutate(cc_biomass_g = as.numeric(cc_biomass_g)) %>% 
@@ -227,6 +247,46 @@ cc_clean <- cc %>%
             cc_se = cc_sd/sqrt(n())) %>%
   arrange(year, factor(trt, c("check", "green", "brown", "gr-br")))
 
+
+cc_mg_plot <- cc %>% 
+  mutate_at(vars(1:4), as.factor) %>% 
+  mutate(cc_biomass_g = as.numeric(cc_biomass_g))%>% 
+  group_by(year, trt, plot) %>% 
+  summarise(mean_cc = mean(cc_biomass_g)) %>% 
+  mutate(mg_ha = mean_cc*0.04) %>% 
+  group_by(trt) %>% 
+  summarise(mean_mg = mean(mg_ha),
+            sd = sd(mg_ha), 
+            n = n(), 
+            se = sd/sqrt(n))
+
+
+cc_mg_model <- cc %>% 
+  mutate_at(vars(1:4), as.factor) %>% 
+  mutate(cc_biomass_g = as.numeric(cc_biomass_g))%>% 
+  group_by(year, trt, plot,block) %>% 
+  summarise(mean_cc = mean(cc_biomass_g)) %>% 
+  mutate(mg_ha = mean_cc*0.04) %>% 
+  filter(trt != "check")
+
+
+cc0 <- lme(mg_ha,
+          random = ~1|year/block,
+          data = cc_mg_model)
+summary(cc0)
+
+cc1 <- lme(mg_ha ~ trt,
+          random = ~1|year/block,
+          data = cc_mg_model)
+summary(cc1)
+
+cc_em <- emmeans(cc1, ~trt)
+pwpm(cc_em)
+cld(cc_em, Letters = letters)
+
+# cover crop plots ####
+
+cc_clean
 ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
   facet_wrap(~year)+
   scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DPP"))+
@@ -248,40 +308,33 @@ ggplot(filter(cc_clean, trt != "check"), aes(x = trt, y = cc_mean, fill = trt))+
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
-
-cc_mg_ha <- cc %>% 
-  mutate_at(vars(1:4), as.factor) %>% 
-  mutate(cc_biomass_g = as.numeric(cc_biomass_g))%>% 
-  group_by(year, trt, plot) %>% 
-  summarise(mean_cc = mean(cc_biomass_g)) %>% 
-  mutate(mg_ha = mean_cc*0.04) %>% 
-  group_by(year, trt) %>% 
-  summarise(mean_mg = mean(mg_ha),
-            sd = sd(mg_ha), 
-            n = n(), 
-            se = sd/sqrt(n))
-
-ggplot(filter(cc_mg_ha, trt != "check"), aes(x = trt, y = mean_mg, fill = trt))+
-  facet_wrap(~year)+
+cc_mg_ha
+ggplot(filter(cc_mg_plot, trt != "check"), aes(x = trt, y = mean_mg, fill = trt))+
   scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   scale_fill_manual(values = c("#D95F02",  "#7570B3","#1B9E77"))+
   geom_bar(stat = 'identity', position = 'dodge', alpha = 0.7)+
   geom_errorbar( aes(x=trt, ymin=mean_mg-se, ymax=mean_mg+se), width=0.4, 
                  colour="black", alpha=0.9, size=1.3)+
-  labs(title = "Corn: Average cover crop biomass by treatment",
+  labs(title = "Corn: Mean Cover Crop Biomass x Treatment",
        subtitle = "Years: 2021-2023",
-       x = "Treatment")+
+       x = "Treatment",
+       caption = "DPP: Days pre plant
+DAP: Days after plant")+
   ylab(bquote("Mean cover crop" (Mg / ha ^-1)))+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(size = 16), 
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 26, color = "grey25"))+
+  annotate("text", x = 1, y = 2.8, label = "a", size = 10)+
+  annotate("text", x = 2, y = 4.9, label = "b", size = 10)+
+  annotate("text", x = 3, y = 7.9, label = "c", size = 10)
+
 
 
 
@@ -335,23 +388,3 @@ ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean
 
 ###
 
-# Anova ####
-anova_one <- aov(bu_ac_mean ~ trt, yield_clean)
-summary(anova_one)
-plot(residuals(anova_one))
-hist(residuals(anova_one))
-TukeyHSD(anova_one)
-
-anova_two <- aov(bu_ac_mean ~ year, yield_clean)
-summary(anova_two)
-hist(residuals(anova_two))
-TukeyHSD(anova_two)
-
-ggplot(yield_clean, aes(x = year, y = bu_ac_mean, fill = trt))+
-  geom_boxplot()
-
-# yield ~ precip
-anova_three <- aov(overall_mean ~ avg_precip, weather_yield)
-summary(anova_three)
-hist(residuals(anova_three))
-shapiro.test(residuals(anova_three))
