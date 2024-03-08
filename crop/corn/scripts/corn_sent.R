@@ -78,7 +78,7 @@ m2 <- glmer(to.predated ~ treatment+growth_stage +
               (1|year/block/plot_id/growth_stage),
             data = sent_years, 
             family = binomial)
-
+ 
 m3 <- glmer(to.predated ~ treatment*growth_stage +
               (1|year/block/plot_id/growth_stage),
             data = sent_years, 
@@ -86,7 +86,8 @@ m3 <- glmer(to.predated ~ treatment*growth_stage +
 check_model(m3)
 anova(m0, m1, m2, m3)
 summary(m3)
-binned_residuals(m3)
+m3_plot <- binned_residuals(m3)
+plot(m3_plot)
 r2_nakagawa(m3)
 #   Conditional R2: 0.555
 #   Marginal R2: 0.101
