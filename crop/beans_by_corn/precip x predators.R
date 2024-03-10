@@ -1,5 +1,17 @@
+# precipitation x predators
+# 3/10/2024
+# from a question in my talk
 
+# packages 
+library(tidyverse)
+library(lme4)
+library(emmeans)
+library(performance)
 
+# data ####
+bean_pf
+corn_pf
+PSA_PA_slugs
 
 # pf wrangling ####
 
@@ -108,3 +120,5 @@ pf_clean <- pf_all %>%
   group_by(crop, year, trt) %>% 
   summarise(pred = sum(predators))
 
+
+# extracting the precip data from slugs? ####
