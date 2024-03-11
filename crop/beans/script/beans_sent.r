@@ -11,6 +11,7 @@ library(lme4)
 library(emmeans)
 library(lmtest)
 library(nlme)
+library(multcomp)
 
 # data ####
 beans_sent <- sent_prey_beans_all
@@ -55,65 +56,169 @@ sent_23 <- subset(sent_years, year == '2023')
 sent_years <- sent_years %>% 
   mutate_at(vars(1:5), as_factor)
 
+m0 <- glmer(to.predated ~ 
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years,
+            family = binomial)
 
-test <- glmer(to.predated ~ treatment * growth_stage+
-                            (1|year/block/plot_id/growth_stage), data = sent_years,
-                          family = binomial)
+m1 <- glmer(to.predated ~ treatment +
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years,
+            family = binomial)
 
-summary(test)
-r2_nakagawa(test)
-result <- binned_residuals(test)
+m2 <- glmer(to.predated ~ treatment + growth_stage +
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years,
+            family = binomial)
+
+m3 <- glmer(to.predated ~ treatment*growth_stage +
+              (1|year/block/plot_id/growth_stage),
+            data = sent_years,
+            family = binomial)
+anova(m0 , m1, m2, m3)
+
+t_emm <- emmeans(m3, ~treatment)
+pairs(t_emm)
+pwpm(t_emm)
+cld(t_emm, Letters = letters)
+
+g_emm <- emmeans(m3, ~growth_stage)
+pairs(g_emm)
+pwpm(g_emm)
+cld(g_emm, Letters = letters)
+
+
+summary(m3)
+r2_nakagawa(m3)
+# Conditional R2: 0.891
+# Marginal R2: 0.866
+result <- binned_residuals(m3)
 plot(result)
-t1_emm <- emmeans(test, ~treatment * growth_stage, type = "response")
-pairs(t1_emm, simple = "each")
-pwpm(t1_emm)
-t1_plot <- data.frame(t1_emm)
-
-
-
-test2 <- glmer(to.predated ~ growth_stage +
-                (1|year/block/plot_id/growth_stage), data = sent_years,
-              family = binomial)
-
-summary(test2)
-r2_nakagawa(test2)
-
-m2_emm <- emmeans(test2, ~growth_stage, type = "pairwise")
-pairs(m2_emm, simple = "each")
-pwpm(m2_emm)
 
 # plot for total/ all data ####
-m1_plot
-ggplot(m1_plot, aes(x = factor(treatment), y = prob, shape = growth_stage))+
-  geom_point(aes(color = factor(treatment)), alpha = 1, size = 5, position = position_dodge(width = .75))+
-  geom_errorbar(aes(x = factor(treatment),ymin = prob - SE, ymax = prob + SE),
-                color = "black", alpha = 1, width = 0, linewidth = 1.5)+
-  geom_errorbar(aes(x = factor(treatment),ymin = asymp.LCL, ymax = asymp.UCL), 
-                alpha = .6, width = 0, linewidth = 1)+
-  scale_x_discrete(labels=c("Check","Brown","Green","GrBr"))+ 
+
+trt_prop <- beans_sent %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  dplyr::select(-location, -date) %>% 
+  group_by(treatment) %>% 
+  summarise(prop = mean(to.predated),
+            sd = sd(to.predated),
+            n = n(),
+            se = sd/sqrt(n)) %>% 
+  mutate_at(vars(1), factor) %>% 
+  print(n= Inf)
+
+ggplot(trt_prop, aes(x = treatment, y =  prop))+
+  geom_point(aes(color = treatment), size = 10)+
+  geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"),
+                   limits = c("1", "2", "4", "3"))+ 
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
-        axis.text.y = element_text(size = 20),
-        axis.line = element_line(color = "black", size = 1.25))+
-  annotate("text", x = 2, y = 1.01, label = "p = 0.00107**", size = 6)+
-  annotate("text", x = 3, y = 1.01, label = "p = 2.04e-05***", size = 6)+
-  annotate("text", x = 4, y = 1.01, label = "p = 0.03882*", size = 6)+
   labs(
-    title = "Beans: Mean predation",
+    title = "Soybean: Mean predation x Treatment",
     subtitle = "Years: 2022-2023",
-    y = "Mean predation",
-    x = "Treatment"
+    x = "Treatment",
+    y = "Mean proportion predated ( x / 1 )",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
   )+
   theme(legend.position = 'none',
-        axis.title = element_text(size = 20),
-        plot.subtitle = element_text(size = 18),
-        plot.title = element_text(size = 24),
-        axis.line = element_line(size = 1.25),
-        axis.ticks = element_line(size = 1.25),
-        axis.ticks.length = unit(.25, "cm"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()
-  )
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  annotate("text", x = 1, y = .855, label = "a", size = 10)+ #1
+  annotate("text", x = 2, y = .955, label = "ab", size = 10)+ #2
+  annotate("text", x = 3, y = .92, label = "ab", size = 10)+ #4
+  annotate("text", x = 4, y = .98, label = "b", size = 10) #3
+
+
+
+
+gs_prop <- beans_sent %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  dplyr::select(-location, -date) %>% 
+  group_by(growth_stage) %>% 
+  summarise(prop = mean(to.predated),
+            sd = sd(to.predated),
+            n = n(),
+            se = sd/sqrt(n)) %>% 
+  mutate_at(vars(1), factor) %>% 
+  print(n= Inf)
+
+ggplot(gs_prop, aes(x = growth_stage, y =  prop))+
+  geom_point(aes(color = growth_stage), size = 10)+
+  geom_errorbar(aes(x = growth_stage,ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(limits = c("V3", "V5", "R3"))+ 
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77"))+
+  labs(
+    title = "Soybean: Mean predation x Growth Stage",
+    subtitle = "Years: 2022-2023",
+    x = "Growth Stage",
+    y = "Mean proportion predated ( x / 1 )"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1, y = 0.845, label = "a", size = 10)+
+  annotate("text", x = 2, y = 0.94, label = "b", size = 10)+
+  annotate("text", x = 3, y = 0.99, label = "ab", size = 10)
+
+
+
+# old plots ####
+# m1_plot
+# ggplot(m1_plot, aes(x = factor(treatment), y = prob, shape = growth_stage))+
+#   geom_point(aes(color = factor(treatment)), alpha = 1, size = 5, position = position_dodge(width = .75))+
+#   geom_errorbar(aes(x = factor(treatment),ymin = prob - SE, ymax = prob + SE),
+#                 color = "black", alpha = 1, width = 0, linewidth = 1.5)+
+#   geom_errorbar(aes(x = factor(treatment),ymin = asymp.LCL, ymax = asymp.UCL), 
+#                 alpha = .6, width = 0, linewidth = 1)+
+#   scale_x_discrete(labels=c("Check","Brown","Green","GrBr"))+ 
+#   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 18), 
+#         axis.text.y = element_text(size = 20),
+#         axis.line = element_line(color = "black", size = 1.25))+
+#   annotate("text", x = 2, y = 1.01, label = "p = 0.00107**", size = 6)+
+#   annotate("text", x = 3, y = 1.01, label = "p = 2.04e-05***", size = 6)+
+#   annotate("text", x = 4, y = 1.01, label = "p = 0.03882*", size = 6)+
+#   labs(
+#     title = "Beans: Mean predation",
+#     subtitle = "Years: 2022-2023",
+#     y = "Mean predation",
+#     x = "Treatment"
+#   )+
+#   theme(legend.position = 'none',
+#         axis.title = element_text(size = 20),
+#         plot.subtitle = element_text(size = 18),
+#         plot.title = element_text(size = 24),
+#         axis.line = element_line(size = 1.25),
+#         axis.ticks = element_line(size = 1.25),
+#         axis.ticks.length = unit(.25, "cm"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank()
+#   )
 
 ggplot(sent_prop, aes(x = factor(growth_stage, level = c("V3", "V5", "R3")), y =  prop))+
   geom_point(aes(size = 5))+
