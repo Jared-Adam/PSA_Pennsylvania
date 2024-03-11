@@ -229,9 +229,79 @@ bpf_clean %>%
   group_by(crop, year) %>% 
   summarise(across(where(is.numeric), ~sum(.x, na.rm = TRUE)))
 
-# plots ####
-library(ggpmisc)
+# stats on this ####
 
+# slugs : 
+sum_slug
+# pf : 
+pf_clean
+
+# all #
+all_plot <- cbind(sum_slug, pf_clean) %>% 
+  rename(crop = crop...1, 
+         year = year...2) %>% 
+  dplyr::select(-crop...5, -year...6, -treatment)
+
+# model tests
+
+poisson_model.2 <- glm(slugs ~ pred,
+                       data = all_plot,
+                       family = poisson)
+
+nb_model_trt.2 <- glm.nb(slugs ~ pred, 
+                         data = all_plot) 
+
+lrtest(poisson_model.2,nb_model_trt.2)
+# the negative binomial has the higher likelihood score, so we will use that
+
+
+
+# beans # 
+sum_sb <- sum_slug %>% 
+  filter(crop == "bean") %>% 
+  rename(trt = treatment)
+pf_sb <- pf_clean %>% 
+  filter(crop == "beans")
+s_plot <- cbind(sum_sb, pf_sb) %>% 
+  rename(crop = crop...1,
+         year = year...2,
+         trt = trt...3) %>% 
+  dplyr::select(-crop...5, - year...6, -trt...7)
+
+
+
+bm1 <- glm.nb(slugs ~ pred, data = s_plot)
+summary(bm1)
+hist(residuals(bm1))
+# X2 p value derived from deviance = 
+bX2 = (34.3557-8.3931)
+
+
+# Karn #
+sum_c <- sum_slug %>% 
+  filter(crop == "corn") %>% 
+  rename(trt = treatment)
+pf_c <- pf_clean %>% 
+  filter(crop == "corn")
+c_plot <- cbind(sum_c, pf_c) %>% 
+  rename(crop = crop...1,
+         year = year...2, 
+         trt = trt...3) %>% 
+  dplyr::select(-crop...5, -year...6, -trt...7)
+
+cm1 <- glm.nb(slugs ~ pred, data = c_plot)
+summary(cm1)
+hist(residuals(cm1))
+cX2 = (13.7146-8.0861)
+
+
+
+all_m <- glm(slugs ~ pred, data = all_plot)
+summary(all_m)
+hist(residuals(all_m))
+
+
+# plots ####
 display.brewer.all(colorblindFriendly = TRUE)
 display.brewer.pal(n=4, name = "Dark2")
 brewer.pal(n=4, name = "Dark2")
@@ -262,7 +332,7 @@ ggplot(s_plot, aes(x = pred, y = slugs))+
     values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
                      labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
   guides(color=guide_legend("Treatment"))+
-  # geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
   stat_poly_eq(label.x = "right", label.y = "top", size = 12)+
   labs(title = "Soybean: Slug x Predator Populations",
        subtitle = "Years: 2022-2023",
@@ -270,7 +340,7 @@ ggplot(s_plot, aes(x = pred, y = slugs))+
        y = "Slug population",
        caption = "DPP: Days pre plant
 DAP: Days after plant")+
-  # annotate("text", x = 470, y = 240, label = "p = 2.6e-07 ***", size = 8)+
+  annotate("text", x = 470, y = 240, label = "p value < .001", size = 12, fontface = 'italic')+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
         legend.title = element_text(size = 24),
@@ -303,7 +373,7 @@ ggplot(c_plot, aes(x = pred, y = slugs))+
   scale_color_manual(limits = c("1", "2", "4","3"),
                      values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
                      labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
-  # geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
   stat_poly_eq(size = 12)+
   guides(color=guide_legend("Treatment"))+
   labs(title = "Corn: Slug x Predator Populations",
@@ -312,7 +382,7 @@ ggplot(c_plot, aes(x = pred, y = slugs))+
       y = "Slug population",
       caption = "DPP: Days pre plant
 DAP: Days after plant")+
-  # annotate("text", x = 80, y = 650, label = "p = 0.00901 **", size = 8)+
+  annotate("text", x = 80, y = 630, label = "p value < .01", size = 12, fontface = "italic")+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
         legend.title = element_text(size = 24),
@@ -361,49 +431,3 @@ ggplot(all_plot, aes(x = pred, y = slugs))+
         panel.grid.minor = element_blank())
   
 
-# stats on this ####
-poisson_model.2 <- glm(slugs ~ pred,
-                       data = all_plot,
-                       family = poisson)
-
-nb_model_trt.2 <- glm.nb(slugs ~ pred, 
-                         data = all_plot) 
-
-lrtest(poisson_model.2,nb_model_trt.2)
-# the negative binomial has the higher likelihood score, so we will use that
-
-
-
-
-bm0 <- glm(slugs ~ pred, data = s_plot)
-
-bm1 <- glm(slugs ~ pred + trt, data = s_plot)
-?lme
-anova(bm0, bm1)
-bm_e <- emmeans(bm1, ~pred)
-pwpm(bm_e)
-summary(bm1)
-hist(residuals(bm1))
-
-
-
-cm0 <- glm.nb(slugs ~ pred, data = c_plot)
-
-
-cm1 <- glm.nb(slugs ~ pred + trt, data = c_plot)
-
-anova(cm0, cm1)
-summary(cm1)
-hist(residuals(cm1))
-cm_e <- emmeans(cm1, ~ pred + trt)
-pwpm(cm_e)
-
-
-
-
-all_m <- glm(slugs ~ pred + trt, data = all_plot)
-summary(all_m)
-hist(residuals(all_m))
-all_e <- emmeans(all_m, ~pred+trt)
-all_e
-pwpm(all_e)
