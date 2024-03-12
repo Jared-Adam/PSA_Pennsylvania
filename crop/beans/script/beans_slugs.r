@@ -157,6 +157,12 @@ s_emm <- emmeans(m1, ~treatment, type = "response")
 pairs(s_emm)
 cld(s_emm, Letters = letters)
 
+# no season
+m1_no_season <- glmer.nb(total_slug ~ treatment + (1|year/block), 
+               data = final_slug)
+r2_nakagawa(m1_no_season)
+# Conditional R2: 0.118
+# Marginal R2: 0.017
 
 # plots for slug populations  ####
 # add sig values in ppt: confusing with two factor facets

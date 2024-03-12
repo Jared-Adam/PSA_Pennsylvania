@@ -113,7 +113,7 @@ ggplot(trt_prop, aes(x = treatment, y =  prop))+
   geom_point(aes(color = treatment), size = 10)+
   geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
-  scale_x_discrete(labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"),
+  scale_x_discrete(labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"),
                    limits = c("1", "2", "4", "3"))+ 
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   labs(
@@ -186,6 +186,66 @@ ggplot(gs_prop, aes(x = growth_stage, y =  prop))+
   annotate("text", x = 3, y = 0.99, label = "ab", size = 10)
 
 
+# pub plots ####
+
+ggplot(trt_prop, aes(x = treatment, y =  prop))+
+  geom_point(size = 10)+
+  geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"),
+                   limits = c("1", "2", "4", "3"))+ 
+  labs(
+    title = "Soybean: Mean predation x Treatment",
+    subtitle = "Years: 2022-2023",
+    x = "Treatment",
+    y = "Mean proportion predated ( x / 1 )",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  annotate("text", x = 1, y = .855, label = "a", size = 10)+ #1
+  annotate("text", x = 2, y = .955, label = "ab", size = 10)+ #2
+  annotate("text", x = 3, y = .92, label = "ab", size = 10)+ #4
+  annotate("text", x = 4, y = .98, label = "b", size = 10) #3
+
+ggplot(gs_prop, aes(x = growth_stage, y =  prop))+
+  geom_point(size = 10)+
+  geom_errorbar(aes(x = growth_stage,ymin = prop - se, ymax = prop + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(limits = c("V3", "V5", "R3"))+ 
+  labs(
+    title = "Soybean: Mean predation x Growth Stage",
+    subtitle = "Years: 2022-2023",
+    x = "Growth Stage",
+    y = "Mean proportion predated ( x / 1 )"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1, y = 0.845, label = "a", size = 10)+
+  annotate("text", x = 2, y = 0.94, label = "b", size = 10)+
+  annotate("text", x = 3, y = 0.99, label = "ab", size = 10)
 
 # old plots ####
 # m1_plot
