@@ -7,6 +7,8 @@ library(tidyverse)
 library(vegan)
 library(vegan3d)
 library(plotly)
+library(hrbrthemes)
+library(viridis)
 # data ####
 bpf <- bean_pf
 unique(bpf$crop)
@@ -57,6 +59,17 @@ bpf_clean <- bpf_wide %>%
   relocate(year, date, crop) %>% 
   print(n = Inf)
 colnames(pf_clean)
+
+bea_total <- bpf_clean %>%
+  mutate(total = sum(c_across(Lycosidae:Linyphiidae ))) %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(total),
+            sd = sd(total),
+            n = n(), 
+            se = sd/sqrt(n))
+ggplot(bea_total, aes(x = year, y = mean)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se))
 
 # PF 2022 ####
 
@@ -423,6 +436,13 @@ bperm_2
 #date is significant 
 bperm_3 <- adonis2(beans_dist ~ year + date + trt, permutations = 999, method = 'bray', data = bpf_year)
 bperm_3
+# Df SumOfSqs      R2       F Pr(>F)    
+# year      1   4.5306 0.18567 34.7227  0.001 ***
+#   date      3   7.3653 0.30184 18.8160  0.001 ***
+#   trt       3   0.5013 0.02055  1.2808  0.161    
+# Residual 92  12.0040 0.49194                   
+# Total    99  24.4013 1.00000 
+
 
 # NMDS
 
@@ -463,7 +483,8 @@ bpf_tot <- bpf_clean %>%
          -Linyphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Dermaptera, -Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Ensifera = Gryllidae,
-         Caelifera = Acrididae)
+         Caelifera = Acrididae) %>% 
+  mutate(date = as.factor(date))
 
 
 sp_list <- bpf_tot[6:14]
@@ -474,10 +495,10 @@ for(i in 1:9){
   print(i)
   spss <- colnames(sp_list[i])
   print(spss)
-  loop <- subset(bpf_tot, select = c("year", spss))
-  colnames(loop) <- c("year", "spss")
+  loop <- subset(bpf_tot, select = c("year", "date", spss))
+  colnames(loop) <- c("year", "date", "spss")
   
-  model <- aov(spss ~ year, loop)
+  model <- aov(spss ~ year + date, loop)
   
   aov_summary <- summary(model)
   summary_list[[i]] <- aov_summary
@@ -488,17 +509,55 @@ for(i in 1:9){
   
 }
 colnames(sp_list)
-tukey_list[[5]]
-tukey_list[[6]]
+tukey_list[[5]] #spider 
+tukey_list[[6]] #carabid
 
 carab_tot <- bpf_tot %>% 
-  group_by(year) %>% 
+  group_by(year, date) %>% 
   summarise(mean = mean(Carabid), 
             sd = sd(Carabid), 
             n = n(), 
             se = sd/sqrt(n))
-# diff       lwr       upr    p adj
-# 2023-2022 -3.3 -6.894079 0.2940793 0.071491
+
+# $year
+# diff       lwr        upr     p adj
+# 2023-2022 -3.3 -6.244838 -0.3551621 0.0284699
+# 
+# $date
+# diff         lwr        upr     p adj
+# 2022-07-01-2022-05-28   0.9  -5.4904499  7.2904499 0.9949462
+# 2022-08-18-2022-05-28  13.8   7.4095501 20.1904499 0.0000003
+# 2023-06-26-2022-05-28   2.1  -4.2904499  8.4904499 0.8909315
+# 2023-07-28-2022-05-28   7.7   1.3095501 14.0904499 0.0099623
+# 2022-08-18-2022-07-01  12.9   6.5095501 19.2904499 0.0000019
+# 2023-06-26-2022-07-01   1.2  -5.1904499  7.5904499 0.9849115
+# 2023-07-28-2022-07-01   6.8   0.4095501 13.1904499 0.0311254
+# 2023-06-26-2022-08-18 -11.7 -18.0904499 -5.3095501 0.0000175
+# 2023-07-28-2022-08-18  -6.1 -12.4904499  0.2904499 0.0687238
+# 2023-07-28-2023-06-26   5.6  -0.7904499 11.9904499 0.1145023
+
+ggplot(carab_tot, aes(x = date, y = mean, fill = year))+
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7)+
+  facet_wrap(~year, scales = "free_x")+
+  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Carabidae population x date and year",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        # plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 28),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
 
 aran_tot <- bpf_tot %>% 
   group_by(year) %>% 
@@ -506,51 +565,170 @@ aran_tot <- bpf_tot %>%
             sd = sd(Aranaeomorphae), 
             n = n(), 
             se = sd/ sqrt(n))
-# diff       lwr       upr     p adj
-# 2023-2022 -6.858333 -11.08464 -2.632028 0.0017375
 
-ggplot(carab_tot, aes(x = year, y = mean, fill = year))+
-  geom_bar(stat = "identity", position = "dodge")+
-  scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
-  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
-  labs(
-    title = "Soybean: Carabidae population by year",
-    x = "Timing",
-    y = "Mean population"
-  )+
-  theme(legend.position = "none",
-        axis.text.x = element_text(size=18),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        # plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())+
-  annotate("text", x = 1.2, y = 9.5, label = "a", size = 6)+
-  annotate("text", x = 2.2, y = 6, label = "b", size = 6)
+# $year
+# diff      lwr       upr     p adj
+# 2023-2022 -6.858333 -11.0907 -2.625965 0.0017718
+# 
+# $date
+# diff        lwr       upr     p adj
+# 2022-07-01-2022-05-28  2.30000000  -6.884456 11.484456 0.9568097
+# 2022-08-18-2022-05-28  5.45000000  -3.734456 14.634456 0.4696123
+# 2023-06-26-2022-05-28  2.20833333  -6.976123 11.392790 0.9626396
+# 2023-07-28-2022-05-28  2.95833333  -6.226123 12.142790 0.8978218
+# 2022-08-18-2022-07-01  3.15000000  -6.034456 12.334456 0.8748565
+# 2023-06-26-2022-07-01 -0.09166667  -9.276123  9.092790 0.9999999
+# 2023-07-28-2022-07-01  0.65833333  -8.526123  9.842790 0.9996418
+# 2023-06-26-2022-08-18 -3.24166667 -12.426123  5.942790 0.8629734
+# 2023-07-28-2022-08-18 -2.49166667 -11.676123  6.692790 0.9427911
+# 2023-07-28-2023-06-26  0.75000000  -8.434456  9.934456 0.9994000
+
 
 ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
-  geom_bar(stat = "identity", position = "dodge")+
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7)+
   scale_fill_manual(values = c("#D95F02", "#1B9E77"))+
   geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
   labs(
-    title = "Soybean: Araneomorphae population by year",
+    title = "Soybean: Araneomorphae population x year",
     x = "Timing",
     y = "Mean population"
   )+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        # plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())+
-  annotate("text", x = 1.2, y = 9.5, label = "a", size = 6)+
-  annotate("text", x = 2.2, y = 3, label = "b", size = 6)
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        # plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        # strip.text = element_text(size = 28),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 ##
 #
+# density ####
 
+dbpt <- bpf_tot %>% 
+  group_by(trt) %>% 
+  summarise(sum_for = sum(Formicidae),
+            sum_enf = sum(Ensifera),
+            sum_aran = sum(Aranaeomorphae),
+            sum_car = sum(Carabid)) %>% 
+  print(n = Inf)
+
+dbpt_plot <- dbpt %>% 
+  pivot_longer(
+    cols = where (is.numeric)) %>% 
+  mutate(name = as.factor(name))
+
+ggplot(dbpt_plot, aes(x = value, group = name, fill = name))+
+  geom_density(adjust = 1, position = 'stack', alpha = 0.7)+
+  scale_fill_brewer(palette = "Dark2", labels = c("Araneomorphae", "Carabidae", "Ensifera", "Formicidae"))+
+  labs(title = "Soybean: Predator density",
+       subtitle = "Years: 2022-2023",
+       y = "Density",
+       x = "Abundance Counts",
+       fill = "Predator:")+
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+name.labs <- c("Formicidae", "Ensifera", "Araneomorphae", "Carabidae")
+names(name.labs) <- c("sum_for", "sum_enf", "sum_aran", "sum_car")
+
+ggplot(dbpt_plot, aes(x = value, fill = name))+
+  geom_density(adjust = 1, alpha = 0.7)+
+  scale_fill_brewer(palette = "Dark2")+
+  facet_grid(~name, labeller = labeller(name = name.labs))+
+  labs(title = "Soybean: Predator density x predator",
+       subtitle = "Years: 2022-2023",
+       y = "Density",
+       x = "Abundance Counts",
+       fill = "Predator:")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+# pub plots ####
+
+ggplot(carab_tot, aes(x = date, y = mean, fill = year))+
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7, fill = "black")+
+  facet_wrap(~year, scales = "free_x")+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Carabidae population x date and year",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        # plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 28),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7, fill = "black")+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se),color = 'black', alpha = 1, size = 1, width = 0.5)+
+  labs(
+    title = "Soybean: Araneomorphae population x year",
+    x = "Timing",
+    y = "Mean population"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        # plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        # strip.text = element_text(size = 28),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+# density 
+
+ggplot(dbpt_plot, aes(x = value, fill = name))+
+  geom_density(adjust = 1, alpha = 0.7, fill = "black")+
+  facet_grid(~name, labeller = labeller(name = name.labs))+
+  labs(title = "Soybean: Predator density x predator",
+       subtitle = "Years: 2022-2023",
+       y = "Density",
+       x = "Abundance Counts",
+       fill = "Predator:")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))

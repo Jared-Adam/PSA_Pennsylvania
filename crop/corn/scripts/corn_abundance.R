@@ -8,6 +8,8 @@ library(vegan)
 library(vegan3d)
 library(plotly)
 library(multcomp)
+library(hrbrthemes)
+library(viridis)
 # data ####
 pf <- corn_pf
 
@@ -62,6 +64,17 @@ pf_clean <- pf_wide %>%
   print(n = Inf)
 colnames(pf_clean)
 
+by_total <- pf_clean %>%
+  mutate(total = sum(c_across(Lycosidae:Staph))) %>% 
+  group_by(year) %>% 
+  summarise(mean = mean(total),
+            sd = sd(total),
+            n = n(), 
+            se = sd/sqrt(n))
+ggplot(by_total, aes(x = year, y = mean)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se))
+  
 # PF 2022  ####
 
 #
@@ -412,6 +425,12 @@ perm_1
 # I will use this model to highlight both
 perm_2 <- adonis2(c_dist ~ trt + year + date , permutations = 999, method = 'bray', data = cpf_clean)
 perm_2
+# Df SumOfSqs      R2       F Pr(>F)    
+# trt       3   0.8458 0.03654  1.5191  0.084 .  
+# year      1   5.8449 0.25252 31.4933  0.001 ***
+#   date      1   2.7221 0.11760 14.6672  0.001 ***
+#   Residual 74  13.7337 0.59334                   
+# Total    79  23.1464 1.00000 
 
 perm_3 <- adonis2(c_dist ~ year , permutations = 999, mathod = 'bray', data = cpf_clean)
 perm_3
@@ -579,13 +598,7 @@ ggplot(aran_tot, aes(x = date, y = mean, fill = year))+
 ###
 ##
 #
-
 # density plot test ####
-install.packages("hrbrthemes")
-install.packages("viridis")
-library(hrbrthemes)
-library(viridis)
-
 
 dpt <- cpf_tot %>% 
   mutate(Ensifera = Ensifera + Gyrillidae) %>% 
