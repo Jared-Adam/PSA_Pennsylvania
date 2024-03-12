@@ -12,6 +12,7 @@ library(performance)
 bean_pf
 corn_pf
 PSA_PA_slugs
+weather <- PSA_PA_weather
 
 # pf wrangling ####
 
@@ -104,6 +105,7 @@ b_clean <- bpf_clean %>%
   rename(Carabidae = Carabidae_new) %>% 
   print(n = Inf)
 
+# ALL 
 
 pf_all <- rbind(b_clean, c_clean) %>% 
   replace(is.na(.), 0) %>% 
@@ -121,4 +123,48 @@ pf_clean <- pf_all %>%
   summarise(pred = sum(predators))
 
 
-# extracting the precip data from slugs? ####
+# extracting the precip data anmd necessary pf data ####
+c_clean
+b_clean
+unique(c_clean$date)
+unique(pf_all$date)
+
+pf_precip <- pf_all %>% 
+  dplyr::select(-Elateridae, -Diplopoda, -Dermaptera, -Acrididae, -Coreidae) %>% 
+  mutate(predators = Lycosidae + Formicidae + Thomisidae + `Coleoptera larvae` + Staphylinidae + Opiliones + Gryllidae +
+           Tetragnathidae + Chilopoda  + Gnaphosidae + Agelenidae + Lyniphiidae + Carabidae + Araneae + Salticidae) %>% 
+  mutate(month = format(date, '%m')) %>% 
+  group_by(month, year) %>% 
+  summarise(pf_sum = sum(predators)) %>% 
+  arrange(year)
+
+weather
+
+pf_weather <- weather %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"), 
+         year = format(date, "%Y"),
+         month = format(date, '%m')) %>%  
+  filter(year != '2021') %>% 
+  dplyr::select(-date, -`Avg Air Temp (?F)`, -`Max Air Temp (?F)`,-`Min Air Temp (?F)`) %>% 
+  rename(precip = `Total Precipitation`) %>% 
+  relocate(year, month) %>% 
+  mutate_at(vars(1:2), as.factor) %>% 
+  group_by(year, month) %>% 
+  summarise(pre_sum = sum(precip)) %>% 
+  filter(!(year == '2023' & month == '05')) %>% 
+  filter(!(year == "2023" & month == "08")) %>% 
+  filter(!(year == "2022" & month == "06")) %>% 
+  arrange(year)
+
+# binding them together 
+
+pf_w_precip <- cbind(pf_precip, pf_weather) %>% 
+  dplyr::select(-month...5, -year...4) %>% 
+  rename(year = year...2, 
+         month = month...1) %>% 
+  mutate(month = as.factor(month))
+
+#model 
+pre_m1 <- glm.nb(pf_sum ~ pre_sum, data = pf_w_precip)
+summary(pre_m1)
+hist(residuals(pre_m1))
