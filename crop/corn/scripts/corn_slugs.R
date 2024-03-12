@@ -193,7 +193,7 @@ ggplot(slug_plot, aes(x = treatment, y = mean, fill = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
   labs( x = 'Treatment',
         y = 'Total Slug Counts', 
         title = "Corn: Average Slug Counts / Trap x Treatment",
@@ -220,7 +220,7 @@ ggplot(slug_plot, aes(x = treatment, y = mean))+
   geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
   labs( x = 'Treatment',
         y = 'Total Slug Counts', 
         title = "Corn: Average Slug Counts / Trap x Treatment",
