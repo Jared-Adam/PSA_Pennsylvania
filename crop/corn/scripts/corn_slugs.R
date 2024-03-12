@@ -85,28 +85,7 @@ if(dispersion_stats$mean[1] > dispersion_stats$variances[1] &
   }
 
 
-# spring models 
-# test model: 
-test_spring_model <- glmer.nb(total_slug ~ treatment+
-                                (1|block/plot_id)+ (1|month), data = spring_slugs)
-summary(test_spring_model)
-
-# # the random of effects of this model are extremely low, this means I likely do not need to include them
-# spring_model <- glmer.nb(total_slug ~ treatment +
-#                            (1|block) + (1|month), 
-#                          data = spring_slugs)
-# summary(spring_model)
-# spring_emm <- emmeans(spring_model, pairwise ~ treatment, type = "response")
-# pairs(spring_emm) # will print the contrasts
-# plot(spring_emm$emmeans)
-
-# glm.nb from MASS
-glm_test <- glm(total_slug ~ treatment, family = poisson, data = spring_slugs)
-summary(glm_test)
-
-glm.nb_test <-glm.nb(total_slug ~ treatment + year, data = spring_slugs)
-summary(glm.nb_test)
-
+# models ####
 
 # let's see which is better, poisson or nb? 
 # run one of each where the only difference is the family 
@@ -124,34 +103,35 @@ lrtest(poisson_model,nb_model_trt)
 
 
 m0 <- glmer.nb(total_slug ~ +
-                 (1|year) + (1|precip),
+                 (1|year/block) + (1|precip) + (1|season),
                data = slug_clean)
 
 m1 <- glmer.nb(total_slug ~ treatment +
-                 (1|year) + (1|precip), data = slug_clean) 
+                 (1|year/block) + (1|precip) + (1|season), data = slug_clean) 
+
+anova(m0, m1)
 
 check_model(m1)
 summary(m1)
 check_singularity(m1)
-r2_nakagawa(m1)
-#  Conditional R2: 0.813
+r2_nakagawa(m1) #with precip
+#  Conditional R2: 0.848
 #  Marginal R2: 0.002
-
-anova(m0, m1)
-
 
 cm_emm <- emmeans(m1, ~treatment)
 pairs(cm_emm)
 pwpm(cm_emm)
 cld(cm_emm, Letters = letters)
 
+
+m1_no_precip <- glmer.nb(total_slug ~ treatment +
+                 (1|year/block) + (1|season), data = slug_clean) 
+r2_nakagawa(m1_no_precip)
+
 # without precip: 
-# Conditional R2: 0.035
+# Conditional R2: 0.043
 # Marginal R2: 0.007
 
-binned_residuals(m1)
-m1_r <- binned_residuals(m1)
-plot(m1_r)
 
 
 # plots corn slugs ####
@@ -232,6 +212,32 @@ DAP : Days after plant")+
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 ggplotly(test)
+
+# pub plot ####
+
+ggplot(slug_plot, aes(x = treatment, y = mean))+
+  geom_bar(stat = "identity", position = "dodge", alpha = 0.7)+
+  geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+  labs( x = 'Treatment',
+        y = 'Total Slug Counts', 
+        title = "Corn: Average Slug Counts / Trap x Treatment",
+        subtitle = " Years: 2021-2023",
+        caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
 # slugs and precip ####
 precip_slug <- slug_clean %>% 
   group_by(season, year, treatment) %>% 
