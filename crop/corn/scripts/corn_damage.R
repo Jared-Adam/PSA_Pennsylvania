@@ -91,6 +91,11 @@ new_dmg <- dmg %>%
          block = as.factor(block),
          treatment = as.factor(treatment),
          year = as.factor(year)) %>% 
+  mutate(damage_score = case_when(damage_score == "na" ~ "0",
+                                  is.na(damage_score) ~ "0",
+                                  .default = as.character(damage_score))) %>% 
+  replace(is.na(.),0) %>% 
+  mutate(damage_score = as.numeric(damage_score)) %>% 
   print(n = 10)
 #check before removing 
 # unique(dmg_new$d), sum(dmg_new$d)
@@ -101,6 +106,32 @@ sum(new_dmg$sb)
 sum(new_dmg$taw)
 sum(new_dmg$bcw)
 # these all have numbers 
+
+# damage severity models ####
+new_dmg
+unique(new_dmg$damage_score)
+dmg_sev <- new_dmg %>% 
+  mutate(plot_id = as.factor(plot_id))
+
+
+sm0 <- glmer.nb(damage_score ~ 
+               (1|year/block/plot_id/growth_stage), 
+             data = dmg_sev)
+
+sm1 <- glmer.nb(damage_score ~ treatment +
+                  (1|year/block/plot_id/growth_stage), 
+                data = dmg_sev)
+
+sm2 <- glmer.nb(damage_score ~ treatment + growth_stage +
+                  (1|year/block/plot_id/growth_stage), 
+                data = dmg_sev)
+
+sm3 <- glmer.nb(damage_score ~ treatment*growth_stage +
+                  (1|year/block/plot_id/growth_stage), 
+                data = dmg_sev)
+
+
+
 # slug models for esa pres ####
 
 slug_model <- new_dmg %>% 
@@ -164,7 +195,7 @@ DAP: Days after plant"
 
 
 
-# models ####
+# models for damage type  ####
 # test model to look at variables before we run the loop
 dmg_model <- new_dmg
 
