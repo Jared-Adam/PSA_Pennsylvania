@@ -600,7 +600,7 @@ ggplot(aran_tot, aes(x = date, y = mean, fill = year))+
 #
 # density plot test ####
 
-dpt <- cpf_tot %>% 
+dpt_trt <- cpf_tot %>% 
   mutate(Ensifera = Ensifera + Gyrillidae) %>% 
   group_by(trt) %>% 
   summarise(sum_for = sum(Formicidae),
@@ -609,49 +609,29 @@ dpt <- cpf_tot %>%
             sum_car = sum(Carabid)) %>% 
   print(n = Inf)
 
-test_1 <- dpt %>% 
+density_tot <- dpt_trt %>% 
   pivot_longer(
     cols = where (is.numeric)) %>% 
   mutate(name = as.factor(name))
 
-
-# 2022 = 266
-# 2023 = 306
-sum(266 + 306)
-dpt_done <- dpt %>% 
-  ungroup() %>% 
-  mutate(tot = rowSums(across(where(is.numeric)))) %>% 
-  mutate(prop_for = sum_for/572, 
-         prop_enf = sum_enf/572,
-         prop_aran = sum_aran/572, 
-         prop_car = sum_car/572) %>% 
-  dplyr::select(-sum_for, -sum_enf, -sum_aran, -sum_car, -sum_gryl, -tot)
-
-?pivot_longer
-test <- dpt_done %>% 
-  pivot_longer(
-    cols = where(is.numeric)) %>% 
-  mutate(name = as.factor(name)) %>% 
-  print(n = Inf)
-
 # video 
-test_1 %>% 
+density_tot %>% 
   ggplot(aes(value, fill = name))+
   geom_histogram()
 
-test_1 %>% 
+density_tot %>% 
   ggplot(aes(value, fill = name))+
   geom_density() # area inside the curve = 1
 
-test_1 %>% 
+density_tot %>% 
   ggplot(aes(value, fill = name))+
   geom_density(adjust = 2) # fineness of the curve fit/ resolution
 
-ggplot(test_1, aes(x = value, group = name, fill = name))+
+ggplot(density_tot, aes(x = value, group = name, fill = name))+
   geom_density(alpha = 0.5)+
   theme_ipsum()
 
-ggplot(test_1, aes(x = value, group = name, fill = name))+
+ggplot(density_tot, aes(x = value, group = name, fill = name))+
   geom_density(adjust = 1, position = 'stack', alpha = 0.7)+
   scale_fill_brewer(palette = "Dark2", labels = c("Araneomorphae", "Carabidae", "Ensifera", "Formicidae"))+
   labs(title = "Corn: Predator density",
@@ -697,6 +677,101 @@ ggplot(test_1, aes(x = value, fill = name))+
         strip.text = element_text(size = 26),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
+###
+##
+#
+
+# iteration -- density by month ####
+
+dpt_time <- cpf_tot %>% 
+  mutate(Ensifera = Ensifera + Gyrillidae) %>% 
+  group_by(date,trt) %>% 
+  summarise(sum_for = sum(Formicidae),
+            sum_enf = sum(Ensifera),
+            sum_aran = sum(Aranaeomorphae),
+            sum_car = sum(Carabid)) %>% 
+  print(n = Inf)
+
+dpt_time <- dpt_time %>% 
+  pivot_longer(
+    cols = where (is.numeric)) %>% 
+  mutate(name = as.factor(name))
+
+unique(dpt_time$date)
+# Levels: 2022-05-28 2022-07-01 2023-06-26 2023-07-28
+
+dates <- c('2022-05-28', '2022-07-01', '2023-06-26', '2023-07-28')
+
+##
+## this worked: What I am currently using: 3/13/2024
+dpt_time %>% 
+  group_nest(date) %>% 
+  mutate(plot = map2(.x = data, 
+                     .y = date,
+                     .f = ~{
+                       ggplot(.x, aes(x = value, fill = name))+
+                         geom_density(adjust = 1, alpha = 0.7)+
+                         scale_fill_brewer(palette = "Dark2", labels = c("Araneomorphae", "Carabidae", "Ensifera", "Formicidae"))+
+                         labs(title = "Corn: Predator Abundance",
+                              subtitle = .y,
+                              y = "Density",
+                              x = "Abundance Counts",
+                              fill = "Predator:")+
+                         theme(legend.position = "bottom",
+                               legend.key.size = unit(.50, 'cm'),
+                               legend.title = element_text(size = 24),
+                               legend.text = element_text(size = 24),
+                               axis.text.x = element_text(size=26),
+                               axis.text.y = element_text(size = 26),
+                               axis.title = element_text(size = 32),
+                               plot.title = element_text(size = 28),
+                               plot.subtitle = element_text(size = 24), 
+                               panel.grid.major.y = element_line(color = "darkgrey"),
+                               panel.grid.major.x = element_blank(),
+                               panel.grid.minor = element_blank(),
+                               plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+                     })) %>% 
+  walk2(.x = .$plot, 
+        .y = .$date,
+        .f = ~ggsave(paste0("corn_predators_", .y, ".png"), plot = .x))
+##
+
+
+
+
+dpt_nest <- dpt_time %>%
+  group_nest(date)
+
+plot_fxn <- function(data_df){
+  ggplot(data_df, aes(x = value, fill = name))+
+    geom_density(adjust = 1, alpha = 0.7)
+}
+
+###
+# this worked 
+
+dpt_plot <- dpt_nest %>% 
+  mutate(plot = map(data, ~ggplot(., aes(x = value, fill = name)) + geom_density()))
+
+help <- dpt_plot %>% 
+  pull(plot)
+###
+
+###
+new_df <- map2(
+  .x = dpt_nest$plot,
+  .y = dpt_nest$data,
+  .f = function(.x, .y){
+    plot = .x
+  }
+)
+
+dpt_time %>% 
+  group_split(date) %>% 
+  map(ggplot(.x, aes(x = value, fill = name))+
+                geom_density())
+
+#
 
 # pub plot ####
 
@@ -770,3 +845,24 @@ ggplot(test_1, aes(x = value, fill = name))+
         panel.grid.minor = element_blank(),
         strip.text = element_text(size = 26),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+# old density ####
+# 2022 = 266
+# 2023 = 306
+sum(266 + 306)
+dpt_done <- dpt %>% 
+  ungroup() %>% 
+  mutate(tot = rowSums(across(where(is.numeric)))) %>% 
+  mutate(prop_for = sum_for/572, 
+         prop_enf = sum_enf/572,
+         prop_aran = sum_aran/572, 
+         prop_car = sum_car/572) %>% 
+  dplyr::select(-sum_for, -sum_enf, -sum_aran, -sum_car, -sum_gryl, -tot)
+
+?pivot_longer
+test <- dpt_done %>% 
+  pivot_longer(
+    cols = where(is.numeric)) %>% 
+  mutate(name = as.factor(name)) %>% 
+  print(n = Inf)
+

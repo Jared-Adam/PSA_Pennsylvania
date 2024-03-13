@@ -668,6 +668,59 @@ ggplot(dbpt_plot, aes(x = value, fill = name))+
         strip.text = element_text(size = 26),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
+# iteration -- density plots by time ####
+dbpt_time <- bpf_tot %>% 
+  group_by(date, trt) %>% 
+  summarise(sum_for = sum(Formicidae),
+            sum_enf = sum(Ensifera),
+            sum_aran = sum(Aranaeomorphae),
+            sum_car = sum(Carabid)) %>% 
+  print(n = Inf)
+
+dbpt_time <- dbpt_time %>% 
+  pivot_longer(
+    cols = where (is.numeric)) %>% 
+  mutate(name = as.factor(name))
+
+dbpt_time %>% 
+  group_nest(date) %>% 
+  mutate(plot = map2(.x = data, 
+                     .y = date,
+                     .f = ~{
+                       ggplot(.x, aes(x = value, fill = name))+
+                         geom_density(adjust = 1, alpha = 0.7)+
+                         scale_fill_brewer(palette = "Dark2", labels = c("Araneomorphae", "Carabidae", "Ensifera", "Formicidae"))+
+                         labs(title = "Soybeans: Predator Abundance",
+                              subtitle = .y,
+                              y = "Density",
+                              x = "Abundance Counts",
+                              fill = "Predator:")+
+                         theme(legend.position = "bottom",
+                               legend.key.size = unit(.50, 'cm'),
+                               legend.title = element_text(size = 24),
+                               legend.text = element_text(size = 24),
+                               axis.text.x = element_text(size=26),
+                               axis.text.y = element_text(size = 26),
+                               axis.title = element_text(size = 32),
+                               plot.title = element_text(size = 28),
+                               plot.subtitle = element_text(size = 24), 
+                               panel.grid.major.y = element_line(color = "darkgrey"),
+                               panel.grid.major.x = element_blank(),
+                               panel.grid.minor = element_blank(),
+                               plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+                     })) %>% 
+  walk2(.x = .$plot, 
+        .y = .$date,
+        .f = ~ggsave(paste0("soybean_predators_", .y, ".png"), plot = .x, height = 12, width = 16, units = 'in'))
+##
+
+
+
+
+
+
+
+
 # pub plots ####
 
 ggplot(carab_tot, aes(x = date, y = mean, fill = year))+
