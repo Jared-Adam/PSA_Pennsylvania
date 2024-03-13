@@ -113,23 +113,113 @@ unique(new_dmg$damage_score)
 dmg_sev <- new_dmg %>% 
   mutate(plot_id = as.factor(plot_id))
 
+avg_dmg <- dmg_sev %>%
+  group_by(treatment, year, growth_stage, block, plot_id) %>% 
+  summarise(mean = mean(damage_score)) 
 
-sm0 <- glmer.nb(damage_score ~ 
-               (1|year/block/plot_id/growth_stage), 
-             data = dmg_sev)
+sm0 <- glmer.nb(mean ~ 
+               (1|year/block/growth_stage), 
+             data = avg_dmg)
 
-sm1 <- glmer.nb(damage_score ~ treatment +
-                  (1|year/block/plot_id/growth_stage), 
-                data = dmg_sev)
+sm1 <- glmer.nb(mean ~ treatment +
+                  (1|year/block/growth_stage), 
+                data = avg_dmg)
 
-sm2 <- glmer.nb(damage_score ~ treatment + growth_stage +
-                  (1|year/block/plot_id/growth_stage), 
-                data = dmg_sev)
+sm2 <- glmer.nb(mean ~ treatment + growth_stage +
+                  (1|year/block/growth_stage), 
+                data = avg_dmg)
 
-sm3 <- glmer.nb(damage_score ~ treatment*growth_stage +
-                  (1|year/block/plot_id/growth_stage), 
-                data = dmg_sev)
+sm3 <- glmer.nb(mean ~ treatment*growth_stage +
+                  (1|year/block/growth_stage), 
+                data = avg_dmg)
 
+anova(sm0, sm1, sm2, sm3)
+summary(sm3)
+binned_residuals(sm3)
+check_model(sm3)
+r2_nakagawa(sm3)
+
+sm_em <- emmeans(sm3, ~treatment)
+
+# avg df plot 
+
+avg_dam_p <- dmg_sev %>% 
+  group_by(treatment, year) %>% 
+  summarise(mean = mean(damage_score),
+            sd = sd(damage_score), 
+            n = n(), 
+            se = sd/sqrt(n))
+
+ggplot(avg_dam_p, aes(x = treatment, y = mean))+
+  geom_bar(stat= 'identity', position = 'dodge')+
+  facet_wrap(~year)+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se))
+
+# sum df plot
+sum_dmg <- dmg_sev %>% 
+  group_by(treatment, year, growth_stage, plot_id) %>% 
+  summarise(sum = sum(damage_score))
+
+a1 <- aov(sum ~ year , data = sum_dmg)
+TukeyHSD(a1)  
+
+# dmg severity plot ####
+
+sum_dmg
+
+year.labs <- c("2021  a", "2022  b", "2023  c")
+names(year.labs) <- c("2021", "2022", "2023")
+
+ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
+  geom_violin(alpha = 0.7)+
+  geom_boxplot(width = 0.1, fill = 'white')+
+  facet_wrap(~year, labeller = labeller(year = year.labs))+
+  geom_jitter()+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  labs(title = 'Corn: Total damage score x treatment and year',
+       x = 'Treatment',
+       y = 'Total damage score (0-4)',
+       caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=20),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 24),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+
+
+ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
+  geom_violin(alpha = 0.5, fill = 'black')+
+  geom_boxplot(width = 0.1, fill = 'white')+
+  facet_wrap(~year, labeller = labeller(year = year.labs))+
+  geom_jitter()+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  labs(title = 'Corn: Total damage score x treatment and year',
+       x = 'Treatment',
+       y = 'Total damage score (0-4)',
+       caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=20),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 24),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 
 # slug models for esa pres ####
