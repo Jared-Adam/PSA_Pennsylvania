@@ -178,9 +178,9 @@ ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
-  labs(title = 'Corn: Total damage score x treatment and year',
+  labs(title = 'Corn: Total Damage Score x Treatment and Year',
        x = 'Treatment',
-       y = 'Total damage score (0-4)',
+       y = 'Total Damage Score x Plot (0-4)',
        caption = "DPP: Days pre plant
 DAP : Days after plant")+
   theme(legend.position = "none",
@@ -206,7 +206,7 @@ ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
                    labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
   labs(title = 'Corn: Total damage score x treatment and year',
        x = 'Treatment',
-       y = 'Total damage score (0-4)',
+       y = 'Total Damage Score x Plot (0-4)',
        caption = "DPP: Days pre plant
 DAP : Days after plant")+
   theme(legend.position = "none",
@@ -222,7 +222,7 @@ DAP : Days after plant")+
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 
-# slug models for esa pres ####
+# slug models and plot ####
 
 slug_model <- new_dmg %>% 
   dplyr::select(year, growth_stage, block, plot_id, treatment, s)
@@ -283,8 +283,584 @@ DAP: Days after plant"
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
+ggplot(slug_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75), color = "black")+
+  facet_wrap(~growth_stage)+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Slug Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+# bcw models and plot ####
+bcw_model <- new_dmg %>% 
+  dplyr::select(year, growth_stage, block, plot_id, treatment, bcw) %>% 
+  mutate(plot_id = as.factor(plot_id))
+unique(bcw_model$treatment)
+
+bm0 <- glmer(bcw ~ +
+              (1|year/block/plot_id/growth_stage), data = bcw_model,
+            family = binomial)
+
+bm1 <- glmer(bcw ~ treatment +
+              (1|year/block/plot_id/growth_stage), data = bcw_model,
+            family = binomial)
+
+bm2 <- glmer(bcw ~ treatment+growth_stage +
+              (1|year/block/plot_id/growth_stage), data = bcw_model,
+            family = binomial)
+
+bm3 <- glmer(bcw ~ treatment*growth_stage +
+              (1|year/block/plot_id/growth_stage), data = bcw_model,
+            family = binomial)
+
+anova(bm0, bm1, bm2, bm3)
+summary(bm3)
+r2_nakagawa(bm3)
+bm3_em <- emmeans(bm3, ~treatment+growth_stage)
+
+pwpm(bm3_em)
+
+bcw_em <- as.data.frame(cld(bm3_em, Letters = letters))
+
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
 
 
+ggplot(bcw_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Black Cutworm Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+
+ggplot(bcw_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75), color = "black")+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Black Cutworm Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+# taw models and plot ####
+taw_model <- new_dmg %>% 
+  dplyr::select(year, growth_stage, block, plot_id, treatment, taw) %>% 
+  mutate(plot_id = as.factor(plot_id))
+unique(bcw_model$treatment)
+
+tm0 <- glmer(taw ~ +
+               (1|year/block/plot_id/growth_stage), data = taw_model,
+             family = binomial)
+
+tm1 <- glmer(taw ~ treatment +
+               (1|year/block/plot_id/growth_stage), data = taw_model,
+             family = binomial)
+
+tm2 <- glmer(taw ~ treatment+growth_stage +
+               (1|year/block/plot_id/growth_stage), data = taw_model,
+             family = binomial)
+
+tm3 <- glmer(taw ~ treatment*growth_stage +
+               (1|year/block/plot_id/growth_stage), data = taw_model,
+             family = binomial)
+
+anova(tm0, tm1, tm2, tm3)
+summary(tm3)
+r2_nakagawa(tm3)
+tm3_em <- emmeans(tm3, ~treatment+growth_stage)
+
+pwpm(tm3_em)
+
+taw_em <- as.data.frame(cld(tm3_em, Letters = letters))
+
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
+
+
+ggplot(taw_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage)+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: True Armyworm Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+  # geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+
+ggplot(taw_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75), color = "black")+
+  facet_wrap(~growth_stage)+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: True Armyworm Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+  # geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+
+
+
+# sb models and plot ####
+sb_model <- new_dmg %>% 
+  dplyr::select(year, growth_stage, block, plot_id, treatment, sb) %>% 
+  mutate(plot_id = as.factor(plot_id))
+unique(bcw_model$treatment)
+
+sbm0 <- glmer(sb ~ +
+               (1|year/block/plot_id/growth_stage), data = sb_model,
+             family = binomial)
+
+sbm1 <- glmer(sb ~ treatment +
+               (1|year/block/plot_id/growth_stage), data = sb_model,
+             family = binomial)
+
+sbm2 <- glmer(sb ~ treatment+growth_stage +
+               (1|year/block/plot_id/growth_stage), data = sb_model,
+             family = binomial)
+
+sbm3 <- glmer(sb ~ treatment*growth_stage +
+               (1|year/block/plot_id/growth_stage), data = sb_model,
+             family = binomial)
+
+anova(sbm0, sbm1, sbm2, sbm3)
+summary(sbm3)
+r2_nakagawa(sbm3)
+sbm3_em <- emmeans(sbm3, ~treatment+growth_stage)
+
+pwpm(sbm3_em)
+
+sb_em <- as.data.frame(cld(sbm3_em, Letters = letters))
+
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
+
+
+ggplot(sb_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Stink Bug Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+ geom_text(aes(x = treatment, y = -5.4, label = trimws(.group)), size = 10, color = "black")
+
+
+ggplot(sb_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75), color = "black")+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Stink Bug Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(x = treatment, y = -5.4, label = trimws(.group)), size = 10, color = "black")
+
+
+# multiple models and plot ####
+
+mult_model <- new_dmg %>% 
+  dplyr::select(year, growth_stage, block, plot_id, treatment, multiple) %>% 
+  mutate(plot_id = as.factor(plot_id))
+unique(bcw_model$treatment)
+
+mm0 <- glmer(multiple ~ +
+                (1|year/block/plot_id/growth_stage), data = mult_model,
+              family = binomial)
+
+mm1 <- glmer(multiple ~ treatment +
+                (1|year/block/plot_id/growth_stage), data = mult_model,
+              family = binomial)
+
+mm2 <- glmer(multiple ~ treatment+growth_stage +
+                (1|year/block/plot_id/growth_stage), data = mult_model,
+              family = binomial)
+
+mm3 <- glmer(multiple ~ treatment*growth_stage +
+                (1|year/block/plot_id/growth_stage), data = mult_model,
+              family = binomial)
+
+anova(mm0, mm1, mm2, mm3)
+summary(mm3)
+r2_nakagawa(mm3)
+mm3_em <- emmeans(mm3, ~treatment+growth_stage)
+
+pwpm(mm3_em)
+
+mm_em <- as.data.frame(cld(mm3_em, Letters = letters))
+
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
+
+
+ggplot(mm_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Multiple Pest Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+ggplot(mm_em, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = emmean), size = 10,
+             position = position_dodge(width = .75), color = 'black')+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+  labs(
+    title = "Corn: Multiple Pest Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment",
+    y = "Damage Emmean",
+    caption = "DPP: Days pre plant
+DAP: Days after plant"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 26), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+# DO NOT USE: other models and plot ####
+
+# do not use other #
+
+# oth_model <- new_dmg %>% 
+#   dplyr::select(year, growth_stage, block, plot_id, treatment, other) %>% 
+#   mutate(plot_id = as.factor(plot_id))
+# unique(oth_model$treatment)
+# 
+# om0 <- glmer(other ~ +
+#                (1|year/block/plot_id/growth_stage), data = oth_model,
+#              family = binomial)
+# 
+# om1 <- glmer(other ~ treatment +
+#                (1|year/block/plot_id/growth_stage), data = oth_model,
+#              family = binomial)
+# 
+# om2 <- glmer(other ~ treatment+growth_stage +
+#                (1|year/block/plot_id/growth_stage), data = oth_model,
+#              family = binomial)
+# 
+# om3 <- glmer(other ~ treatment*growth_stage +
+#                (1|year/block/plot_id/growth_stage), data = oth_model,
+#              family = binomial)
+# 
+# anova(om0, om1, om2, om3)
+# summary(om3)
+# r2_nakagawa(om3)
+# om3_em <- emmeans(om3, ~treatment*growth_stage)
+# 
+# pwpm(mm3_em)
+# 
+# om_em <- as.data.frame(cld(om3_em, Letters = letters))
+# 
+# gs.labs <- c("V3  a", "V5  b")
+# names(gs.labs) <- c("V3", "V5")
+# 
+# 
+# ggplot(om_em, aes(color = treatment))+
+#   geom_point(aes(x = treatment, y = emmean), size = 10,
+#              position = position_dodge(width = .75))+
+#   facet_wrap(~growth_stage)+
+#   geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
+#                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+#   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+#   scale_x_discrete(limits = c("1", "2", "4", "3"),
+#                    labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+#   labs(
+#     title = "Corn: Other Pest Damage x Treatment",
+#     subtitle = "Years: 2021-2023",
+#     x = "Treatment",
+#     y = "Damage Emmean",
+#     caption = "DPP: Days pre plant
+# DAP: Days after plant"
+#   )+
+#   theme(legend.position = 'none',
+#         axis.title = element_text(size = 32),
+#         plot.subtitle = element_text(size = 24),
+#         plot.title = element_text(size = 28),
+#         # axis.line = element_line(size = 1.25),
+#         # axis.ticks = element_line(size = 1.25),
+#         # axis.ticks.length = unit(.25, "cm"),
+#         axis.text.x = element_text(size = 26),
+#         axis.text.y = element_text(size = 26),
+#         strip.text.x = element_text(size = 26), 
+#         panel.grid.major.y = element_line(color = "darkgrey"),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+#   #geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+
+# old code beloooooowwwww 
+
+
+# old model code ####
+
+
+
+
+test_m1 <- glmer(s ~ treatment + growth_stage +
+                   (1|year/block/plot_id), data = dmg_model,
+                 family = binomial)
+summary(test_m1)
+r2_nakagawa(test_m1)
+hist(residuals(test_m1))
+
+#this is the one 
+test_m2 <- glmer(s ~ treatment  +
+                   (1|year/growth_stage/block), data = dmg_model,
+                 family = binomial)
+summary(test_m2)
+r2_nakagawa(test_m2)
+hist(residuals(test_m2))
+
+# m3 = overfot/ singular. Removing plot 
+test_m3 <- glmer(s ~ treatment  +
+                   (1|year/growth_stage/block/plot_id), data = dmg_model,
+                 family = binomial)
+summary(test_m3)
+r2_nakagawa(test_m3)
+hist(residuals(test_m3))
+
+###
+##
+#
+# model other, slug, and taw (singularity in the loop)
+other <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, other))
+other_m1 <- glmer(other ~ treatment +
+                   (1|year), data = dmg_model,
+                 family = binomial)
+other_saved <- emmeans(other_m1, pairwise ~ treatment, type = 'response')
+other_saved <- as.data.frame(other_saved$emmeans)
+summary(other_m1)
+r2_nakagawa(other_m1)
+model_performance(other_m1)
+
+# slug model # 
+slug <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, s))
+slug_m1 <- glmer(s ~ treatment +
+                   (1|year/block), data = dmg_model,
+                 family = binomial)
+slug_saved <- emmeans(slug_m1, pairwise ~ treatment, type = 'response')
+slug_saved <- as.data.frame(slug_saved$emmeans)
+summary(slug_m1)
+r2_nakagawa(slug_m1)
+
+taw <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, taw))
+taw_m1 <- glmer(taw ~ treatment+
+                    (1|year/block), data = dmg_model,
+                  family = binomial)
+taw_saved <- emmeans(taw_m1, pairwise ~ treatment, type = 'response')
+taw_saved <- as.data.frame(taw_saved$emmeans)
+summary(taw_m1)
+r2_nakagawa(taw_m1)
+
+#
+##
+###
 # models for damage type  ####
 # test model to look at variables before we run the loop
 dmg_model <- new_dmg
@@ -709,67 +1285,4 @@ ggplot(other_em)+
         panel.grid.minor = element_blank())
 
 
-# old model code ####
 
-
-
-
-test_m1 <- glmer(s ~ treatment + growth_stage +
-                   (1|year/block/plot_id), data = dmg_model,
-                 family = binomial)
-summary(test_m1)
-r2_nakagawa(test_m1)
-hist(residuals(test_m1))
-
-#this is the one 
-test_m2 <- glmer(s ~ treatment  +
-                   (1|year/growth_stage/block), data = dmg_model,
-                 family = binomial)
-summary(test_m2)
-r2_nakagawa(test_m2)
-hist(residuals(test_m2))
-
-# m3 = overfot/ singular. Removing plot 
-test_m3 <- glmer(s ~ treatment  +
-                   (1|year/growth_stage/block/plot_id), data = dmg_model,
-                 family = binomial)
-summary(test_m3)
-r2_nakagawa(test_m3)
-hist(residuals(test_m3))
-
-###
-##
-#
-# model other, slug, and taw (singularity in the loop)
-other <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, other))
-other_m1 <- glmer(other ~ treatment +
-                   (1|year), data = dmg_model,
-                 family = binomial)
-other_saved <- emmeans(other_m1, pairwise ~ treatment, type = 'response')
-other_saved <- as.data.frame(other_saved$emmeans)
-summary(other_m1)
-r2_nakagawa(other_m1)
-model_performance(other_m1)
-
-# slug model # 
-slug <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, s))
-slug_m1 <- glmer(s ~ treatment +
-                   (1|year/block), data = dmg_model,
-                 family = binomial)
-slug_saved <- emmeans(slug_m1, pairwise ~ treatment, type = 'response')
-slug_saved <- as.data.frame(slug_saved$emmeans)
-summary(slug_m1)
-r2_nakagawa(slug_m1)
-
-taw <- subset(dmg_model, select =  c(year, growth_stage, block, plot_id, treatment, transect, plant_num, damage_score, taw))
-taw_m1 <- glmer(taw ~ treatment+
-                    (1|year/block), data = dmg_model,
-                  family = binomial)
-taw_saved <- emmeans(taw_m1, pairwise ~ treatment, type = 'response')
-taw_saved <- as.data.frame(taw_saved$emmeans)
-summary(taw_m1)
-r2_nakagawa(taw_m1)
-
-#
-##
-###
