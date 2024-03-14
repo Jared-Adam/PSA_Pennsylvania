@@ -109,6 +109,12 @@ m0 <- glmer.nb(total_slug ~ +
 m1 <- glmer.nb(total_slug ~ treatment +
                  (1|year/block) + (1|precip) + (1|season), data = slug_clean) 
 
+sl.table <- as.data.frame(summary(m1)$coefficients)
+#CI <- confint(m1)
+sl.table <-cbind(row.names(sl.table), sl.table)
+names(sl.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(sl.table, highlight = TRUE)
+
 anova(m0, m1)
 
 check_model(m1)

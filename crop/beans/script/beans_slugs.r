@@ -144,6 +144,13 @@ m0 <- glmer.nb(total_slug ~
 m1 <- glmer.nb(total_slug ~ treatment + (1|year/season/block), 
                     data = final_slug)
 
+bsl.table <- as.data.frame(summary(m1)$coefficients)
+#CI <- confint(m1)
+bsl.table <-cbind(row.names(bsl.table), bsl.table)
+names(bsl.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(bsl.table, highlight = TRUE)
+
+
 anova(m0, m1)
 
 summary(m1)
