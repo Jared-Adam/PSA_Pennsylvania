@@ -75,6 +75,13 @@ m3 <- glmer(to.predated ~ treatment*growth_stage +
               (1|year/block/plot_id/growth_stage),
             data = sent_years,
             family = binomial)
+
+bent.table <- as.data.frame(summary(m3)$coefficients)
+#CI <- confint(m1)
+bent.table <-cbind(row.names(bent.table), bent.table)
+names(bent.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(bent.table, highlight = TRUE)
+
 anova(m0 , m1, m2, m3)
 
 t_emm <- emmeans(m3, ~treatment)

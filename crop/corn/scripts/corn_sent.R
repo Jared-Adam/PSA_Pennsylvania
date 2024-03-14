@@ -83,6 +83,13 @@ m3 <- glmer(to.predated ~ treatment*growth_stage +
               (1|year/block/plot_id/growth_stage),
             data = sent_years, 
             family = binomial)
+
+cent.table <- as.data.frame(summary(m3)$coefficients)
+#CI <- confint(m1)
+cent.table <-cbind(row.names(cent.table), cent.table)
+names(cent.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(cent.table, highlight = TRUE)
+
 check_model(m3)
 anova(m0, m1, m2, m3)
 summary(m3)
