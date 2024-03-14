@@ -7,6 +7,9 @@ library(tidyverse)
 library(lme4)
 library(emmeans)
 library(performance)
+library(jtools)
+library(huxtable)
+library(rempsyc)
 
 # data #####
 damage_inc <- PSA_PA_Inc
@@ -99,7 +102,13 @@ m3 <- glmer(prop_damaged ~ treatment * growth +
               (1|year/block/plotid/growth), 
                  data = damage_done, family = binomial, 
                  weights = total_sum)
-summary(m3)
+t <- summary(m3)
+stats.table <- as.data.frame(summary(m3)$coefficients)
+#CI <- confint(m3)
+stats.table <-cbind(row.names(stats.table), stats.table)
+names(stats.table) <- c("Term", "B", "SE", "t", "p")
+
+nice_table(stats.table, highlight = TRUE)
 
 anova(m0, m1, m2, m3)
 

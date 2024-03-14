@@ -13,6 +13,7 @@ library(MASS)
 library(performance)
 library(emmeans)
 library(ggpubr)
+library(rempsyc)
 # data ####
 damage_type <- PSA_PA_damage
 
@@ -133,6 +134,8 @@ sm3 <- glmer.nb(mean ~ treatment*growth_stage +
                   (1|year/block/growth_stage), 
                 data = avg_dmg)
 
+
+
 anova(sm0, sm1, sm2, sm3)
 summary(sm3)
 binned_residuals(sm3)
@@ -243,6 +246,12 @@ m3 <- glmer(s ~ treatment*growth_stage +
               (1|year/block/plot_id/growth_stage), data = slug_model,
             family = binomial)
 
+sl.table <- as.data.frame(summary(m3)$coefficients)
+#CI <- confint(m3)
+sl.table <-cbind(row.names(sl.table), sl.table)
+names(sl.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(sl.table, highlight = TRUE)
+
 anova(m0, m1, m2, m3)
 summary(m3)
 r2_nakagawa(m3)
@@ -335,6 +344,12 @@ bm2 <- glmer(bcw ~ treatment+growth_stage +
 bm3 <- glmer(bcw ~ treatment*growth_stage +
               (1|year/block/plot_id/growth_stage), data = bcw_model,
             family = binomial)
+
+bcw.table <- as.data.frame(summary(bm3)$coefficients)
+#CI <- confint(m3)
+bcw.table <-cbind(row.names(bcw.table), bcw.table)
+names(bcw.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(bcw.table, highlight = TRUE)
 
 anova(bm0, bm1, bm2, bm3)
 summary(bm3)
@@ -436,6 +451,12 @@ tm2 <- glmer(taw ~ treatment+growth_stage +
 tm3 <- glmer(taw ~ treatment*growth_stage +
                (1|year/block/plot_id/growth_stage), data = taw_model,
              family = binomial)
+
+taw.table <- as.data.frame(summary(tm3)$coefficients)
+#CI <- confint(m3)
+taw.table <-cbind(row.names(taw.table), taw.table)
+names(taw.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(taw.table, highlight = TRUE)
 
 anova(tm0, tm1, tm2, tm3)
 summary(tm3)
@@ -643,6 +664,12 @@ mm2 <- glmer(multiple ~ treatment+growth_stage +
 mm3 <- glmer(multiple ~ treatment*growth_stage +
                 (1|year/block/plot_id/growth_stage), data = mult_model,
               family = binomial)
+
+mult.table <- as.data.frame(summary(mm3)$coefficients)
+#CI <- confint(m3)
+mult.table <-cbind(row.names(mult.table), mult.table)
+names(mult.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(mult.table, highlight = TRUE)
 
 anova(mm0, mm1, mm2, mm3)
 summary(mm3)
