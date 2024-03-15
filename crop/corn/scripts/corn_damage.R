@@ -14,6 +14,7 @@ library(performance)
 library(emmeans)
 library(ggpubr)
 library(rempsyc)
+library(multcomp)
 # data ####
 damage_type <- PSA_PA_damage
 
@@ -115,24 +116,28 @@ dmg_sev <- new_dmg %>%
   mutate(plot_id = as.factor(plot_id))
 
 avg_dmg <- dmg_sev %>%
-  group_by(treatment, year, growth_stage, block, plot_id) %>% 
+  dplyr::select(treatment, year, growth_stage, block, plot_id, damage_score) %>% 
   summarise(mean = mean(damage_score)) 
 
-sm0 <- glmer.nb(mean ~ 
+sm0 <- glmer(damage_score ~ 
                (1|year/block/growth_stage), 
-             data = avg_dmg)
+             data = avg_dmg, 
+             family = poisson)
 
-sm1 <- glmer.nb(mean ~ treatment +
+sm1 <- glmer(damage_score ~ treatment +
                   (1|year/block/growth_stage), 
-                data = avg_dmg)
+                data = avg_dmg, 
+             family = poisson)
 
-sm2 <- glmer.nb(mean ~ treatment + growth_stage +
+sm2 <- glmer(damage_score ~ treatment + growth_stage +
                   (1|year/block/growth_stage), 
-                data = avg_dmg)
+                data = avg_dmg, 
+             family = poisson)
 
-sm3 <- glmer.nb(mean ~ treatment*growth_stage +
+sm3 <- glmer(damage_score ~ treatment*growth_stage +
                   (1|year/block/growth_stage), 
-                data = avg_dmg)
+                data = avg_dmg, 
+                family = poisson)
 
 
 
@@ -142,12 +147,13 @@ binned_residuals(sm3)
 check_model(sm3)
 r2_nakagawa(sm3)
 
-sm_em <- emmeans(sm3, ~treatment)
+sm_em <- emmeans(sm3, ~treatment*growth_stage)
+dmg_score_plot <- cld(sm_em, Letters = letters)
 
 # avg df plot 
 
 avg_dam_p <- dmg_sev %>% 
-  group_by(treatment, year) %>% 
+  group_by(treatment, year, growth_stage) %>% 
   summarise(mean = mean(damage_score),
             sd = sd(damage_score), 
             n = n(), 
@@ -168,6 +174,56 @@ TukeyHSD(a1)
 
 # dmg severity plot ####
 
+# by growth stage
+ggplot(avg_dam_p, aes(x = treatment, y = mean, fill = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_boxplot(alpha = 0.7)+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  labs(title = 'Corn: Average Damage Score x Treatment and Growth Stage',
+       subtitle = "Years: 2021-2023",
+       x = 'Treatment',
+       y = 'Average Damage Score x Treatment (x / n)',
+       caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 24),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+ggplot(avg_dam_p, aes(x = treatment, y = mean, fill = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_boxplot(alpha = 0.5, fill = "black")+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  labs(title = 'Corn: Average Damage Score x Treatment and Growth Stage',
+       subtitle = "Years: 2021-2023",
+       x = 'Treatment',
+       y = 'Average Damage Score x Treatment (x / n)',
+       caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 24),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+
+
 sum_dmg
 
 year.labs <- c("2021  a", "2022  b", "2023  c")
@@ -177,7 +233,7 @@ ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
   geom_violin(alpha = 0.7)+
   geom_boxplot(width = 0.1, fill = 'white')+
   facet_wrap(~year, labeller = labeller(year = year.labs))+
-  geom_jitter()+
+  geom_point(size = 2)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
@@ -204,10 +260,10 @@ ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
   geom_violin(alpha = 0.5, fill = 'black')+
   geom_boxplot(width = 0.1, fill = 'white')+
   facet_wrap(~year, labeller = labeller(year = year.labs))+
-  geom_jitter()+
+  geom_point()+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
-  labs(title = 'Corn: Total damage score x treatment and year',
+  labs(title = 'Corn: Total Damage Score x Treatment and Year',
        x = 'Treatment',
        y = 'Total Damage Score x Plot (0-4)',
        caption = "DPP: Days pre plant
@@ -268,7 +324,7 @@ ggplot(slug_em, aes(color = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: Slug Damage x Treatment",
     subtitle = "Years: 2021-2023",
@@ -299,7 +355,7 @@ ggplot(slug_em, aes(color = treatment))+
   geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: Slug Damage x Treatment",
     subtitle = "Years: 2021-2023",
@@ -372,7 +428,7 @@ ggplot(bcw_em, aes(color = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: Black Cutworm Damage x Treatment",
     subtitle = "Years: 2021-2023",
@@ -405,7 +461,7 @@ ggplot(bcw_em, aes(color = treatment))+
   geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: Black Cutworm Damage x Treatment",
     subtitle = "Years: 2021-2023",
@@ -479,7 +535,7 @@ ggplot(taw_em, aes(color = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: True Armyworm Damage x Treatment",
     subtitle = "Years: 2021-2023",
@@ -512,7 +568,7 @@ ggplot(taw_em, aes(color = treatment))+
   geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: True Armyworm Damage x Treatment",
     subtitle = "Years: 2021-2023",
@@ -692,7 +748,7 @@ ggplot(mm_em, aes(color = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: Multiple Pest Damage x Treatment",
     subtitle = "Years: 2021-2023",
@@ -724,7 +780,7 @@ ggplot(mm_em, aes(color = treatment))+
   geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
   labs(
     title = "Corn: Multiple Pest Damage x Treatment",
     subtitle = "Years: 2021-2023",
