@@ -146,6 +146,14 @@ summary(sm3)
 binned_residuals(sm3)
 check_model(sm3)
 r2_nakagawa(sm3)
+# Conditional R2: 0.094
+# Marginal R2: 0.027
+
+d_s.table <- as.data.frame(summary(sm3)$coefficients)
+#CI <- confint(m3)
+d_s.table <-cbind(row.names(d_s.table), d_s.table)
+names(d_s.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(d_s.table, highlight = TRUE)
 
 sm_em <- emmeans(sm3, ~treatment*growth_stage)
 dmg_score_plot <- cld(sm_em, Letters = letters)
@@ -158,6 +166,13 @@ avg_dam_p <- dmg_sev %>%
             sd = sd(damage_score), 
             n = n(), 
             se = sd/sqrt(n))
+
+avg_for_paper <- dmg_sev %>% 
+  group_by(treatment, growth_stage) %>% 
+  summarise(mean = mean(damage_score),
+            sd = sd(damage_score), 
+            n = n(), 
+            se = sd/ sqrt(n))
 
 ggplot(avg_dam_p, aes(x = treatment, y = mean))+
   geom_bar(stat= 'identity', position = 'dodge')+

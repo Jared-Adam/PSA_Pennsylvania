@@ -270,19 +270,32 @@ cc_mg_model <- cc %>%
   filter(trt != "check")
 
 
-cc0 <- lme(mg_ha,
-          random = ~1|year/block,
+cc0 <- lmer(mg_ha~
+          (1|year/block),
           data = cc_mg_model)
 summary(cc0)
 
-cc1 <- lme(mg_ha ~ trt,
-          random = ~1|year/block,
+cc1 <- lmer(mg_ha ~ trt +
+          (1|year/block),
           data = cc_mg_model)
 summary(cc1)
 
 cc_em <- emmeans(cc1, ~trt)
 pwpm(cc_em)
 cld(cc_em, Letters = letters)
+# trt   emmean  SE   df lower.CL upper.CL .group
+# brown   1.96 1.8 2.09    -5.48     9.41  a    
+# gr-br   3.77 1.8 2.09    -3.67    11.22   b   
+# green   6.44 1.8 2.09    -1.01    13.88    c 
+
+ca <- aov(mg_ha ~ year, data = cc_mg_model)
+TukeyHSD(ca)
+
+# $year
+# diff       lwr        upr     p adj
+# 2022-2021 -4.36412 -6.378883 -2.3493571 0.0000133
+# 2023-2021 -5.97080 -7.985563 -3.9560371 0.0000000
+# 2023-2022 -1.60668 -3.621443  0.4080829 0.1408407
 
 # cover crop plots ####
 
@@ -336,55 +349,33 @@ DAP: Days after plant")+
   annotate("text", x = 3, y = 7.9, label = "c", size = 10)
 
 
+ggplot(filter(cc_mg_model, trt != "check"), aes(x = trt, y = mg_ha, fill = trt))+
+  scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_fill_manual(values = c("#D95F02",  "#7570B3","#1B9E77"))+
+  geom_boxplot(alpha = 0.7)+
+  geom_point(size = 2)+
+  labs(title = "Corn: Cover Crop Biomass x Treatment",
+       subtitle = "Years: 2021-2023",
+       x = "Treatment",
+       caption = "DPP: Days pre plant
+DAP: Days after plant")+
+  ylab(bquote("Biomass" (Mg / ha ^-1)))+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 26, color = "grey25"))+
+  annotate("text", x = 1, y = 7, label = "a", size = 10)+
+  annotate("text", x = 2, y = 9, label = "b", size = 10)+
+  annotate("text", x = 3, y = 14, label = "c", size = 10)
 
 
 
-
-# not enough df for this anova or lm p values 
-# will need to do a t test
-cc_20 <- cc %>% 
-  mutate(plot = as.factor(plot)) %>% 
-  mutate(cc_biomass_g = as.numeric(cc_biomass_g)) %>% 
-  group_by(year,plot, trt) %>% 
-  summarise(cc_sum = sum(cc_biomass_g)) %>% 
-  print(n = Inf)
-
-cc_aov <- filter(cc_20, trt != "check")
-cc_21 <- filter(cc_aov, year == "2021")
-
-aov_cc21 <- aov(cc_sum ~ trt, cc_21)
-summary(aov_cc21)
-TukeyHSD(aov_cc21)
-
-cc_22 <- filter(cc_aov, year == "2022")
-
-aov_cc22 <- aov(cc_sum ~ trt, cc_22)
-summary(aov_cc22)
-TukeyHSD(aov_cc22)
-
-cc_23 <- filter(cc_aov, year == "2023")
-
-aov_cc23 <- aov(cc_sum ~ trt, cc_23)
-summary(aov_cc23)
-TukeyHSD(aov_cc23)
-
-cc_aov$year <- as.factor(cc_aov$year)
-aov_cc20 <- aov(cc_sum ~ year, cc_aov)
-TukeyHSD(aov_cc20)
-
-# add cc to weather and yield df
-cc_bind <- cc_clean 
-cc_yield <- cbind(cc_bind, overall_yield)
-cc_yield <- cc_yield %>% 
-  dplyr::select(-'year...7') %>% 
-  rename(year = year...1) %>% 
-  dplyr::select(-trt...2) %>% 
-  rename(trt = trt...6) %>% 
-  relocate(year, trt)
-
-ggplot(filter(cc_yield, trt != 'Check'), aes(x = overall_yield_mean, y = cc_mean, shape = trt, color = trt))+
-  geom_point(stat = 'identity', position = 'identity')+
-  facet_wrap(~year)
 
 ###
 
