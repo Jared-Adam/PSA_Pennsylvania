@@ -116,8 +116,7 @@ dmg_sev <- new_dmg %>%
   mutate(plot_id = as.factor(plot_id))
 
 avg_dmg <- dmg_sev %>%
-  dplyr::select(treatment, year, growth_stage, block, plot_id, damage_score) %>% 
-  summarise(mean = mean(damage_score)) 
+  dplyr::select(treatment, year, growth_stage, block, plot_id, damage_score) 
 
 sm0 <- glmer(damage_score ~ 
                (1|year/block/growth_stage), 
@@ -149,14 +148,28 @@ r2_nakagawa(sm3)
 # Conditional R2: 0.094
 # Marginal R2: 0.027
 
-d_s.table <- as.data.frame(summary(sm3)$coefficients)
-#CI <- confint(m3)
-d_s.table <-cbind(row.names(d_s.table), d_s.table)
-names(d_s.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(d_s.table, highlight = TRUE)
-
 sm_em <- emmeans(sm3, ~treatment*growth_stage)
 dmg_score_plot <- cld(sm_em, Letters = letters)
+
+
+d_s.table <- as.data.frame(summary(sm3)$coefficients)
+d_s.table <-cbind(row.names(d_s.table), d_s.table)
+d_s.table <- as_tibble(d_s.table) %>% 
+  mutate(`row.names(d_s.table)` = case_when(`row.names(d_s.table)` == 'treatment2' ~ '14-28 DPP',
+                          `row.names(d_s.table)` == 'treatment4' ~ '3-7 DPP',
+                          `row.names(d_s.table)` == 'treatment3' ~ '1-3 DAP',
+                          `row.names(d_s.table)` == 'growth_stageV5' ~ 'V5',
+                          `row.names(d_s.table)` == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+                          `row.names(d_s.table)` == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+                          `row.names(d_s.table)` == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+                          .default = as.character(`row.names(d_s.table)`)))
+names(d_s.table) <- c("Term", "B", "SE", "t", "p")
+d_s.table <- flextable(d_s.table)
+d_s.table <- autofit(d_s.table)
+theme_zebra(d_s.table) %>% 
+  save_as_docx(path = 'damage_coef_summarytable.docx')
+
+
 
 # avg df plot 
 
@@ -167,12 +180,25 @@ avg_dam_p <- dmg_sev %>%
             n = n(), 
             se = sd/sqrt(n))
 
+trt_ord <- c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP")
 avg_for_paper <- dmg_sev %>% 
+  mutate(treatment = case_when(treatment == '1' ~ 'No CC',
+                               treatment == '2' ~ '14-28 DPP',
+                               treatment == '3' ~ '1-3 DAP',
+                               treatment == '4' ~ '3-7 DPP')) %>% 
+  mutate(treatment = factor(treatment, levels = trt_ord)) %>% 
   group_by(treatment, growth_stage) %>% 
   summarise(mean = mean(damage_score),
             sd = sd(damage_score), 
             n = n(), 
             se = sd/ sqrt(n))
+names(avg_for_paper) <- c("Treatment", "Growth Stage", "Mean","Sd", "n", "SE")
+avg_dmg_table <- flextable(avg_for_paper)
+avg_dmg_table <- autofit(avg_dmg_table)
+theme_zebra(avg_dmg_table) %>% 
+  save_as_docx(path = 'average.dmg.trt.gs.docx')
+
+
 
 ggplot(avg_dam_p, aes(x = treatment, y = mean))+
   geom_bar(stat= 'identity', position = 'dodge')+
@@ -321,7 +347,22 @@ sl.table <- as.data.frame(summary(m3)$coefficients)
 #CI <- confint(m3)
 sl.table <-cbind(row.names(sl.table), sl.table)
 names(sl.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(sl.table, highlight = TRUE)
+sl.table <- as_tibble(sl.table) %>% 
+  mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
+         Term == 'treatment4' ~ '3-7 DPP',
+         Term == 'treatment3' ~ '1-3 DAP',
+         Term == 'growth_stageV5' ~ 'V5',
+         Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+         Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+         Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+         .default = as.character(Term)))
+sl.table <- flextable(sl.table)
+sl.table <- autofit(sl.table)
+sl.table <- add_header_lines(sl.table,
+                              values = 'Slug: Summary')
+theme_zebra(sl.table) %>% 
+  save_as_docx(path = 'slug_summary_table.docx')
+
 
 anova(m0, m1, m2, m3)
 summary(m3)
@@ -420,7 +461,21 @@ bcw.table <- as.data.frame(summary(bm3)$coefficients)
 #CI <- confint(m3)
 bcw.table <-cbind(row.names(bcw.table), bcw.table)
 names(bcw.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(bcw.table, highlight = TRUE)
+bcw.table <- as_tibble(bcw.table) %>% 
+  mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
+                          Term == 'treatment4' ~ '3-7 DPP',
+                          Term == 'treatment3' ~ '1-3 DAP',
+                          Term == 'growth_stageV5' ~ 'V5',
+                          Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+                          Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+                          Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+                          .default = as.character(Term)))
+bcw.table <- flextable(bcw.table)
+bcw.table <- autofit(bcw.table)
+bcw.table <- add_header_lines(bcw.table,
+                               values = 'Black Cutworm: Summary')
+theme_zebra(bcw.table) %>% 
+  save_as_docx(path = 'bcw_summary_table.docx')
 
 anova(bm0, bm1, bm2, bm3)
 summary(bm3)
@@ -527,7 +582,21 @@ taw.table <- as.data.frame(summary(tm3)$coefficients)
 #CI <- confint(m3)
 taw.table <-cbind(row.names(taw.table), taw.table)
 names(taw.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(taw.table, highlight = TRUE)
+taw.table <- as_tibble(taw.table) %>% 
+  mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
+                          Term == 'treatment4' ~ '3-7 DPP',
+                          Term == 'treatment3' ~ '1-3 DAP',
+                          Term == 'growth_stageV5' ~ 'V5',
+                          Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+                          Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+                          Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+                          .default = as.character(Term)))
+taw.table <- flextable(taw.table)
+taw.table <- autofit(taw.table)
+taw.table <- add_header_lines(taw.table,
+                              values = 'True Armyworm: Summary')
+theme_zebra(taw.table) %>% 
+  save_as_docx(path = 'taw_summary_table.docx')
 
 anova(tm0, tm1, tm2, tm3)
 summary(tm3)
@@ -740,7 +809,21 @@ mult.table <- as.data.frame(summary(mm3)$coefficients)
 #CI <- confint(m3)
 mult.table <-cbind(row.names(mult.table), mult.table)
 names(mult.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(mult.table, highlight = TRUE)
+mult.table <- as_tibble(mult.table) %>% 
+  mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
+                          Term == 'treatment4' ~ '3-7 DPP',
+                          Term == 'treatment3' ~ '1-3 DAP',
+                          Term == 'growth_stageV5' ~ 'V5',
+                          Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+                          Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+                          Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+                          .default = as.character(Term)))
+mult.table <- flextable(mult.table)
+mult.table <- autofit(mult.table)
+mult.table <- add_header_lines(mult.table,
+                              values = 'Multiple Pest: Summary')
+theme_zebra(mult.table) %>% 
+  save_as_docx(path = 'mult_summary_table.docx')
 
 anova(mm0, mm1, mm2, mm3)
 summary(mm3)
