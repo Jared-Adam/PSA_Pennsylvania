@@ -135,7 +135,7 @@ cpf_22__tot <- cpf_2022 %>%
          Non_Insect_Arth = Diplopoda + Chilopoda + Opiliones,
          Other_Coleoptera = Staphylinidae + Elateridae,
          Gryllidae = Gryllidae + Gyrillidae) %>% 
-  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Araneae, -Salticidae, 
+ dplyr::select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Araneae, -Salticidae, 
          -Lyniphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Carabidae, -Cicindelidae) %>% 
   rename(Ensifera = Gryllidae,
@@ -231,7 +231,11 @@ ggplot(aran_tot, aes(x = timing, y = mean, fill = timing))+
   annotate("text", x = 2.2, y = 8, label = "b", size = 6)
 
 
-
+# table for the paper 
+cpf_22__tot %>% 
+  group_by(date, trt) %>% 
+  summarise(sumC = sum(Carabid),
+            sumA = sum(Aranaeomorphae))
 
 
 ###
@@ -472,7 +476,7 @@ cpf_tot <- cpf_clean %>%
          Non_Insect_Arth = Diplopoda + Chilopoda + Opiliones,
          Other_Coleoptera = Staphylinidae + Elateridae,
          Gryllidae = Gryllidae + Gyrillidae) %>% 
-  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Araneae, -Salticidae, 
+  dplyr::select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Araneae, -Salticidae, 
          -Lyniphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Carabidae, -Cicindelidae) %>% 
   rename(Ensifera = Gryllidae,
@@ -598,6 +602,30 @@ ggplot(aran_tot, aes(x = date, y = mean, fill = year))+
 ###
 ##
 #
+
+# table for paper 
+trt_order <- c('No CC', "14-28 DPP", '3-7 DPP', '1-3 DAP')
+total_corn <- cpf_tot %>% 
+  mutate(trt = case_when(trt == '1' ~ 'No CC',
+                         trt == '2' ~ '14-28 DPP',
+                         trt == '3' ~ '3-7 DPP',
+                         trt == '4' ~ '1-3 DAP',
+                         .default = as.factor(trt))) %>% 
+  mutate(trt = factor(trt, levels = trt_order)) %>% 
+  group_by(year, trt) %>% 
+  summarise('Araneomorphae Sum' = sum(Aranaeomorphae),
+            'Carabidae sum' = sum(Carabid)) %>% 
+  rename(Year = year, 
+         Treatment = trt)
+  
+corn_PF_table <- flextable(total_corn)
+corn_PF_table <- autofit(corn_PF_table)
+corn_PF_table <- add_header_lines(corn_PF_table, 
+                 values = 'Corn: Pitfall totals by year')
+theme_zebra(corn_PF_table) %>% 
+  save_as_docx(path = 'corn_PF_table.docx')
+
+
 # density plot test ####
 
 dpt_trt <- cpf_tot %>% 

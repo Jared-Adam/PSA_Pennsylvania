@@ -61,7 +61,7 @@ bpf_clean <- bpf_wide %>%
 colnames(pf_clean)
 
 bea_total <- bpf_clean %>%
-  mutate(total = sum(c_across(Lycosidae:Linyphiidae ))) %>% 
+  mutate(total = sum(c_across(Lycosidae:Lin))) %>% 
   group_by(year) %>% 
   summarise(mean = mean(total),
             sd = sd(total),
@@ -479,7 +479,7 @@ bpf_tot <- bpf_clean %>%
          Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
          Other_Coleoptera = Staphylinidae + Elateridae,
          Other_insects = Dermaptera) %>% 
-  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+  dplyr::select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
          -Linyphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Dermaptera, -Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Ensifera = Gryllidae,
@@ -604,9 +604,32 @@ ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
         panel.grid.minor = element_blank(),
         # strip.text = element_text(size = 28),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
-
+###
 ##
 #
+
+# table for paper 
+trt_order <- c('No CC', "14-28 DPP", '3-7 DPP', '1-3 DAP')
+total_bean <- bpf_tot %>% 
+  mutate(trt = case_when(trt == '1' ~ 'No CC',
+                         trt == '2' ~ '14-28 DPP',
+                         trt == '3' ~ '3-7 DPP',
+                         trt == '4' ~ '1-3 DAP',
+                         .default = as.factor(trt))) %>% 
+  mutate(trt = factor(trt, levels = trt_order)) %>% 
+  group_by(year, trt) %>% 
+  summarise('Araneomorphae Sum' = sum(Aranaeomorphae),
+            'Carabidae sum' = sum(Carabid),
+            'Formicidae sum ' = sum(Formicidae)) %>% 
+  rename(Year = year, 
+         Treatment = trt)
+
+bean_PF_table <- flextable(total_bean)
+bean_PF_table <- autofit(bean_PF_table)
+bean_PF_table <- add_header_lines(bean_PF_table, 
+                                  values = 'Soybean: Pitfall totals by year')
+theme_zebra(bean_PF_table) %>% 
+  save_as_docx(path = 'bean_PF_table.docx')
 # density ####
 
 dbpt <- bpf_tot %>% 
