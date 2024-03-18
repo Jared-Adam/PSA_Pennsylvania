@@ -7,6 +7,8 @@ library(lme4)
 library(emmeans)
 library(lmtest)
 library(multcomp)
+library(rempsyc)
+library(flextable)
 
 # data ####
 wield <- wallace_yield_cb
@@ -425,12 +427,16 @@ TukeyHSD(ca)
 # 2022-2021 -4.36412 -6.378883 -2.3493571 0.0000133
 # 2023-2021 -5.97080 -7.985563 -3.9560371 0.0000000
 # 2023-2022 -1.60668 -3.621443  0.4080829 0.1408407
-cc_mg_model %>% 
+year_corn <- cc_mg_model %>% 
   group_by(year) %>% 
   summarise(mean = mean(mg_ha), 
             sd = sd(mg_ha), 
             n = n(), 
             se = sd/sqrt(n))
+names(year_corn) <- c("Year", "Mean", "Sd", "n", "SE")
+year_corn_cc <- flextable(year_corn)
+theme_zebra(year_corn_cc) %>% 
+  save_as_docx(path = 'corn_annual_cc.docx')
 
 
 # 2021
@@ -447,12 +453,24 @@ cld(cc21_em, Letters = letters)
 # brown   4.08 0.485 12     3.03     5.14  a    
 # gr-br   6.81 0.485 12     5.75     7.87   b   
 # green  11.61 0.485 12    10.55    12.67    c  
-c21 %>% 
+
+trt_ord <- c("14-28 DPP", "3-7 DPP", "1-3 DAP")
+corn_21_mean <- c21 %>% 
+  ungroup() %>% 
+  mutate(trt = case_when(trt == 'brown' ~ '14-28 DPP',
+                         trt == 'green' ~ '1-3 DAP',
+                         trt == 'gr-br' ~ '3-7 DPP',
+                         .default = as.character(trt))) %>%
+  mutate(trt = factor(trt, levels = trt_ord)) %>% 
   group_by(trt) %>% 
   summarise(mean = mean(mg_ha), 
             sd = sd(mg_ha), 
             n = n(), 
-            se = sd/sqrt(n))
+            se = sd/sqrt(n)) %>% 
+  mutate(Year = c(2021, 2021,2021)) %>% 
+  relocate(Year, trt) %>% 
+  mutate_at(vars(1:2), as.factor)
+
 
 # 2022
 c22 <- filter(cc_mg_model, year == "2022")
@@ -469,12 +487,22 @@ cld(cc22_em, Letters = letters)
 # gr-br   2.76 0.163 11.2    2.399     3.12   b   
 # green   5.49 0.163 11.2    5.133     5.85    c  
 
-c22 %>% 
+trt_ord <- c("14-28 DPP", "3-7 DPP", "1-3 DAP")
+corn_22_mean <- c22 %>%  
+  ungroup() %>% 
+  mutate(trt = case_when(trt == 'brown' ~ '14-28 DPP',
+                         trt == 'green' ~ '1-3 DAP',
+                         trt == 'gr-br' ~ '3-7 DPP',
+                         .default = as.character(trt))) %>% 
+  mutate(trt = factor(trt, levels = trt_ord)) %>% 
   group_by(trt) %>% 
   summarise(mean = mean(mg_ha), 
             sd = sd(mg_ha), 
             n = n(), 
-            se = sd/sqrt(n))
+            se = sd/sqrt(n))%>% 
+  mutate(Year = c(2022, 2022,2022)) %>% 
+  relocate(Year, trt) %>% 
+  mutate_at(vars(1:2), as.factor)
 
 # 2023
 c23 <- filter(cc_mg_model, year == "2023")
@@ -491,12 +519,32 @@ cld(cc23_em, Letters = letters)
 # gr-br  1.745 0.145 11.5    1.428    2.062   b   
 # green  2.212 0.145 11.5    1.895    2.529   b  
 
-c23 %>% 
+trt_ord <- c("14-28 DPP", "3-7 DPP", "1-3 DAP")
+corn_23_mean <- c23 %>%   
+  ungroup() %>% 
+  mutate(trt = case_when(trt == 'brown' ~ '14-28 DPP',
+                         trt == 'green' ~ '1-3 DAP',
+                         trt == 'gr-br' ~ '3-7 DPP',
+                         .default = as.character(trt))) %>% 
+  mutate(trt = factor(trt, levels = trt_ord)) %>% 
   group_by(trt) %>% 
   summarise(mean = mean(mg_ha), 
             sd = sd(mg_ha), 
             n = n(), 
-            se = sd/sqrt(n))
+            se = sd/sqrt(n))%>% 
+  mutate(Year = c(2023, 2023, 2023)) %>% 
+  relocate(Year, trt) %>% 
+  mutate_at(vars(1:2), as.factor)
+
+corn_cc_table <- rbind(corn_21_mean, corn_22_mean, corn_23_mean)
+names(corn_cc_table) <- c("Year", "Treatment", "Mean", "Sd", "n", "SE")
+
+test <- flextable(corn_cc_table)
+test <- autofit(test) 
+test <- add_header_lines(test,
+                         values = 'Corn: Cover crop biomass values')
+theme_zebra(test) %>% 
+  save_as_docx(path = 'corn.cc.table.docx')
 
 # corn cover crop plots ####
 
@@ -704,7 +752,7 @@ TukeyHSD(ba)
 # diff        lwr       upr    p adj
 # 2023-2022 0.04613333 -0.5450744 0.6373411 0.874153
 
-bcc_mg_model %>% 
+bean_year_cc <- bcc_mg_model %>% 
   group_by(year) %>% 
   summarise(mean = mean(mg_ha), 
             sd = sd(mg_ha), 
@@ -714,6 +762,11 @@ bcc_mg_model %>%
 # <fct> <dbl> <dbl> <int> <dbl>
 #   1 2022   1.50 0.976    15 0.252
 # 2 2023   1.54 0.544    15 0.140
+names(bean_year_cc) <- c("Year", "Mean", "Sd", "n", "SE")
+bean_year_cc <- flextable(bean_year_cc)
+theme_zebra(bean_year_cc) %>% 
+  save_as_docx(path = 'bean_annual_cc.docx')
+
 
 # 2022
 b22 <- filter(bcc_mg_model, year == "2022")
@@ -730,12 +783,23 @@ cld(bcc22_em, Letters = letters)
 # grbr  1.522 0.179 12   1.1312    1.912   b   
 # gr    2.556 0.179 12   2.1656    2.947    c   
 
-b22 %>% 
+trt_ord <- c("14-28 DPP", "3-7 DPP", "1-3 DAP")
+b22_table <- b22 %>% 
+  ungroup() %>% 
+  mutate(trt = case_when(trt == 'br' ~ '14-28 DPP',
+                         trt == 'gr' ~ '1-3 DAP',
+                         trt == 'grbr' ~ '3-7 DPP',
+                         .default = as.character(trt))) %>% 
+  mutate(trt = factor(trt, levels = trt_ord)) %>% 
   group_by(trt) %>% 
   summarise(mean = mean(mg_ha), 
             sd = sd(mg_ha), 
             n = n(), 
-            se = sd/sqrt(n))
+            se = sd/sqrt(n))   %>% 
+  mutate(Year = c(2022, 2022, 2022)) %>% 
+  relocate(Year, trt) %>% 
+  mutate_at(vars(1:2), as.factor)
+  
 # trt    mean     sd     n     se
 # <fct> <dbl>  <dbl> <int>  <dbl>
 #   1 br    0.419 0.0668     5 0.0299
@@ -758,12 +822,31 @@ cld(bcc23_em, Letters = letters)
 # gr    1.750 0.0704 12    1.597     1.90   b   
 # grbr  2.037 0.0704 12    1.883     2.19    c    
 
-b23 %>% 
+b23_table <- b23 %>%
+  ungroup() %>% 
+  mutate(trt = case_when(trt == 'br' ~ '14-28 DPP',
+                         trt == 'gr' ~ '1-3 DAP',
+                         trt == 'grbr' ~ '3-7 DPP',
+                         .default = as.character(trt))) %>% 
+  mutate(trt = factor(trt, levels = trt_ord)) %>% 
   group_by(trt) %>% 
   summarise(mean = mean(mg_ha), 
             sd = sd(mg_ha), 
             n = n(), 
-            se = sd/sqrt(n))
+            se = sd/sqrt(n))   %>% 
+  mutate(Year = c(2023, 2023, 2023)) %>% 
+  relocate(Year, trt) %>% 
+  mutate_at(vars(1:2), as.factor)
+
+b_cc_table <- rbind(b22_table, b23_table)
+
+names(b_cc_table) <- c("Year", "Treatment", "Mean", "Sd", "n", "SE")
+b_cc_table <- flextable(b_cc_table)
+b_cc_table <- autofit(b_cc_table) 
+b_cc_table <- add_header_lines(b_cc_table,
+                         values = 'Soybean: Cover crop biomass values')
+theme_zebra(b_cc_table) %>% 
+  save_as_docx(path = 'bean.cc.table.docx')
 
 
 # bean cover crop plots ####
