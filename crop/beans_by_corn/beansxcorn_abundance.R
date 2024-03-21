@@ -22,7 +22,7 @@ corn <- corn_pf
 # beans 
 colnames(beans)
 b_wide <- beans %>% 
-  select(-split, -life_stage, -sp, -genus) %>% 
+  dplyr::select(-split, -life_stage, -sp, -genus) %>% 
   group_by(date, plot) %>% 
   pivot_wider(names_from = family, 
               values_from = family,
@@ -33,7 +33,7 @@ colnames(b_wide)
 b_wide <- b_wide  %>% 
   replace(is.na(.),0) %>% 
   mutate(Lin = Liniphiide + Lyniphiidae + Linyphiidae) %>% 
-  select(-Liniphiide, -Lyniphiidae, -Linyphiidae, -na) %>% 
+  dplyr::select(-Liniphiide, -Lyniphiidae, -Linyphiidae, -na) %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"), 
          year = format(date, "%Y")) %>% 
   relocate(year) %>% 
@@ -47,7 +47,7 @@ b_clean <- b_wide %>%
                          plot %in% c(102,201,303,402,502) ~ 3, 
                          plot %in% c(104,202,301,404,504) ~ 4))) %>% 
   na.omit() %>%  
-  select(-crop) %>% 
+  dplyr::select(-crop) %>% 
   mutate(crop = 'beans',
          crop = as.factor(crop)) %>% 
   relocate(year, date, crop) %>% 
@@ -61,7 +61,7 @@ b_23 <- b_23 %>%
   rename('Coleoptera larvae' = Coleoptera)%>% 
   rename(Lyniphiidae = Lin) %>%
   mutate(Carabidae_new = Carabidae + Pterostichus +Cicindelidae) %>% 
-  select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  dplyr::select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Carabidae = Carabidae_new) %>% 
   print(n = Inf)
 colnames(b_23)
@@ -75,7 +75,7 @@ colnames(b_23)
 # corn 
 colnames(corn)
 c_wide <- corn %>% 
-  select(-split, -life_stage, -sp, -genus) %>% 
+  dplyr::select(-split, -life_stage, -sp, -genus) %>% 
   group_by(date, plot) %>% 
   pivot_wider(names_from = family, 
               values_from = family,
@@ -87,7 +87,7 @@ c_wide <- c_wide  %>%
   replace(is.na(.),0) %>% 
   mutate(Lyn = Liniphiidae + Lyniphiidae + Linyphiidae, 
          Staph= Staphylinidae + Staphylinidaa) %>% 
-  select(-Liniphiidae, -Lyniphiidae, -Linyphiidae, -Staphylinidae, -Staphylinidaa, -na) %>% 
+  dplyr::select(-Liniphiidae, -Lyniphiidae, -Linyphiidae, -Staphylinidae, -Staphylinidaa, -na) %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"), 
          year = format(date, "%Y")) %>% 
   relocate(year) %>% 
@@ -111,7 +111,7 @@ c_22 <- c_clean %>%
          Tetragnathidae = Tetrgnathidae) %>% 
   mutate(Carabidae_new = Carabidae + Cicindelidae,
          Gryll = Gryllidae +Gyrillidae) %>% 
-  select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
+  dplyr::select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
   rename(Carabidae = Carabidae_new,
          Gryllidae = Gryll) %>%
   print(n = Inf) 
@@ -147,6 +147,13 @@ bc_dist <- vegdist(bc_fams, method = "bray")
 # crop and date are sig
 p1 <- adonis2(bc_dist ~ crop + date + trt, perm = 999, method = "bray", data = bc)
 p1
+# Df SumOfSqs      R2       F Pr(>F)    
+# crop      1   5.0688 0.23054 31.3926  0.001 ***
+#   date      2   4.7570 0.21636 14.7307  0.001 ***
+#   trt       3   0.3737 0.01700  0.7715  0.738    
+# Residual 73  11.7870 0.53610                   
+# Total    79  21.9866 1.00000                   
+# ---
 
 # nmds corn 22 beans 23####
 #
@@ -155,6 +162,7 @@ p1
 
 nmds <- metaMDS(bc_fams, k=3)
 nmds$stress
+# [1] 0.1561735
 stressplot(nmds)
 
 ###
@@ -199,7 +207,7 @@ func_bc <- bc %>%
          Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
          Other_Coleoptera = Staphylinidae + Elateridae,
          Other_insects = Dermaptera + Coreidae) %>% 
-  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+  dplyr::select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
          -Lyniphiidae, -Araneae, -Salticidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Dermaptera, -Coreidae) %>% 
   rename(Ensifera = Gryllidae,
@@ -261,12 +269,38 @@ plot(tukey_list[[5]])
 
 # main groups of interest: 5 = carabidae beans > corn | 6 = aranaeomorphae corn > beans
 
+# carabidae numbers by crop for paper 
+func_bc  %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(Carabidae), 
+            sd = sd(Carabidae), 
+            n = n(), 
+            se = sd/sqrt(n))
 
 
 
+# araneomorphae numbers by crop for paper
+
+func_bc  %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(Aranaeomorphae ), 
+            sd = sd(Aranaeomorphae ), 
+            n = n(), 
+            se = sd/sqrt(n))
+
+# lycosidae number by crop for paper
+lyc <- aov(Lycosidae ~ crop, data = bc)
+TukeyHSD(lyc)
+
+bc %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(Lycosidae), 
+            sd = sd(Lycosidae), 
+            n = n(), 
+            se = sd/sqrt(n))
 
 
-# total arthropods by crop and trt for 2022 and 2023 ####
+# total arthropods by crop and trt for corn 2022 and corn 2023 ####
 colnames(func_bc)
 tot_arth <- func_bc %>% 
   group_by(crop, trt) %>% 
@@ -274,41 +308,128 @@ tot_arth <- func_bc %>%
   mutate(sum = sum(c_across(6:12))) %>% 
   print(n = Inf)
 
+tot_aov <- aov(sum ~ crop + trt, tot_arth)
+summary(tot_aov)
+TukeyHSD(tot_aov)
+hist(residuals(tot_aov))
+
 se_df <- tot_arth %>% 
   group_by(crop, trt) %>% 
   summarise(mean = mean(sum),
             sd = sd(sum),
             n = n(),
             se = sd/ sqrt(n)) %>% 
-  select(crop, trt, mean, sd, se)
+  dplyr::select(crop, trt, mean, sd, se)
 
-tot_aov <- aov(sum ~ crop + trt, tot_arth)
-summary(tot_aov)
-TukeyHSD(tot_aov)
-hist(residuals(tot_aov))
+tot_arth_plot <- tot_arth %>% 
+  pivot_longer(
+    cols = where(is.numeric)) %>% 
+  mutate(block = case_when(plot %in% c('101', '102', '103', '104') ~ 1,
+                           plot %in% c('201', '202', '203', '204') ~ 2,
+                           plot %in% c('301', '302', '303', '304') ~ 3, 
+                           plot %in% c('401', '402', '403', '404') ~ 4,
+                           plot %in% c('501', '502', '503', '503') ~ 5))
+
+p <- glmer(value ~ trt*crop +
+             (1|block/crop), 
+           family = poisson, 
+           data = tot_arth_plot)
+
+nb <- glmer.nb(value ~ trt*crop +
+            (1|block/crop),
+          data = tot_arth_plot)
+
+lrtest(p, nb)
+
+
+m0 <- glmer.nb(value ~ 
+           (1|block/crop),
+         data = tot_arth_plot)
+
+m1 <- glmer.nb(value ~ trt +
+                 (1|block/crop),
+               data = tot_arth_plot)
+
+m2 <- glmer.nb(value ~ trt + crop +
+                 (1|block/crop),
+               data = tot_arth_plot)
+
+m3 <- glmer.nb(value ~ trt*crop +
+                 (1|block/crop),
+               data = tot_arth_plot)
+
+
+anova(m0, m1, m2, m3)
+hist(residuals(m3))
+check_model(m3)
+
+bc_emm <- cld(emmeans(m3, ~ trt + crop), Letters = letters)
+
 
 tot_se_df <- tot_arth %>% 
-  group_by(crop) %>% 
+  group_by(crop,trt) %>% 
   summarise(mean = mean(sum), 
             sd = sd(sum), 
             n = n(), 
             se = sd/ sqrt(n))
 
-ggplot(tot_se_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
-  geom_bar(position = 'dodge', stat = 'identity')+
-  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
-  annotate("text", x = 1.9, y=16.8, label = "***", size = 6)+
-  labs(title = "Total arthropod by crop",
-       x = 'Crop and Year',
-       y = 'Mean Arthropod population')+
-  scale_x_discrete(labels=c('Corn:2022', 'Beans:2023'))
+# plots for corn 22 and beans 23 ####
+# total arthropods
 
-  sps_grouped <- bc_loop %>% 
-    group_by(crop, trt) %>% 
-    summarise(mean = mean(sps),
-              sd = sd(sps),
-              n = n()) %>% 
-    mutate(se = sd/sqrt(n))
+tot_se_df %>% 
+  mutate(crop = case_when(crop == 'corn' ~ "Corn", 
+                          crop == 'beans' ~ "Soybean"),
+         crop = factor(crop, levels = c("Corn", "Soybean"))) %>% 
+  ggplot(aes(x = trt, y = mean, fill = crop))+
+    geom_bar(position = position_dodge(1), stat = 'identity')+
+    geom_errorbar(aes(ymin=mean-se, ymax = mean+se), 
+                  color = 'black', alpha = 1, size = 1, width = 0.5,
+                  position = position_dodge(1))+
+  scale_x_discrete(limits = c('1','2','4','3'),
+                   labels = c('No CC', '14-28 DPP', '3-7 DPP', '1-3 DAP'))+
+  scale_fill_manual(values = c("#D95F02","#1B9E77"), 
+                    name = "Crop")+
+    labs(title = "Total Arthropod x Treatment and Crop",
+         subtitle = 'Years: 2022 Corn - 2023 Soybean',
+         x = 'Treatment',
+         y = 'Mean Arthropod population',
+         caption = "DPP: Days pre plant
+DAP: Days after plant")+
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  annotate('text', x =.75, y = 27, label = 'a', size = 10)+ #1c
+  annotate('text', x =1.25, y = 27, label = 'bc', size = 10)+ #1b
+  annotate('text', x =1.75, y = 27, label = 'ab', size = 10)+ #2c
+  annotate('text', x =2.25, y = 27, label = 'abc', size = 10)+ #2b
+  annotate('text', x =2.75, y = 27, label = 'abc', size = 10)+ #4c
+  annotate('text', x =3.25, y = 27, label = 'abc', size = 10)+ #4b
+  annotate('text', x =3.75, y = 27, label = 'ab', size = 10)+#3c
+  annotate('text', x =4.25, y = 27, label = 'c', size = 10) #3b
+
+
+
+tot_arth_plot %>% 
+  mutate(crop = case_when(crop == 'corn' ~ "Corn", 
+                           crop == 'beans' ~ "Soybean"),
+          crop = fct_relevel(crop, "Corn", "Soybean")) %>% 
+  ggplot(aes(trt, log10(value), fill = crop))+
+  geom_bar(stat = 'identity', position = position_dodge(1))+
+  scale_x_discrete(limits = c('1','2','4','3'))
+  
+  
+  
+  
   
 # total arthropods by crop for all years ####
 b_clean 
@@ -318,7 +439,7 @@ all_b <- b_clean %>%
   rename('Coleoptera larvae' = Coleoptera)%>% 
   rename(Lyniphiidae = Lin) %>%
   mutate(Carabidae_new = Carabidae + Pterostichus +Cicindelidae) %>% 
-  select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
+  dplyr::select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Carabidae = Carabidae_new) %>% 
   print(n = Inf)
 
@@ -328,7 +449,7 @@ all_c <- c_clean %>%
          Tetragnathidae = Tetrgnathidae) %>% 
   mutate(Carabidae_new = Carabidae + Cicindelidae,
          Gryll = Gryllidae +Gyrillidae) %>% 
-  select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
+  dplyr::select(-Carabidae, -Cicindelidae, -Gryllidae, -Gyrillidae) %>% 
   rename(Carabidae = Carabidae_new,
          Gryllidae = Gryll) %>%
   print(n = Inf) 
@@ -345,7 +466,7 @@ func_tot <- all_arth_bc %>%
          Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
          Other_Coleoptera = Staphylinidae + Elateridae,
          Other_insects = Dermaptera + Coreidae) %>% 
-  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+  dplyr::select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
          -Lyniphiidae, -Araneae, -Salticidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Dermaptera, -Coreidae) %>% 
   rename(Ensifera = Gryllidae,
@@ -410,7 +531,7 @@ for(i in 1:9){
   print(i)
   spss <- colnames(all_sp_list[i])
   print(spss)
-  all_loop <- subset(func_tot, select = c("crop", "trt", spss))
+  all_loop <- subset(func_tot, dplyr::select = c("crop", "trt", spss))
   colnames(all_loop) <- c("crop", "trt", "spss")
   
   model <- aov(spss ~ crop, all_loop)
@@ -435,7 +556,7 @@ all_summary_list[[6]]
 
 # Carabid plot 
 cartabid_plot <- func_tot %>% 
-  dplyr::select(year, crop, Carabidae) %>% 
+  dplyr::dplyr::select(year, crop, Carabidae) %>% 
   group_by(crop) %>% 
   summarise(mean = mean(Carabidae),
             sd = sd(Carabidae), 
@@ -464,7 +585,7 @@ ggplot(cartabid_plot, aes(x = reorder(crop, mean), y = mean, fill = crop))+
 
 # Arane plot
 arane_plot <- func_tot %>% 
-  dplyr::select(year, crop, Aranaeomorphae) %>% 
+  dplyr::dplyr::select(year, crop, Aranaeomorphae) %>% 
   group_by(crop) %>% 
   summarise(mean = mean(Aranaeomorphae),
             sd = sd(Aranaeomorphae), 
