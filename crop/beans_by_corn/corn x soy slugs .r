@@ -218,7 +218,9 @@ ggplot(cbs2122, aes(treatment, log10(total_slug), fill = crop))+
   labs(title = "Slug Counts x Treatment and Crop",
        subtitle = "Years: 2021 Corn - 2022 Soybeans",
        x = "Treatment", 
-       y = "Slug count (log10)")+
+       y = "Slug count (log10)",
+       caption = "DPP: Days pre plant
+DAP: Days after plant")+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
         legend.title = element_text(size = 24),
@@ -230,7 +232,8 @@ ggplot(cbs2122, aes(treatment, log10(total_slug), fill = crop))+
         plot.subtitle = element_text(size = 24), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())+
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
   annotate('text', x =.815, y = 2, label = 'abc', size = 10)+ #1c
   annotate('text', x =1.19, y = 2, label = 'abc', size = 10)+ #1b
   annotate('text', x =1.815, y = 2, label = 'bc', size = 10)+ #2c
@@ -251,7 +254,9 @@ ggplot(cbs2223, aes(treatment, log10(total_slug), fill = crop))+
   labs(title = "Slug Counts x Treatment and Crop",
        subtitle = "Years: 2022 Corn - 2023 Soybeans",
        x = "Treatment", 
-       y = "Slug count (log10)")+
+       y = "Slug count (log10)",
+       caption = "DPP: Days pre plant
+DAP: Days after plant")+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
         legend.title = element_text(size = 24),
@@ -263,14 +268,15 @@ ggplot(cbs2223, aes(treatment, log10(total_slug), fill = crop))+
         plot.subtitle = element_text(size = 24), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())+
-  annotate('text', x =.815, y = 2.5, label = 'b', size = 10)+ #1c
-  annotate('text', x =1.19, y = 2.5, label = 'ab', size = 10)+ #1b
-  annotate('text', x =1.815, y = 2.5, label = 'ab', size = 10)+ #2c
-  annotate('text', x =2.19, y = 2.5, label = 'ab', size = 10)+ #2b
-  annotate('text', x =2.815, y = 2.5, label = 'ab', size = 10)+ #4c
-  annotate('text', x =3.19, y = 2.5, label = 'ab', size = 10)+ #4b
-  annotate('text', x =3.815, y = 2.5, label = 'ab', size = 10)+#3c
-  annotate('text', x =4.19, y = 2.5, label = 'a', size = 10)#3b
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  annotate('text', x =.815, y = 2.3, label = 'b', size = 10)+ #1c
+  annotate('text', x =1.19, y = 2.3, label = 'ab', size = 10)+ #1b
+  annotate('text', x =1.815, y = 2.3, label = 'ab', size = 10)+ #2c
+  annotate('text', x =2.19, y = 2.3, label = 'ab', size = 10)+ #2b
+  annotate('text', x =2.815, y = 2.3, label = 'ab', size = 10)+ #4c
+  annotate('text', x =3.19, y = 2.3, label = 'ab', size = 10)+ #4b
+  annotate('text', x =3.815, y = 2.3, label = 'ab', size = 10)+#3c
+  annotate('text', x =4.19, y = 2.3, label = 'a', size = 10)#3b
 
 
