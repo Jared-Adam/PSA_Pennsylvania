@@ -112,31 +112,38 @@ cbs2223 <- rbind(cs22, bs23)
 cbs2122
 
 # dist check 
-sp <- glm(total_slug ~ treatment*crop,
+sp <- glmer(total_slug ~ treatment*crop+
+              (1|block/crop),
             data = cbs2122, 
             family = poisson)
-nb <- glm.nb(total_slug ~ treatment*crop ,
+nb <- glmer.nb(total_slug ~ treatment*crop +
+                 (1|block/crop),
                data = cbs2122)
 lrtest(sp, nb)
 
-
-m1 <- glm.nb(total_slug ~ treatment, 
+m0<- glmer.nb(total_slug ~ +
+                 (1|block/crop),
+             data = cbs2122)
+m1 <- glmer.nb(total_slug ~ treatment +
+                 (1|block/crop), 
                data = cbs2122)
 
-m2 <- glm.nb(total_slug ~ treatment + crop, 
+m2 <- glmer.nb(total_slug ~ treatment + crop+
+                 (1|block/crop), 
                data = cbs2122)
 
-m3 <- glm.nb(total_slug ~ treatment*crop,
+m3 <- glmer.nb(total_slug ~ treatment*crop+
+                 (1|block/crop),
                data = cbs2122)
 
-anova(m1,m2,m3)
+anova(m0,m1,m2,m3)
 hist(residuals(m3))
 check_model(m3)
 # r2_nakagawa(m3)
 performance::check_singularity(m3)
 
-cbs1 <- emmeans(m3, ~treatment + crop)
-cld(cbs1, Letters = letters)
+cbs1 <- cld(emmeans(m3, ~treatment + crop),Letters = letters)
+
 # treatment crop  emmean    SE  df asymp.LCL asymp.UCL .group
 # 4         beans  0.903 0.392 Inf     0.135      1.67  a    
 # 3         beans  1.142 0.384 Inf     0.389      1.90  ab   
@@ -158,29 +165,35 @@ cbs1_df <- as.data.frame(cld(cbs1, Letters = letters))
 cbs2223
 
 # dist check 
-sp <- glm(total_slug ~ treatment*crop,
+sp <- glmer(total_slug ~ treatment*crop+
+              (1|block/crop),
             data = cbs2223, 
             family = poisson)
-nb <- glm.nb(total_slug ~ treatment*crop,
+nb <- glmer.nb(total_slug ~ treatment*crop +
+                 (1|block/crop),
                data = cbs2223)
 lrtest(sp, nb)
 
-
-m1 <- glm.nb(total_slug ~ treatment , 
+m10<- glmer.nb(total_slug ~ +
+                (1|block/crop),
+              data = cbs2223)
+m11 <- glmer.nb(total_slug ~ treatment +
+                 (1|block/crop), 
                data = cbs2223)
 
-m2 <- glm.nb(total_slug ~ treatment + crop, 
+m12 <- glmer.nb(total_slug ~ treatment + crop+
+                 (1|block/crop), 
                data = cbs2223)
 
-m3 <- glm.nb(total_slug ~ treatment*crop , 
+m13 <- glmer.nb(total_slug ~ treatment*crop+
+                 (1|block/crop),
                data = cbs2223)
+anova(m10, m11,m12,m13)
 
-anova(m1,m2,m3)
+check_model(m13)
+hist(residuals(m13))
+cbs2 <- cld(emmeans(m13, ~treatment + crop), Letters = letters)
 
-check_model(m3)
-hist(residuals(m3))
-cbs2 <- emmeans(m3, ~treatment + crop)
-cld(cbs2, Letters = letters)
 # treatment crop  emmean    SE  df asymp.LCL asymp.UCL .group
 # 3         beans   2.02 0.278 Inf      1.47      2.56  a    
 # 2         beans   2.20 0.276 Inf      1.66      2.74  ab   
@@ -195,5 +208,69 @@ cbs2_df <- as.data.frame(cld(cbs2, Letters = letters))
 
 
 # plots ####
-ggplot(cbs1_df, aes())
+# 21 - 22 plot on raw data with log10 to shrinnk outliers 
+ggplot(cbs2122, aes(treatment, log10(total_slug), fill = crop))+
+  geom_boxplot()+
+  scale_x_discrete(limits = c('1', '2', '4', '3'),
+                   labels = c('No CC', '14-28 DPP', '3-7 DPP', '1-3 DAP'))+
+  scale_fill_manual(values = c("#D95F02","#1B9E77"), 
+                    name = "Treatment", labels = c("Corn", 'Soybean'))+
+  labs(title = "Slug Counts x Treatment and Crop",
+       subtitle = "Years: 2021 Corn - 2022 Soybeans",
+       x = "Treatment", 
+       y = "Slug count (log10)")+
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate('text', x =.815, y = 2, label = 'abc', size = 10)+ #1c
+  annotate('text', x =1.19, y = 2, label = 'abc', size = 10)+ #1b
+  annotate('text', x =1.815, y = 2, label = 'bc', size = 10)+ #2c
+  annotate('text', x =2.19, y = 2, label = 'abc', size = 10)+ #2b
+  annotate('text', x =2.815, y = 2, label = 'abc', size = 10)+ #4c
+  annotate('text', x =3.19, y = 2, label = 'a', size = 10)+ #4b
+  annotate('text', x =3.815, y = 2, label = 'c', size = 10)+#3c
+  annotate('text', x =4.19, y = 2, label = 'ab', size = 10)#3b
+  
+
+# 22 - 23 
+ggplot(cbs2223, aes(treatment, log10(total_slug), fill = crop))+
+  geom_boxplot()+
+  scale_x_discrete(limits = c('1', '2', '4', '3'),
+                   labels = c('No CC', '14-28 DPP', '3-7 DPP', '1-3 DAP'))+
+  scale_fill_manual(values = c("#D95F02","#1B9E77"), 
+                    name = "Treatment", labels = c("Corn", 'Soybean'))+
+  labs(title = "Slug Counts x Treatment and Crop",
+       subtitle = "Years: 2022 Corn - 2023 Soybeans",
+       x = "Treatment", 
+       y = "Slug count (log10)")+
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate('text', x =.815, y = 2.5, label = 'b', size = 10)+ #1c
+  annotate('text', x =1.19, y = 2.5, label = 'ab', size = 10)+ #1b
+  annotate('text', x =1.815, y = 2.5, label = 'ab', size = 10)+ #2c
+  annotate('text', x =2.19, y = 2.5, label = 'ab', size = 10)+ #2b
+  annotate('text', x =2.815, y = 2.5, label = 'ab', size = 10)+ #4c
+  annotate('text', x =3.19, y = 2.5, label = 'ab', size = 10)+ #4b
+  annotate('text', x =3.815, y = 2.5, label = 'ab', size = 10)+#3c
+  annotate('text', x =4.19, y = 2.5, label = 'a', size = 10)#3b
+
 
