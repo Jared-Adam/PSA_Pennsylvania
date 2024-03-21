@@ -9,6 +9,7 @@ library(lmtest)
 library(multcomp)
 library(rempsyc)
 library(flextable)
+library(performance)
 
 # data ####
 wield <- wallace_yield_cb
@@ -92,15 +93,6 @@ corn %>%
 
 # corn all 
 
-# p <- glmer(yieldbuac ~ 
-#                (1|year/block), 
-#              family = poisson, 
-#              data = corn)
-# nb <- glmer.nb(yieldbuac ~
-#                   (1|year/block), 
-#                 data = corn)
-# lrtest(p, nb)
-
 g <- lmer(yieldbuac ~ cc +
              (1|year/block), 
            data = corn)
@@ -169,15 +161,6 @@ corn_23 %>%
 # bean stats ####
 
 # beans all 
-
-# bp <- glmer(yieldbuac ~ 
-#              (1|year/block), 
-#            family = poisson, 
-#            data = beans)
-# bnb <- glmer.nb(yieldbuac ~
-#                  (1|year/block), 
-#                data = beans)
-# lrtest(bp, bnb)
 
 bg <- lmer(yieldbuac ~ cc +
              (1|year/block), 
@@ -348,6 +331,50 @@ DAP : Days after plant")+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+# corn - soy: yield
+# 21 -22
+corn_21 <- filter(corn, year == "2021") %>% 
+  mutate(crop = 'corn')
+bean_22 <- filter(beans, year == "2022") %>% 
+  mutate(crop = 'beans')
+
+y2122 <- rbind(corn_21, bean_22) %>% 
+  mutate(crop = as.factor(crop))
+# results from above models 
+# 2021 corn
+# cc        emmean   SE   df lower.CL upper.CL .group
+# No CC        127 5.33 14.2      115      138  a    
+# 1-3 DAP      128 5.33 14.2      116      139  a    
+# 3-7 DPP      141 5.33 14.2      130      152  a    
+# 14-28 DPP    145 5.33 14.2      133      156  a 
+
+# 2022 beans 
+# cc        emmean   SE df lower.CL upper.CL .group
+# 1-3 DAP     47.4 3.16 16     40.7     54.1  a    
+# 3-7 DPP     47.6 3.16 16     40.9     54.3  a    
+# No CC       47.6 3.16 16     40.9     54.3  a    
+# 14-28 DPP   50.0 3.16 16     43.3     56.7  a  
+
+
+# 22-23
+
+corn_22 <- filter(corn, year == "2022")
+bean_23 <- filter(beans, year == "2023")
+# results from above 
+# 2022 corn
+# cc        emmean   SE   df lower.CL upper.CL .group
+# No CC        113 6.49 15.2       99      127  a    
+# 1-3 DAP      123 6.49 15.2      109      137  a    
+# 3-7 DPP      131 6.49 15.2      117      145  a    
+# 14-28 DPP    131 6.49 15.2      118      145  a 
+
+# 2023 beans
+# cc        emmean   SE df lower.CL upper.CL .group
+# No CC       47.6 6.05 16     34.8     60.4  a    
+# 3-7 DPP     54.8 6.05 16     42.0     67.6  a    
+# 14-28 DPP   58.8 6.05 16     46.0     71.6  a    
+# 1-3 DAP     63.6 6.05 16     50.8     76.4  a 
 
 # corn cover crop data and stats ####
 cc_clean <- cc %>% 
@@ -665,14 +692,14 @@ bcc_start <- bcc %>%
             cc_sd = sd(cc_g),
             cc_se = cc_sd/sqrt(n())) 
 
-new_bcc <- rbind(as.data.frame(cc_start), new_checks)
-
-new_bcc <- as_tibble(new_cc)
-
-bcc_clean <- new_cc %>% 
-  mutate_at(vars(1:2), as.factor)%>%
-  mutate_at(vars(3:5), as.numeric) %>% 
-  arrange(year, factor(trt, c("check", "gr", "br", "grbr")))
+# new_bcc <- rbind(as.data.frame(cc_start), new_checks)
+# 
+# new_bcc <- as_tibble(new_cc)
+# 
+# bcc_clean <- new_cc %>% 
+#   mutate_at(vars(1:2), as.factor)%>%
+#   mutate_at(vars(3:5), as.numeric) %>% 
+#   arrange(year, factor(trt, c("check", "gr", "br", "grbr")))
 
 # all data
 bcc_mg_plot <- bcc %>% 
@@ -932,3 +959,113 @@ DAP: Days after plant")+
   annotate("text", x = 1, y = 1.25, label = "a", size = 10)+
   annotate("text", x = 2, y = 2.5, label = "b", size = 10)+
   annotate("text", x = 3, y = 3.5, label = "b", size = 10)
+
+# corn - soy: cover crops ####
+# 21 corn - 22 soybeans
+cc_mg_model # corn
+bcc_mg_model # soybeans
+
+ccc_21 <- cc_mg_model %>% 
+  filter(year == "2021") %>% 
+  arrange(plot) %>% 
+  mutate(crop = 'corn')
+
+bcc_22 <- bcc_mg_model %>% 
+  filter(year == '2022') %>% 
+  arrange(plot) %>% 
+  mutate(crop = 'beans')
+
+cs2122 <- rbind(ccc_21, bcc_22) %>%
+  mutate( trt = case_when(trt == 'gr' ~ 'green',
+                          trt == 'br' ~ 'brown',
+                          trt == 'grbr' ~ 'gr-br',
+                          .default = as.factor(trt))) %>% 
+  mutate(crop = as.factor(crop)) %>% 
+  print(n = Inf)
+
+clm1 <- glmer(mg_ha ~ trt +
+              (1|crop), data = cs2122)
+hist(residuals(clm1))
+cclm_em <- emmeans(clm1, ~ trt)
+cld(cclm_em, Letters = letters)
+# all differ 
+check_model(clm1)
+r2_nakagawa(clm1)
+# Conditional R2: 0.913
+# Marginal R2: 0.170
+
+# sum stats 
+cs2122 %>% 
+  group_by(trt) %>% 
+  summarise(
+    mean = mean(mg_ha),
+    sd = sd(mg_ha),
+    n = n(), 
+    se = sd/sqrt(n)
+  )
+# trt    mean    sd     n    se
+# 1 brown  2.25  2.01    10 0.634
+# 2 gr-br  4.17  2.89    10 0.915
+# 3 green  7.08  4.87    10 1.54 
+
+
+
+# 22 corn - 23 soybeans
+ccc_22 <- cc_mg_model %>% 
+  filter(year == '2022') %>% 
+  arrange(plot) %>% 
+  mutate(crop = 'corn')
+
+bcc_23 <- cc_mg_model %>% 
+  filter(year == '2023') %>% 
+  arrange(plot) %>% 
+  mutate(crop = 'beans')
+  
+cs2223 <- rbind(ccc_22, bcc_23) %>% 
+  mutate( trt = case_when(trt == 'gr' ~ 'green',
+                          trt == 'br' ~ 'brown',
+                          trt == 'grbr' ~ 'gr-br',
+                          .default = as.factor(trt))) %>% 
+  mutate(crop = as.factor(crop)) %>% 
+  print(n = Inf)
+
+#sum stats 
+cs2223 %>% 
+  group_by(trt) %>% 
+  summarise(
+    mean = mean(mg_ha),
+    sd = sd(mg_ha),
+    n = n(), 
+    se = sd/sqrt(n)
+  )
+# trt    mean    sd     n     se
+# 1 brown 0.902 0.307    10 0.0970
+# 2 gr-br 2.25  0.612    10 0.193 
+# 3 green 3.85  1.79     10 0.566 
+
+clm2 <- glmer(mg_ha ~ trt +
+                (1|crop),
+              data = cs2223)
+hist(residuals(clm2))
+cclm2_em <- emmeans(clm2, ~trt)
+cld(cclm2_em, Letters = letters)
+# all differ 
+
+check_model(clm2)
+r2_nakagawa(clm2)
+# Conditional R2: 0.840
+# Marginal R2: 0.458
+
+# corn - soy: cover crop plots ####
+ggplot(cs2122, aes(x = trt, y = mg_ha, fill = trt))+
+  geom_boxplot()+
+  annotate('text', x=1, y = 5, label = 'a', size = 10)+
+  annotate('text', x=2, y = 5, label = 'b', size = 10)+
+  annotate('text', x=3, y = 5, label = 'c', size = 10)
+
+ggplot(cs2223, aes(trt, mg_ha, fill = trt))+
+  geom_boxplot()+
+  annotate('text', x=1, y = 5, label = 'a', size = 10)+
+  annotate('text', x=2, y = 5, label = 'b', size = 10)+
+  annotate('text', x=3, y = 5, label = 'c', size = 10)
+  
