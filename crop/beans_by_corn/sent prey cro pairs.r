@@ -117,12 +117,44 @@ colnames(bent_22)
 cbent2122 <- rbind(cent_21, bent_22) %>% 
   relocate(year, growth_stage, crop) %>% 
   mutate_at(vars(1:6), as.factor)
-unique(cbent2122$crop)
+
+cbent2122 %>% 
+  group_by(crop, treatment) %>% 
+  summarise(mean = mean(to.predated),
+            sd = sd(to.predated), 
+            n = n(), 
+            se = sd/sqrt(n))
+# crop  treatment  mean    sd     n     se
+#   1 corn  1         0.656 0.478    90 0.0504
+# 2 corn  2         0.711 0.456    90 0.0480
+# 3 corn  3         0.844 0.364    90 0.0384
+# 4 corn  4         0.911 0.286    90 0.0302
+# 5 beans 1         0.889 0.316    90 0.0333
+# 6 beans 2         0.967 0.181    90 0.0190
+# 7 beans 3         0.967 0.181    90 0.0190
+# 8 beans 4         0.933 0.251    90 0.0264
+
 
 # corn 2022 - soybean 2023
 cbent2223 <- rbind(cent_22, bent_23)%>% 
   relocate(year, growth_stage, crop) %>% 
   mutate_at(vars(1:6), as.factor)
+
+cbent2223 %>% 
+  group_by(crop, treatment) %>% 
+  summarise(mean = mean(to.predated),
+            sd = sd(to.predated), 
+            n = n(), 
+            se = sd/sqrt(n))
+# crop  treatment  mean    sd     n     se
+#   1 corn  1         0.9   0.302    90 0.0318
+# 2 corn  2         0.944 0.230    90 0.0243
+# 3 corn  3         0.878 0.329    90 0.0347
+# 4 corn  4         0.933 0.251    90 0.0264
+# 5 beans 1         0.733 0.445    90 0.0469
+# 6 beans 2         0.878 0.329    90 0.0347
+# 7 beans 3         0.944 0.230    90 0.0243
+# 8 beans 4         0.833 0.375    90 0.0395
 
 # models ####
 cbent2122
