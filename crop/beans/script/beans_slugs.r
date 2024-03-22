@@ -154,12 +154,13 @@ nice_table(bsl.table, highlight = TRUE)
 anova(m0, m1)
 
 summary(m1)
-r2_nakagawa(m1)
-# Conditional R2: 0.734
+r2_nakagawa(m1)# Conditional R2: 0.734
 # Marginal R2: 0.010
 binned_residuals(m1)
 br_1 <- binned_residuals(m1)
 plot(br_1)
+check_model(m1)
+?check_model
 s_emm <- emmeans(m1, ~treatment, type = "response")
 pairs(s_emm)
 cld(s_emm, Letters = letters)
