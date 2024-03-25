@@ -151,12 +151,18 @@ cm23 <- lmer(yieldbuac ~ cc +
 c23_em <- emmeans(cm23, ~cc)
 cld(c23_em, Letters = letters)
 
-corn_23 %>%
+cavg_paper <- corn_23 %>%
   group_by(cc) %>% 
   summarise(mean = mean(yieldbuac), 
             sd = sd(yieldbuac), 
             n = n(), 
             se = sd / sqrt(n))
+
+names(cavg_paper) <- c("Treatment","Mean","Sd", "n", "SE")
+cavg23_table <- flextable(cavg_paper)
+cavg23_table <- autofit(cavg23_table)
+theme_zebra(cavg23_table) %>% 
+  save_as_docx(path = 'cavg23_table.docx')
 
 # bean stats ####
 
@@ -340,7 +346,9 @@ bean_22 <- filter(beans, year == "2022") %>%
   mutate(crop = 'beans')
 
 y2122 <- rbind(corn_21, bean_22) %>% 
-  mutate(crop = as.factor(crop))
+  mutate(crop = as.factor(crop)) %>% 
+  mutate(crop = case_when(crop == 'corn' ~ 'Corn', 
+                          crop == 'beans' ~ 'Soybean'))
 # results from above models 
 # 2021 corn
 # cc        emmean   SE   df lower.CL upper.CL .group
@@ -355,12 +363,39 @@ y2122 <- rbind(corn_21, bean_22) %>%
 # 3-7 DPP     47.6 3.16 16     40.9     54.3  a    
 # No CC       47.6 3.16 16     40.9     54.3  a    
 # 14-28 DPP   50.0 3.16 16     43.3     56.7  a  
+ggplot(y2122, aes(x = cc, y = yieldbuac, fill = cc))+
+  geom_boxplot(width = 0.5, alpha = 0.7)+
+  geom_point(size = 2)+
+  facet_wrap(~crop, scale = 'free')+
+  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
+  ylab(bquote("Yield"(bu / ac ^-1)))+
+  labs(x = 'Treatment',
+       title = 'Yield x Treatment',
+       subtitle = "Years: 2021 Corn - 2022 Soybeans",
+       caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
+        strip.text = element_text(size = 26))
 
 
 # 22-23
-
+unique(y2223$crop)
 corn_22 <- filter(corn, year == "2022")
 bean_23 <- filter(beans, year == "2023")
+y2223 <- rbind(corn_22, bean_23) %>% 
+  mutate(crop = as.factor(crop)) %>% 
+  mutate(crop = case_when(crop == 'corn' ~ 'Corn', 
+                          crop == 'soybean' ~ 'Soybean'))
 # results from above 
 # 2022 corn
 # cc        emmean   SE   df lower.CL upper.CL .group
@@ -375,6 +410,32 @@ bean_23 <- filter(beans, year == "2023")
 # 3-7 DPP     54.8 6.05 16     42.0     67.6  a    
 # 14-28 DPP   58.8 6.05 16     46.0     71.6  a    
 # 1-3 DAP     63.6 6.05 16     50.8     76.4  a 
+
+ggplot(y2223, aes(x = cc, y = yieldbuac, fill = cc))+
+  geom_boxplot(width = 0.5, alpha = 0.7)+
+  geom_point(size = 2)+
+  facet_wrap(~crop, scale = 'free')+
+  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
+  ylab(bquote("Yield"(bu / ac ^-1)))+
+  labs(x = 'Treatment',
+       title = 'Yield x Treatment',
+       subtitle = "Years: 2022 Corn - 2023 Soybeans",
+       caption = "DPP: Days pre plant
+DAP : Days after plant")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
+        strip.text = element_text(size = 26))
+
+
 
 # corn cover crop data and stats ####
 cc_clean <- cc %>% 
