@@ -942,7 +942,7 @@ theme_zebra(b_cc_table) %>%
 #over all bar
 ggplot(filter(bcc_mg_plot, trt != "check"), aes(x = trt, y = mean_mg, fill = trt))+
   scale_x_discrete(limits = c('br', 'grbr', 'gr'),
-    labels = c("14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+    labels = c("14-28 DPP", "3-7 DPP", "1-3 DAP"))+
   scale_fill_manual(values = c("#D95F02","#1B9E77" , "#7570B3"))+
   geom_bar(stat = 'identity', position = 'dodge', alpha = 0.7)+
   geom_errorbar( aes(x=trt, ymin=mean_mg-se, ymax=mean_mg+se), width=0.4, 
@@ -970,7 +970,7 @@ DAP: Days after plant")+
 # bar by year 
 ggplot(filter(bcc_year_plot, trt != "check"), aes(x = trt, y = mean_mg, fill = trt))+
   scale_x_discrete(limits = c('br', 'grbr', 'gr'),
-    labels = c("14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+    labels = c("14-28 DPP", "3-7 DPP", "1-3 DAP"))+
   scale_fill_manual(values = c("#D95F02","#1B9E77", "#7570B3"))+
   geom_bar(stat = 'identity', position = 'dodge', alpha = 0.7)+
   geom_errorbar( aes(x=trt, ymin=mean_mg-se, ymax=mean_mg+se), width=0.4, 
@@ -997,7 +997,7 @@ DAP: Days after plant")+
 # overall box
 ggplot(filter(bcc_mg_model, trt != "check"), aes(x = trt, y = mg_ha, fill = trt))+
   scale_x_discrete(limits = c("br", "grbr", "gr"),
-    labels = c("14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+    labels = c("14-28 DPP", "3-7 DPP", "1-3 DAP"))+
   scale_fill_manual(values = c("#D95F02", "#1B9E77", "#7570B3"))+
   geom_boxplot(alpha = 0.7)+
   geom_point(size = 2)+
