@@ -47,6 +47,18 @@ beans_avg <- beans %>%
             sd = sd(yieldbuac), 
             n = n(), 
             se = sd / sqrt(n))
+#year for fig 
+beans %>% 
+  group_by(year) %>% 
+  summarise(mean =mean(yieldbuac),
+            sd= sd(yieldbuac),
+            n = n(),
+            se = sd/sqrt(n))
+# year   mean    sd     n    se
+# <fct> <dbl> <dbl> <int> <dbl>
+#   1 2022   48.2  6.57    20  1.47
+# 2 2023   56.2 13.8     20  3.08
+
 
 ggplot(beans_avg, aes(x = cc, y = mean, fill = cc))+
   geom_bar(stat = 'identity', position = 'dodge')+
@@ -188,6 +200,10 @@ cld(b_em, Letters = letters)
 ba <- aov(yieldbuac ~ year, data = beans)
 hist(residuals(ba))
 TukeyHSD(ba)
+
+# $year
+# diff      lwr      upr     p adj
+# 2023-2022 8.05 1.133493 14.96651 0.0237249
 
 # 2022
 bean_22 <- filter(beans, year == "2022")

@@ -299,7 +299,7 @@ ggplot(cbent2122_plot, aes(treatment, prop, color = treatment))+
     title = "Mean predation x Treatment and Crop",
     subtitle = "Years: 2021 Corn - 2022 Soybean",
     x = "Treatment",
-    y = "Mean proportion predated ( x / 1 )",
+    y = "Mean proportion attacked ( x / 1 )",
     caption = "DPP: Days pre plant
 DAP: Days after plant")+
   theme(legend.position = 'none',
@@ -349,7 +349,7 @@ ggplot(cbent2223_plot, aes(treatment, prop, color = treatment))+
     title = "Mean predation x Treatment and Crop",
     subtitle = "Years: 2022 Corn - 2023 Soybean",
     x = "Treatment",
-    y = "Mean proportion predated ( x / 1 )",
+    y = "Mean proportion attacked ( x / 1 )",
     caption = "DPP: Days pre plant
 DAP: Days after plant")+
   theme(legend.position = 'none',
