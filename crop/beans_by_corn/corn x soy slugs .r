@@ -212,20 +212,22 @@ cbs2_df <- as.data.frame(cld(cbs2, Letters = letters))
 ggplot(cbs2122, aes(treatment, log10(total_slug), fill = crop))+
   geom_boxplot()+
   scale_x_discrete(limits = c('1', '2', '4', '3'),
-                   labels = c('No CC', '14-28 DPP', '3-7 DPP', '1-3 DAP'))+
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#D95F02","#1B9E77"), 
-                    name = "Treatment", labels = c("Corn", 'Soybean'))+
+                    name = "Crop", labels = c("Corn", 'Soybean'))+
+  geom_point(position = position_dodge(width = 0.75))+
   labs(title = "Slug Counts x Treatment and Crop",
        subtitle = "Years: 2021 Corn - 2022 Soybeans",
-       x = "Treatment", 
-       y = "Slug count (log10)",
-       caption = "DPP: Days pre plant
-DAP: Days after plant")+
+       x = "Treatment termination", 
+       y = "Slug count (log10)"
+#        caption = "DPP: Days pre plant
+# DAP: Days after plant"
+       )+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
         legend.title = element_text(size = 24),
         legend.text = element_text(size = 24),
-        axis.text.x = element_text(size=26),
+        axis.text.x = element_text(size=32),
         axis.text.y = element_text(size = 26),
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 28),
@@ -234,34 +236,36 @@ DAP: Days after plant")+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  annotate('text', x =.815, y = 2, label = 'abc', size = 10)+ #1c
-  annotate('text', x =1.19, y = 2, label = 'abc', size = 10)+ #1b
-  annotate('text', x =1.815, y = 2, label = 'bc', size = 10)+ #2c
-  annotate('text', x =2.19, y = 2, label = 'abc', size = 10)+ #2b
-  annotate('text', x =2.815, y = 2, label = 'abc', size = 10)+ #4c
-  annotate('text', x =3.19, y = 2, label = 'a', size = 10)+ #4b
-  annotate('text', x =3.815, y = 2, label = 'c', size = 10)+#3c
-  annotate('text', x =4.19, y = 2, label = 'ab', size = 10)#3b
+  annotate('text', x =.815, y = 2.1, label = 'abc', size = 10)+ #1c
+  annotate('text', x =1.19, y = 2.1, label = 'abc', size = 10)+ #1b
+  annotate('text', x =1.815, y = 2.1, label = 'bc', size = 10)+ #2c
+  annotate('text', x =2.19, y = 2.1, label = 'abc', size = 10)+ #2b
+  annotate('text', x =2.815, y = 2.1, label = 'abc', size = 10)+ #4c
+  annotate('text', x =3.19, y = 2.1, label = 'a', size = 10)+ #4b
+  annotate('text', x =3.815, y = 2.1, label = 'c', size = 10)+#3c
+  annotate('text', x =4.19, y = 2.1, label = 'ab', size = 10)#3b
   
 
 # 22 - 23 
 ggplot(cbs2223, aes(treatment, log10(total_slug), fill = crop))+
   geom_boxplot()+
   scale_x_discrete(limits = c('1', '2', '4', '3'),
-                   labels = c('No CC', '14-28 DPP', '3-7 DPP', '1-3 DAP'))+
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#D95F02","#1B9E77"), 
-                    name = "Treatment", labels = c("Corn", 'Soybean'))+
+                    name = "Crop", labels = c("Corn", 'Soybean'))+
+  geom_point(position = position_dodge(width = 0.75))+
   labs(title = "Slug Counts x Treatment and Crop",
        subtitle = "Years: 2022 Corn - 2023 Soybeans",
-       x = "Treatment", 
-       y = "Slug count (log10)",
-       caption = "DPP: Days pre plant
-DAP: Days after plant")+
+       x = "Treatment termination", 
+       y = "Slug count (log10)"
+#        caption = "DPP: Days pre plant
+# DAP: Days after plant"
+       )+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
         legend.title = element_text(size = 24),
         legend.text = element_text(size = 24),
-        axis.text.x = element_text(size=26),
+        axis.text.x = element_text(size=32),
         axis.text.y = element_text(size = 26),
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 28),

@@ -277,16 +277,19 @@ DAP : Days after plant")+
 ggplot(corn, aes(x = cc, y = yieldbuac, fill = cc))+
   geom_boxplot(width = 0.5, alpha = 0.7)+
   geom_point(size = 2)+
-  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"),
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
   ylab(bquote("Yield"(bu / ac ^-1)))+
   labs(x = 'Treatment',
        title = 'Corn: Yield x Treatment',
-       subtitle = "Years: 2021-2023",
-       caption = "DPP: Days pre plant
-DAP : Days after plant")+
+       subtitle = "Years: 2021-2023"
+#        ,
+#        caption = "DPP: Days pre plant
+# DAP : Days after plant"
+)+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=26),
+        axis.text.x = element_text(size=32),
         axis.text.y = element_text(size = 26),
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 32),
@@ -295,10 +298,10 @@ DAP : Days after plant")+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  annotate("text", x = 1, y = 150, label = "a", size = 10)+
-  annotate("text", x = 2, y = 177, label = "b", size = 10)+
-  annotate("text", x = 3, y = 177, label = "b", size = 10)+
-  annotate("text", x = 4, y = 200, label = "b", size = 10)
+  annotate("text", x = 1, y = 205, label = "a", size = 10)+
+  annotate("text", x = 2, y = 205, label = "b", size = 10)+
+  annotate("text", x = 3, y = 205, label = "b", size = 10)+
+  annotate("text", x = 4, y = 205, label = "b", size = 10)
   
 
 bean_plot <- beans %>% 
@@ -311,7 +314,8 @@ bean_plot <- beans %>%
 
 ggplot(bean_plot, aes(x= cc, y = mean, fill = cc))+
   geom_bar(position = 'dodge' , stat = 'identity', alpha = .7)+
-  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"),
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
   geom_errorbar( aes(x=cc, ymin=mean-se, ymax=mean+se), width=0.4, 
                  colour="black", alpha=0.9, size=1.3)+
@@ -322,7 +326,7 @@ ggplot(bean_plot, aes(x= cc, y = mean, fill = cc))+
        caption = "DPP: Days pre plant
 DAP : Days after plant")+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=26),
+        axis.text.x = element_text(size=32),
         axis.text.y = element_text(size = 26),
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 32),
@@ -335,16 +339,18 @@ DAP : Days after plant")+
 ggplot(beans, aes(x = cc, y = yieldbuac, fill = cc))+
   geom_boxplot(width = 0.5, alpha = 0.7)+
   geom_point(size = 2)+
-  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"),
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
   ylab(bquote("Yield"(bu / ac ^-1)))+
   labs(x = 'Treatment',
        title = 'Soybean: Yield x Treatment',
-       subtitle = "Years: 2022-2023",
-       caption = "DPP: Days pre plant
-DAP : Days after plant")+
+       subtitle = "Years: 2022-2023"
+#        caption = "DPP: Days pre plant
+# DAP : Days after plant"
+       )+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=26),
+        axis.text.x = element_text(size=32),
         axis.text.y = element_text(size = 26),
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 32),
@@ -499,23 +505,25 @@ cc_mg_model <- cc %>%
   filter(trt != "check")
 
 
-cc0 <- lmer(mg_ha~
-              (1|year/block),
-            data = cc_mg_model)
-summary(cc0)
 
-cc1 <- lmer(mg_ha ~ trt +
-              (1|year/block),
+cc1 <- lm(mg_ha ~ trt + year,
             data = cc_mg_model)
 summary(cc1)
-
-cc_em <- emmeans(cc1, ~trt)
+hist(residuals(cc1))
+cc_em <- emmeans(cc1, ~trt + year)
 pwpm(cc_em)
 cld(cc_em, Letters = letters)
-# trt   emmean  SE   df lower.CL upper.CL .group
-# brown   1.96 1.8 2.09    -5.48     9.41  a    
-# gr-br   3.77 1.8 2.09    -3.67    11.22   b   
-# green   6.44 1.8 2.09    -1.01    13.88    c 
+# trt   year emmean    SE df lower.CL upper.CL .group  
+# brown 2023 -0.563 0.424 40   -1.419    0.293  a      
+# brown 2022  1.044 0.424 40    0.188    1.900   b     
+# gr-br 2023  1.246 0.424 40    0.390    2.102   b     
+# gr-br 2022  2.853 0.424 40    1.997    3.709    c    
+# green 2023  3.913 0.424 40    3.057    4.769    cd   
+# brown 2021  5.408 0.424 40    4.552    6.264     de  
+# green 2022  5.519 0.424 40    4.663    6.375      ef 
+# gr-br 2021  7.217 0.424 40    6.361    8.073       f 
+# green 2021  9.883 0.424 40    9.027   10.739        g
+
 cc_mg_model %>% 
   group_by(trt) %>% 
   summarise(mean = mean(mg_ha), 
@@ -825,14 +833,13 @@ bc0 <- lmer(mg_ha~
             data = bcc_mg_model)
 summary(bc0)
 
-bc1 <- lmer(mg_ha ~ trt +
-              (1|year/block),
+bc1 <- lm(mg_ha ~ trt + year,
             data = bcc_mg_model)
 summary(bc1)
 
-bcc_em <- emmeans(bc1, ~trt)
-pwpm(bcc_em)
-cld(bcc_em, Letters = letters)
+cld(emmeans(bc1, ~trt + year), Letters = letters)
+
+
 # trt  emmean    SE   df lower.CL upper.CL .group
 # br    0.634 0.136 7.36    0.316    0.951  a    
 # grbr  1.779 0.136 7.36    1.461    2.097   b   

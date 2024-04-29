@@ -150,7 +150,16 @@ r2_nakagawa(sm3)
 
 sm_em <- emmeans(sm3, ~treatment*growth_stage)
 dmg_score_plot <- cld(sm_em, Letters = letters)
-
+dmg_score_plot
+# treatment growth_stage  emmean     SE  df asymp.LCL asymp.UCL .group
+# 4         V5           -0.4917 0.0806 Inf    -0.650  -0.33370  a    
+# 2         V5           -0.4710 0.0807 Inf    -0.629  -0.31294  ab   
+# 1         V5           -0.4444 0.0798 Inf    -0.601  -0.28800  ab   
+# 1         V3           -0.3168 0.0787 Inf    -0.471  -0.16253  a c  
+# 4         V3           -0.2246 0.0779 Inf    -0.377  -0.07192  abcd 
+# 2         V3           -0.1464 0.0771 Inf    -0.298   0.00467   b d 
+# 3         V3           -0.1011 0.0767 Inf    -0.251   0.04930     d 
+# 3         V5           -0.0779 0.0770 Inf    -0.229   0.07295    cd 
 
 d_s.table <- as.data.frame(summary(sm3)$coefficients)
 d_s.table <-cbind(row.names(d_s.table), d_s.table)
@@ -271,20 +280,17 @@ year.labs <- c("2021  a", "2022  b", "2023  c")
 names(year.labs) <- c("2021", "2022", "2023")
 
 ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
-  geom_violin(alpha = 0.7)+
-  geom_boxplot(width = 0.1, fill = 'white')+
+  geom_boxplot(alpha = 0.7)+
   facet_wrap(~year, labeller = labeller(year = year.labs))+
   geom_point(size = 2)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+                   labels=c("No CC", "Early", "Late", "Green"))+
   labs(title = 'Corn: Total Damage Score x Treatment and Year',
-       x = 'Treatment',
-       y = 'Total Damage Score x Plot (0-4)',
-       caption = "DPP: Days pre plant
-DAP : Days after plant")+
+       x = 'Termination termination',
+       y = 'Total damage score per plot (0-4)')+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=20),
+        axis.text.x = element_text(size=26),
         axis.text.y = element_text(size = 26),
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 28),
@@ -292,8 +298,7 @@ DAP : Days after plant")+
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.text = element_text(size = 24),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+        strip.text = element_text(size = 32))
 
 
 
@@ -369,6 +374,15 @@ summary(m3)
 r2_nakagawa(m3)
 m3_em <- emmeans(m3, ~treatment+growth_stage)
 cld(m3_em, Letters = letters)
+# treatment growth_stage  emmean    SE  df asymp.LCL asymp.UCL .group
+# 4         V5           -0.7789 0.629 Inf    -2.012     0.455  a    
+# 2         V5           -0.5599 0.632 Inf    -1.798     0.679  a    
+# 1         V3           -0.1994 0.622 Inf    -1.419     1.020  a    
+# 1         V5           -0.1961 0.626 Inf    -1.423     1.031  a    
+# 3         V3           -0.1753 0.625 Inf    -1.400     1.049  a    
+# 3         V5           -0.0736 0.625 Inf    -1.299     1.152  a    
+# 4         V3            0.0321 0.628 Inf    -1.198     1.262  a    
+# 2         V3            0.2632 0.627 Inf    -0.967     1.493  a
 
 
 slug_em <- as.data.frame(m3_em)
@@ -485,6 +499,17 @@ bm3_em <- emmeans(bm3, ~treatment+growth_stage)
 pwpm(bm3_em)
 
 bcw_em <- as.data.frame(cld(bm3_em, Letters = letters))
+# treatment growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# 2         V5            -4.39 0.613 Inf     -5.59     -3.19  a    
+# 4         V5            -4.22 0.602 Inf     -5.40     -3.05  a    
+# 1         V5            -3.85 0.585 Inf     -4.99     -2.70  ab   
+# 4         V3            -3.65 0.585 Inf     -4.80     -2.50  ab   
+# 3         V5            -3.58 0.580 Inf     -4.72     -2.45  ab   
+# 2         V3            -3.02 0.564 Inf     -4.13     -1.92  ab   
+# 3         V3            -2.73 0.558 Inf     -3.82     -1.63   b   
+# 1         V3            -2.69 0.560 Inf     -3.79     -1.59   b   
+
+
 
 gs.labs <- c("V3  a", "V5  b")
 names(gs.labs) <- c("V3", "V5")
@@ -498,14 +523,12 @@ ggplot(bcw_em, aes(color = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
   labs(
     title = "Corn: Black Cutworm Damage x Treatment",
     subtitle = "Years: 2021-2023",
-    x = "Treatment",
-    y = "Damage Emmean",
-    caption = "DPP: Days pre plant
-DAP: Days after plant"
+    x = "Treatment termination",
+    y = "Damage Emmean"
   )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
@@ -516,7 +539,7 @@ DAP: Days after plant"
         # axis.ticks.length = unit(.25, "cm"),
         axis.text.x = element_text(size = 26),
         axis.text.y = element_text(size = 26),
-        strip.text.x = element_text(size = 26), 
+        strip.text.x = element_text(size = 32), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
@@ -606,6 +629,15 @@ tm3_em <- emmeans(tm3, ~treatment+growth_stage)
 pwpm(tm3_em)
 
 taw_em <- as.data.frame(cld(tm3_em, Letters = letters))
+# treatment growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# 2         V5            -5.31 0.867 Inf     -7.00     -3.61  a    
+# 2         V3            -5.23 0.856 Inf     -6.91     -3.55  a    
+# 1         V5            -5.01 0.851 Inf     -6.68     -3.35  a    
+# 1         V3            -4.81 0.831 Inf     -6.44     -3.18  a    
+# 3         V5            -4.63 0.829 Inf     -6.26     -3.01  a    
+# 4         V5            -4.47 0.810 Inf     -6.06     -2.88  a    
+# 3         V3            -4.25 0.796 Inf     -5.81     -2.68  a    
+# 4         V3            -4.10 0.797 Inf     -5.66     -2.53  a 
 
 gs.labs <- c("V3  a", "V5  b")
 names(gs.labs) <- c("V3", "V5")
@@ -833,6 +865,15 @@ mm3_em <- emmeans(mm3, ~treatment+growth_stage)
 pwpm(mm3_em)
 
 mm_em <- as.data.frame(cld(mm3_em, Letters = letters))
+# treatment growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# 1         V5            -4.28 0.392 Inf     -5.04     -3.51  a    
+# 4         V5            -3.82 0.360 Inf     -4.53     -3.12  a    
+# 2         V5            -3.69 0.360 Inf     -4.39     -2.98  ab   
+# 1         V3            -3.48 0.343 Inf     -4.15     -2.81  abc  
+# 2         V3            -3.11 0.323 Inf     -3.75     -2.48  abc  
+# 4         V3            -3.10 0.323 Inf     -3.73     -2.46  abc  
+# 3         V5            -2.58 0.311 Inf     -3.19     -1.97   bc  
+# 3         V3            -2.37 0.304 Inf     -2.96     -1.77    c  
 
 gs.labs <- c("V3  a", "V5  b")
 names(gs.labs) <- c("V3", "V5")
@@ -846,14 +887,12 @@ ggplot(mm_em, aes(color = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
   labs(
     title = "Corn: Multiple Pest Damage x Treatment",
     subtitle = "Years: 2021-2023",
-    x = "Treatment",
-    y = "Damage Emmean",
-    caption = "DPP: Days pre plant
-DAP: Days after plant"
+    x = "Treatment termination",
+    y = "Damage Emmean"
   )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
@@ -864,11 +903,10 @@ DAP: Days after plant"
         # axis.ticks.length = unit(.25, "cm"),
         axis.text.x = element_text(size = 26),
         axis.text.y = element_text(size = 26),
-        strip.text.x = element_text(size = 26), 
+        strip.text.x = element_text(size = 32), 
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+        panel.grid.minor = element_blank())+
   geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
 
 ggplot(mm_em, aes(color = treatment))+

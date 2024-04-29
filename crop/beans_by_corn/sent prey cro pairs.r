@@ -292,16 +292,17 @@ ggplot(cbent2122_plot, aes(treatment, prop, color = treatment))+
   coord_flip()+
   geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
-  scale_x_discrete(labels=c("1-3 DAP", "3-7 DPP", "14-28 DPP", "No CC"),
+  scale_x_discrete(labels=c("Green", "Late", "Early", "No CC"),
                    limits = c("3", "4", "2", "1"))+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   labs(
     title = "Mean predation x Treatment and Crop",
     subtitle = "Years: 2021 Corn - 2022 Soybean",
-    x = "Treatment",
-    y = "Mean proportion attacked ( x / 1 )",
-    caption = "DPP: Days pre plant
-DAP: Days after plant")+
+    x = "Treatment termination",
+    y = "Mean proportion attacked ( x / 1 )"
+#     caption = "DPP: Days pre plant
+# DAP: Days after plant"
+    )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
         plot.subtitle = element_text(size = 24),
@@ -310,12 +311,12 @@ DAP: Days after plant")+
         # axis.ticks = element_line(size = 1.25),
         # axis.ticks.length = unit(.25, "cm"),
         axis.text.x = element_text(size = 26),
-        axis.text.y = element_text(size = 26),
+        axis.text.y = element_text(size = 32),
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
-        strip.text = element_text(size = 26))+
+        strip.text = element_text(size = 32))+
   geom_text(aes(x = treatment, y = 1,label = trimws(cld)), size = 10 , color = 'black')
 
 ####
@@ -342,16 +343,17 @@ ggplot(cbent2223_plot, aes(treatment, prop, color = treatment))+
   coord_flip()+
   geom_errorbar(aes(x = treatment,ymin = prop - se, ymax = prop + se),
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
-  scale_x_discrete(labels=c("1-3 DAP", "3-7 DPP", "14-28 DPP", "No CC"),
+  scale_x_discrete(labels=c("Green", "Late", "Early", "No CC"),
                    limits = c("3", "4", "2", "1"))+
   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   labs(
     title = "Mean predation x Treatment and Crop",
     subtitle = "Years: 2022 Corn - 2023 Soybean",
     x = "Treatment",
-    y = "Mean proportion attacked ( x / 1 )",
-    caption = "DPP: Days pre plant
-DAP: Days after plant")+
+    y = "Mean proportion attacked ( x / 1 )"
+    #     caption = "DPP: Days pre plant
+    # DAP: Days after plant"
+  )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
         plot.subtitle = element_text(size = 24),
@@ -359,11 +361,11 @@ DAP: Days after plant")+
         # axis.line = element_line(size = 1.25),
         # axis.ticks = element_line(size = 1.25),
         # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 26),
+        axis.text.x = element_text(size = 32),
         axis.text.y = element_text(size = 26),
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
-        strip.text = element_text(size = 26))+
+        strip.text = element_text(size = 32))+
   geom_text(aes(x = treatment, y = 1,label = trimws(cld)), size = 10 , color = 'black')

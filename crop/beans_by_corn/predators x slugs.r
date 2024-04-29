@@ -330,16 +330,17 @@ ggplot(s_plot, aes(x = pred, y = slugs))+
   geom_point(size = 10,aes(color = trt)) +
   scale_color_manual(limits = c("1", "2", "4","3"),
     values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
-                     labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
-  guides(color=guide_legend("Treatment"))+
+                     labels=c("No CC", "Early", "Late", "Green"))+
+  guides(color=guide_legend("Treatment termination"))+
   geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
   stat_poly_eq(label.x = "right", label.y = "top", size = 12)+
   labs(title = "Soybean: Slug x Predator Populations",
        subtitle = "Years: 2022-2023",
        x = "Predator population",
-       y = "Slug population",
-       caption = "DPP: Days pre plant
-DAP: Days after plant")+
+       y = "Slug population"
+#        caption = "DPP: Days pre plant
+# DAP: Days after plant"
+)+
   annotate("text", x = 470, y = 240, label = "p value < .001", size = 12, fontface = 'italic')+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
@@ -372,16 +373,17 @@ ggplot(c_plot, aes(x = pred, y = slugs))+
   geom_point(size = 10, aes(color = trt))+
   scale_color_manual(limits = c("1", "2", "4","3"),
                      values = c("#E7298A", "#D95F02", "#7570B3", "#1B9E77"),
-                     labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+                     labels=c("No CC", "Early", "Late", "Green"))+
   geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
   stat_poly_eq(size = 12)+
-  guides(color=guide_legend("Treatment"))+
+  guides(color=guide_legend("Treatment termination"))+
   labs(title = "Corn: Slug x Predator Populations",
        subtitle = "Years: 2022-2023",
       x = "Predator population",
-      y = "Slug population",
-      caption = "DPP: Days pre plant
-DAP: Days after plant")+
+      y = "Slug population"
+#       caption = "DPP: Days pre plant
+# DAP: Days after plant"
+)+
   annotate("text", x = 80, y = 630, label = "p value < .01", size = 12, fontface = "italic")+
   theme(legend.position = "bottom",
         legend.key.size = unit(.50, 'cm'),
@@ -392,7 +394,7 @@ DAP: Days after plant")+
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 28),
         plot.subtitle = element_text(size = 24), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
+        # panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
