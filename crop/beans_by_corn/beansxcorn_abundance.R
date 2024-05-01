@@ -300,13 +300,38 @@ bc %>%
             se = sd/sqrt(n))
 
 
-# total arthropods by crop and trt for corn 2022 and corn 2023 ####
+# total arthropods by crop and trt for corn 2022 and beans 2023 ####
 colnames(func_bc)
 tot_arth <- func_bc %>% 
   group_by(crop, trt) %>% 
   rowwise() %>% 
   mutate(sum = sum(c_across(6:12))) %>% 
   print(n = Inf)
+
+#
+##
+###
+# for paper #
+year_crop <- func_bc %>% 
+  group_by(crop,year) %>% 
+  rowwise() %>% 
+  mutate(sum = sum(c_across(6:12))) %>% 
+  print(n = Inf)
+
+# all
+year_crop %>% 
+  group_by(year, crop) %>% 
+  summarise(
+    sum = sum(sum)
+  )
+# year  crop    sum
+# <fct> <fct> <dbl>
+#   1 2022  corn    305
+# 2 2023  beans   660
+
+
+
+
 
 tot_aov <- aov(sum ~ crop + trt, tot_arth)
 summary(tot_aov)
@@ -441,7 +466,11 @@ all_b <- b_clean %>%
   mutate(Carabidae_new = Carabidae + Pterostichus +Cicindelidae) %>% 
   dplyr::select(-Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Carabidae = Carabidae_new) %>% 
+  filter(date != '2022-08-18') %>% 
   print(n = Inf)
+unique(all_b$date)
+
+
 
 all_c <- c_clean %>% 
   rename(Lyniphiidae = Lyn,
@@ -480,9 +509,14 @@ tot_all_years <- func_tot %>%
   mutate(sum = sum(c_across(6:12))) %>% 
   print(n = Inf)
 
-all_years_bc_aov <- aov(sum ~ crop + trt, tot_all_years)
-summary(all_years_bc_aov)
-TukeyHSD(all_years_bc_aov)
+
+
+all_model <- glm.nb(sum ~ crop + year, data = tot_all_years)
+summary(all_model)
+hist(residuals(all_model))
+cld(emmeans(all_model, ~ crop + year), Letters = letters)
+
+
 
 tot_se_years_bc_df <- tot_all_years %>% 
   group_by(crop) %>% 
@@ -490,6 +524,98 @@ tot_se_years_bc_df <- tot_all_years %>%
             sd = sd(sum), 
             n = n(), 
             se = sd/ sqrt(n))
+# crop   mean    sd     n    se
+# <fct> <dbl> <dbl> <int> <dbl>
+# 1 beans 15.0  10.6     80 1.18 
+# 2 corn   5.65  4.28    80 0.478
+
+tot_all_years %>% 
+  group_by(year) %>% 
+  summarise(tot = sum(sum),
+    mean = mean(sum), 
+            sd = sd(sum), 
+            n = n(), 
+            se = sd/ sqrt(n))
+# year    tot  mean    sd     n    se
+# <fct> <dbl> <dbl> <dbl> <int> <dbl>
+# 1 2022    841  10.5  6.17    80 0.690
+# 2 2023    807  10.1 11.6     80 1.30 
+# 1648
+
+tot_all_years %>% 
+  group_by(year) %>% 
+  summarise(arn = sum(Aranaeomorphae),
+            car = sum(Carabidae))
+# year    arn   car
+# <fct> <dbl> <dbl>
+# 1 2022    530   208
+# 2 2023    119   282
+
+all_arth_bc %>% 
+  mutate(Aranaeomorphae = Thomisidae + Tetragnathidae + Gnaphosidae + Agelenidae +
+           Lyniphiidae + Araneae + Salticidae) %>% 
+  group_by(year) %>% 
+  summarise(lyc = sum(Lycosidae), 
+            aran = sum(Aranaeomorphae)) 
+# year    lyc  aran
+# <fct> <dbl> <dbl>
+# 1 2022    454    76
+# 2 2023     85    34
+
+
+# beetle genera
+
+genus <- beans %>% 
+  dplyr::select(-split, -life_stage, -sp) %>% 
+  group_by(date, plot) %>% 
+  pivot_wider(names_from = genus, 
+              values_from = genus,
+              values_fn = list(genus = length)) %>% 
+  filter(family == 'Carabidae') %>% 
+  dplyr::select(-Gladicosa, -Schizocosa, -na, -Pardosa, -Misumenoides, -Pachygnatha, -Trabeops,
+                -Petalops, -Piratula, -Allocosa, -Varacosa, -unknown, -`NA`) %>% 
+  replace(is.na(.),0) %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"), 
+         year = format(date, "%Y")) %>% 
+  relocate(year) %>% 
+  mutate(year = as.factor(year)) %>% 
+  mutate_at(3:6, as.factor)  %>% 
+  mutate(trt = as.factor(case_when(plot %in% c(101,203,304,401,503) ~ 1,
+                                   plot %in% c(103,204,302,403,501) ~ 2,
+                                   plot %in% c(102,201,303,402,502) ~ 3, 
+                                   plot %in% c(104,202,301,404,504) ~ 4))) %>% 
+  na.omit() %>%  
+  dplyr::select(-crop) %>% 
+  mutate(crop = 'beans',
+         crop = as.factor(crop)) %>% 
+  relocate(year, date, crop) %>% 
+  filter(date != '2022-8-18') %>% 
+  print(n = Inf)
+
+
+genus %>% 
+  mutate(cicin = Cicindela + Cicindelia,
+         Chlaenius = Chlaenius + Chalenius) %>% 
+  group_by(year) %>% 
+  summarise(pte = sum(Pterostichus),
+            poe = sum(Poecilus),
+            chl = sum(Chlaenius),
+            poly = sum(Polyderis),
+            har = sum(Harpalus),
+            cic = sum(cicin),
+            ago = sum(Agonum),
+            not = sum(Notibia),
+            ama = sum(Amara),
+            bad = sum(Badister),
+            bem = sum(Bembidion), 
+            sten = sum(Stenolophus)
+            )
+# year    pte   poe   chl  poly   har   cic   ago   not   ama   bad   bem  sten
+# <fct> <int> <int> <int> <int> <int> <int> <int> <int> <int> <int> <int> <int>
+# 1 2022     24   100    29     0     0     0     0     0    10     1     1     0
+# 2 2023     75   110    13     1     1     0     1     6     0     0     0     0
+# 372
+
 
 ggplot(tot_se_years_bc_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
@@ -627,8 +753,16 @@ all_years_arth <- all_arth_bc[6:25]
 all_years_scores <- vegdist(all_years_arth, method = "bray")
 
 # crop is significant 
-all_years_p1 <- adonis2(all_years_scores ~ crop + trt, perm = 999, method = "bray", data = all_arth_bc)
+all_years_p1 <- adonis2(all_years_scores ~ crop + trt + date, perm = 999, method = "bray", data = all_arth_bc)
 all_years_p1
+# Df SumOfSqs      R2      F Pr(>F)    
+# crop       1    2.695 0.05996 12.274  0.001 ***
+#   trt        3    0.598 0.01331  0.908  0.561    
+# date       1    7.843 0.17447 35.716  0.001 ***
+#   Residual 154   33.816 0.75227                  
+# Total    159   44.951 1.00000 
+
+
 ###
 ##
 #
@@ -674,28 +808,7 @@ text(all_bc_p$xyz.convert(all_fsc), rownames(all_fsc), cex = 1.2)
 legend(x = 'right', legend = levels(all_arth_bc$crop), col = 1:3, pch = 16, cex = 2)
 
 
-# plotly ####
-# rgl_pops <- all_arth_bc[6:25]
-# 
-# rgl_nmds <- metaMDS(rgl_pops, k=3)
-# 
-# # trts
-# scrs <- scores(rgl_nmds, display = "sites")
-# rgl_trts <- cbind(as.data.frame(scrs), trt = all_arth_bc$trt)
-# 
-# # species names 
-# rgl_fsc <- as.data.frame(scores(rgl_nmds, 'species'))
-# rgl_fsc$species <- rownames(rgl_fsc)
-# 
-# Check <- rgl_trts[rgl_trts$trt == "1",][chull(rgl_trts[rgl_trts$trt == "1", c("NMDS1", "NMDS2", "NMDS3")]),]
-# Brown <- rgl_trts[rgl_trts$trt == "2",][chull(rgl_trts[rgl_trts$trt == "2", c("NMDS1", "NMDS2", "NMDS3")]),]
-# Green <- rgl_trts[rgl_trts$trt == "3",][chull(rgl_trts[rgl_trts$trt == "3", c("NMDS1", "NMDS2", "NMDS3")]),]
-# GrBr <- rgl_trts[rgl_trts$trt == "4",][chull(rgl_trts[rgl_trts$trt == "4", c("NMDS1", "NMDS2", "NMDS3")]),]
-# 
-# hull_rgl <- rbind(Check, Brown, Green, GrBr)
-# 
-# # so, now I have species names and treatments values (this is their location in the nmds) 
-# hull_rgl
-# rgl_fsc
+# all year stats and numbers ####
+b_clean
 
 

@@ -9,6 +9,7 @@ library(vegan3d)
 library(plotly)
 library(hrbrthemes)
 library(viridis)
+library(flextable)
 # data ####
 bpf <- bean_pf
 unique(bpf$crop)
@@ -60,16 +61,17 @@ bpf_clean <- bpf_wide %>%
   print(n = Inf)
 colnames(pf_clean)
 
-bea_total <- bpf_clean %>%
-  mutate(total = sum(c_across(Lycosidae:Lin))) %>% 
-  group_by(year) %>% 
-  summarise(mean = mean(total),
-            sd = sd(total),
-            n = n(), 
-            se = sd/sqrt(n))
-ggplot(bea_total, aes(x = year, y = mean)) +
-  geom_bar(position = "dodge", stat = "identity") +
-  geom_errorbar(aes(ymin = mean-se, ymax = mean+se))
+# too many 2022 samples here 
+# bea_total <- bpf_clean %>%
+#   mutate(total = sum(c_across(Lycosidae:Lin))) %>% 
+#   group_by(year) %>% 
+#   summarise(mean = mean(total),
+#             sd = sd(total),
+#             n = n(), 
+#             se = sd/sqrt(n))
+# ggplot(bea_total, aes(x = year, y = mean)) +
+#   geom_bar(position = "dodge", stat = "identity") +
+#   geom_errorbar(aes(ymin = mean-se, ymax = mean+se))
 
 # PF 2022 ####
 
@@ -131,7 +133,7 @@ bpf_2022_tot <- bpf_2022 %>%
          Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
          Other_Coleoptera = Staphylinidae + Elateridae,
          Other_insects = Dermaptera) %>% 
-  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+  dplyr::select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
          -Linyphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Dermaptera, -Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Ensifera = Gryllidae,
@@ -173,6 +175,7 @@ carab_22 <- bpf_2022_tot %>%
             n = n(), 
             se = sd / sqrt(n))
 plot(carab_22$timing, carab_22$mean)
+# timing / dates
 # diff       lwr       upr     p adj
 # 2-1  0.9 -4.797151  6.597151 0.9233304
 # 3-1 13.8  8.102849 19.497151 0.0000009
@@ -186,6 +189,7 @@ spider_22 <- bpf_2022_tot %>%
             n = n(), 
             se = sd / sqrt(n))
 plot(spider_22$timing, spider_22$mean)
+# timing / dates
 # diff       lwr      upr     p adj
 # 2-1 2.30 -8.103933 12.70393 0.8556045
 # 3-1 5.45 -4.953933 15.85393 0.4223682
@@ -243,6 +247,27 @@ ggplot(spider_22, aes(x = timing, y = mean, fill = timing))+
 ###
 ##
 #
+
+aran_car_22 <- bpf_2022_tot  %>% 
+  mutate(trt = factor(trt, levels = trt_order)) %>% 
+  group_by(date) %>% 
+  summarise('Araneomorphae Sum' = mean(Aranaeomorphae),
+            asd = sd(Aranaeomorphae),
+            n = n(),
+            ase = asd/sqrt(n),
+            'Carabidae sum' = mean(Carabid),
+            csd = sd(Carabid),
+            cse = csd/ sqrt(n)
+  )
+
+
+bean_22_table <- flextable(aran_car_22)
+bean_22_table <- autofit(bean_22_table)
+bean_22_table <- add_header_lines(bean_22_table, 
+                                  values = 'Soybean: 2022 Pitfall totals by date')
+theme_zebra(bean_22_table) %>% 
+  save_as_docx(path = 'bean_22_table.docx')
+
 
 # PF 2023 ####
 #
@@ -312,7 +337,7 @@ bpf_2023_tot <- bpf_2023 %>%
          Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
          Other_Coleoptera = Staphylinidae + Elateridae,
          Other_insects = Dermaptera) %>% 
-  select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+  dplyr::select(-Lycosidae, -Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
          -Linyphiidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
          -Elateridae, -Opiliones, -Dermaptera, -Carabidae, -Pterostichus, -Cicindelidae) %>% 
   rename(Ensifera = Gryllidae,
@@ -413,12 +438,34 @@ ggplot(aran_23, aes(x = timing, y = mean, fill = timing))+
 ##
 #
 
+aran_car_23 <- bpf_2023_tot %>% 
+  group_by(date) %>% 
+  summarise('Araneomorphae Sum' = mean(Aranaeomorphae),
+            asd = sd(Aranaeomorphae),
+            n = n(),
+            ase = asd/sqrt(n),
+            'Carabidae sum' = mean(Carabid),
+            csd = sd(Carabid),
+            cse = csd/ sqrt(n)
+            )
+
+
+bean_23_table <- flextable(aran_car_23)
+bean_23_table <- autofit(bean_23_table)
+bean_23_table <- add_header_lines(bean_23_table, 
+                                  values = 'Soybean: 2023 Pitfall totals by date')
+theme_zebra(bean_23_table) %>% 
+  save_as_docx(path = 'bean_23_table.docx')
+
+
 
 # 22 and 23 ####
 colnames(bpf_clean)
 unique(bpf_clean$date)
 bpf_clean <- bpf_clean %>% 
   dplyr::rename(Linyphiidae = Lin)
+bpf_clean <- bpf_clean %>% 
+  filter(date != '2022-08-18')
 
 bean_family_names <- bpf_clean[6:24]
 
@@ -436,12 +483,12 @@ bperm_2
 #date is significant 
 bperm_3 <- adonis2(beans_dist ~ year + date + trt, permutations = 999, method = 'bray', data = bpf_year)
 bperm_3
-# Df SumOfSqs      R2       F Pr(>F)    
-# year      1   4.5306 0.18567 34.7227  0.001 ***
-#   date      3   7.3653 0.30184 18.8160  0.001 ***
-#   trt       3   0.5013 0.02055  1.2808  0.161    
-# Residual 92  12.0040 0.49194                   
-# Total    99  24.4013 1.00000 
+# Df SumOfSqs      R2      F Pr(>F)    
+# year      1   4.2432 0.21504 31.973  0.001 ***
+#   date      2   5.2960 0.26839 19.953  0.001 ***
+#   trt       3   0.5052 0.02560  1.269  0.169    
+# Residual 73   9.6878 0.49096                  
+# Total    79  19.7322 1.00000   
 
 
 # NMDS
@@ -520,21 +567,17 @@ carab_tot <- bpf_tot %>%
             se = sd/sqrt(n))
 
 # $year
-# diff       lwr        upr     p adj
-# 2023-2022 -3.3 -6.244838 -0.3551621 0.0284699
+# diff       lwr      upr     p adj
+# 2023-2022 1.15 -1.192027 3.492027 0.3311938
 # 
 # $date
-# diff         lwr        upr     p adj
-# 2022-07-01-2022-05-28   0.9  -5.4904499  7.2904499 0.9949462
-# 2022-08-18-2022-05-28  13.8   7.4095501 20.1904499 0.0000003
-# 2023-06-26-2022-05-28   2.1  -4.2904499  8.4904499 0.8909315
-# 2023-07-28-2022-05-28   7.7   1.3095501 14.0904499 0.0099623
-# 2022-08-18-2022-07-01  12.9   6.5095501 19.2904499 0.0000019
-# 2023-06-26-2022-07-01   1.2  -5.1904499  7.5904499 0.9849115
-# 2023-07-28-2022-07-01   6.8   0.4095501 13.1904499 0.0311254
-# 2023-06-26-2022-08-18 -11.7 -18.0904499 -5.3095501 0.0000175
-# 2023-07-28-2022-08-18  -6.1 -12.4904499  0.2904499 0.0687238
-# 2023-07-28-2023-06-26   5.6  -0.7904499 11.9904499 0.1145023
+# diff       lwr      upr     p adj
+# 2022-07-01-2022-05-28  0.90 -3.468329 5.268329 0.9486284
+# 2023-06-26-2022-05-28 -2.35 -6.718329 2.018329 0.4951801
+# 2023-07-28-2022-05-28  3.25 -1.118329 7.618329 0.2145644
+# 2023-06-26-2022-07-01 -3.25 -7.618329 1.118329 0.2145644
+# 2023-07-28-2022-07-01  2.35 -2.018329 6.718329 0.4951801
+# 2023-07-28-2023-06-26  5.60  1.231671 9.968329 0.0064222
 
 ggplot(carab_tot, aes(x = date, y = mean, fill = year))+
   geom_bar(stat = "identity", position = "dodge", alpha = 0.7)+
@@ -567,21 +610,17 @@ aran_tot <- bpf_tot %>%
             se = sd/ sqrt(n))
 
 # $year
-# diff      lwr       upr     p adj
-# 2023-2022 -6.858333 -11.0907 -2.625965 0.0017718
+# diff       lwr       upr p adj
+# 2023-2022 -5.425 -7.106049 -3.743951     0
 # 
 # $date
-# diff        lwr       upr     p adj
-# 2022-07-01-2022-05-28  2.30000000  -6.884456 11.484456 0.9568097
-# 2022-08-18-2022-05-28  5.45000000  -3.734456 14.634456 0.4696123
-# 2023-06-26-2022-05-28  2.20833333  -6.976123 11.392790 0.9626396
-# 2023-07-28-2022-05-28  2.95833333  -6.226123 12.142790 0.8978218
-# 2022-08-18-2022-07-01  3.15000000  -6.034456 12.334456 0.8748565
-# 2023-06-26-2022-07-01 -0.09166667  -9.276123  9.092790 0.9999999
-# 2023-07-28-2022-07-01  0.65833333  -8.526123  9.842790 0.9996418
-# 2023-06-26-2022-08-18 -3.24166667 -12.426123  5.942790 0.8629734
-# 2023-07-28-2022-08-18 -2.49166667 -11.676123  6.692790 0.9427911
-# 2023-07-28-2023-06-26  0.75000000  -8.434456  9.934456 0.9994000
+# diff        lwr      upr     p adj
+# 2022-07-01-2022-05-28  2.300 -0.8354784 5.435478 0.2255744
+# 2023-06-26-2022-05-28  0.775 -2.3604784 3.910478 0.9154931
+# 2023-07-28-2022-05-28  1.525 -1.6104784 4.660478 0.5799064
+# 2023-06-26-2022-07-01 -1.525 -4.6604784 1.610478 0.5799064
+# 2023-07-28-2022-07-01 -0.775 -3.9104784 2.360478 0.9154931
+# 2023-07-28-2023-06-26  0.750 -2.3854784 3.885478 0.9226384
 
 
 ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
@@ -609,20 +648,17 @@ ggplot(aran_tot, aes(x = year, y = mean, fill = year))+
 #
 
 # table for paper 
-trt_order <- c('No CC', "14-28 DPP", '3-7 DPP', '1-3 DAP')
-total_bean <- bpf_tot %>% 
-  mutate(trt = case_when(trt == '1' ~ 'No CC',
-                         trt == '2' ~ '14-28 DPP',
-                         trt == '3' ~ '3-7 DPP',
-                         trt == '4' ~ '1-3 DAP',
-                         .default = as.factor(trt))) %>% 
-  mutate(trt = factor(trt, levels = trt_order)) %>% 
-  group_by(year, trt) %>% 
-  summarise('Araneomorphae Sum' = sum(Aranaeomorphae),
-            'Carabidae sum' = sum(Carabid),
-            'Formicidae sum ' = sum(Formicidae)) %>% 
-  rename(Year = year, 
-         Treatment = trt)
+
+total_bean <- bpf_tot  %>% 
+  group_by(date) %>% 
+  summarise('Araneomorphae Sum' = mean(Aranaeomorphae),
+            asd = sd(Aranaeomorphae),
+            n = n(),
+            ase = asd/sqrt(n),
+            'Carabidae sum' = mean(Carabid),
+            csd = sd(Carabid),
+            cse = csd/ sqrt(n)
+  )
 
 bean_PF_table <- flextable(total_bean)
 bean_PF_table <- autofit(bean_PF_table)

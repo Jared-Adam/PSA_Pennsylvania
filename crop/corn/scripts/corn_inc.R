@@ -80,6 +80,14 @@ dam_plot <- damage_done %>%
             se = sd/sqrt(n)) %>% 
   print(n = Inf)
 
+damage_done %>% 
+  group_by(growth) %>% 
+  summarise(mean = mean(prop_damaged),
+            sd = sd(prop_damaged),
+            n = n(),
+            se = sd/sqrt(n)) %>% 
+  print(n = Inf)
+
 # model ####
 damage_done
 
