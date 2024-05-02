@@ -238,6 +238,26 @@ cpf_22__tot %>%
             sumA = sum(Aranaeomorphae))
 
 
+
+
+c22_table <- cpf_22__tot %>% 
+  group_by(date) %>% 
+  summarise(n = n(),
+            amean = mean(Aranaeomorphae),
+            asd = sd(Aranaeomorphae),
+            ase = asd/sqrt(n),
+            cmean = mean(Carabid),
+            csd = sd(Carabid),
+            cse = csd / sqrt(n)) 
+
+corn_22PF_table <- flextable(c22_table)
+corn_22PF_table <- autofit(corn_22PF_table)
+corn_22PF_table <- add_header_lines(corn_22PF_table, 
+                                  values = 'Corn: Pitfall totals by year')
+theme_zebra(corn_22PF_table) %>% 
+  save_as_docx(path = 'corn_22PF_table.docx')
+
+
 ###
 ##
 #
@@ -397,6 +417,30 @@ ggplot(aran_tot, aes(x = timing, y = mean, fill = timing))+
         plot.subtitle = element_text(size = 16), 
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
+
+
+
+
+
+
+c23_table <- cpf_23_tot %>% 
+  group_by(date) %>% 
+  summarise(n = n(),
+            amean = mean(Aranaeomorphae),
+            asd = sd(Aranaeomorphae),
+            ase = asd/sqrt(n),
+            cmean = mean(Carabid),
+            csd = sd(Carabid),
+            cse = csd / sqrt(n)) 
+
+corn_23PF_table <- flextable(c23_table)
+corn_23PF_table <- autofit(corn_23PF_table)
+corn_23PF_table <- add_header_lines(corn_23PF_table, 
+                                    values = 'Corn: Pitfall totals by year')
+theme_zebra(corn_23PF_table) %>% 
+  save_as_docx(path = 'corn_23PF_table.docx')
+
+
 
 ###
 ##
@@ -562,6 +606,12 @@ aran_tot <- cpf_tot %>%
             se = sd/ sqrt(n)) %>% 
   print(n = Inf)
 
+
+aran <- glm.nb(Aranaeomorphae ~ date, data = cpf_tot)
+hist(residuals(aran))
+cld(emmeans(aran, ~date), Letters = letters)
+
+
 # $year
 # diff      lwr      upr p adj
 # 2023-2022 -4.85 -5.88566 -3.81434     0 # sig here
@@ -604,19 +654,16 @@ ggplot(aran_tot, aes(x = date, y = mean, fill = year))+
 #
 
 # table for paper 
-trt_order <- c('No CC', "14-28 DPP", '3-7 DPP', '1-3 DAP')
+
 total_corn <- cpf_tot %>% 
-  mutate(trt = case_when(trt == '1' ~ 'No CC',
-                         trt == '2' ~ '14-28 DPP',
-                         trt == '3' ~ '3-7 DPP',
-                         trt == '4' ~ '1-3 DAP',
-                         .default = as.factor(trt))) %>% 
-  mutate(trt = factor(trt, levels = trt_order)) %>% 
-  group_by(year, trt) %>% 
-  summarise('Araneomorphae Sum' = sum(Aranaeomorphae),
-            'Carabidae sum' = sum(Carabid)) %>% 
-  rename(Year = year, 
-         Treatment = trt)
+  group_by(date) %>% 
+  summarise(n = n(),
+            amean = mean(Aranaeomorphae),
+            asd = sd(Aranaeomorphae),
+            ase = asd/sqrt(n),
+            cmean = mean(Carabid),
+            csd = sd(Carabid),
+            cse = csd / sqrt(n)) 
   
 corn_PF_table <- flextable(total_corn)
 corn_PF_table <- autofit(corn_PF_table)

@@ -181,6 +181,16 @@ plot(carab_22$timing, carab_22$mean)
 # 3-1 13.8  8.102849 19.497151 0.0000009
 # 3-2 12.9  7.202849 18.597151 0.0000037
 
+car_22 <- glm.nb(Carabid ~ timing, data= bpf_2022_tot)
+hist(residuals(car_22))
+cld(emmeans(car_22, ~timing), Letters = letters)
+# timing emmean    SE  df asymp.LCL asymp.UCL .group
+# 1        1.31 0.167 Inf     0.981      1.64  a    
+# 2        1.53 0.159 Inf     1.215      1.84  a    
+# 3        2.86 0.131 Inf     2.605      3.12   b   
+
+
+
 
 spider_22 <- bpf_2022_tot %>% 
   group_by(timing) %>% 
@@ -194,6 +204,17 @@ plot(spider_22$timing, spider_22$mean)
 # 2-1 2.30 -8.103933 12.70393 0.8556045
 # 3-1 5.45 -4.953933 15.85393 0.4223682
 # 3-2 3.15 -7.253933 13.55393 0.7470513
+
+ara_22 <- glm.nb(Aranaeomorphae ~ timing, data = bpf_2022_tot)
+hist(residuals(ara_22))
+cld(emmeans(ara_22, ~timing), Letters = letters)
+# timing emmean    SE  df asymp.LCL asymp.UCL .group
+# 1        1.86 0.212 Inf      1.45      2.28  a    
+# 2        2.17 0.207 Inf      1.76      2.57  a    
+# 3        2.48 0.203 Inf      2.08      2.87  a  
+
+
+
 
 unique(bpf_2022$date)
 ggplot(carab_22, aes(x = timing, y = mean, fill = timing))+
@@ -377,6 +398,14 @@ carab_23 <- bpf_2023_tot %>%
 # diff      lwr      upr     p adj
 # 2-1  5.6 1.131917 10.06808 0.0155144
 
+car_23 <- glm.nb(Carabid ~ timing, data = bpf_2023_tot)
+hist(residuals(car_23))
+cld(emmeans(car_23, ~timing),Letters = letters)
+# timing emmean    SE  df asymp.LCL asymp.UCL .group
+# 1       0.916 0.281 Inf     0.366      1.47  a    
+# 2       2.092 0.255 Inf     1.592      2.59   b  
+
+
 aran_23 <- bpf_2023_tot %>% 
   group_by(timing) %>% 
   summarise(mean = mean(Aranaeomorphae), 
@@ -385,6 +414,13 @@ aran_23 <- bpf_2023_tot %>%
             se = sd/sqrt(n))
 # diff        lwr     upr     p adj
 # 2-1 0.75 -0.4380902 1.93809 0.2084307
+
+ara_23 <- glm.nb(Aranaeomorphae ~ timing, data = bpf_2023_tot)
+hist(residuals(ara_23))
+cld(emmeans(ara_23, ~timing),Letters = letters)
+# timing emmean    SE  df asymp.LCL asymp.UCL .group
+# 1       0.588 0.194 Inf     0.208     0.967  a    
+# 2       0.936 0.171 Inf     0.601     1.272  a  
 
 
 unique(bpf_2023$date)
@@ -566,6 +602,18 @@ carab_tot <- bpf_tot %>%
             n = n(), 
             se = sd/sqrt(n))
 
+car <- glm.nb(Carabid ~ date, data = bpf_tot)
+hist(residuals(car))
+cld(emmeans(car, ~date), Letters = letters)
+# date       emmean    SE  df asymp.LCL asymp.UCL .group
+# 2023-06-26  0.916 0.234 Inf     0.459      1.37  a    
+# 2022-05-28  1.308 0.219 Inf     0.879      1.74  a    
+# 2022-07-01  1.526 0.213 Inf     1.108      1.94  ab   
+# 2023-07-28  2.092 0.202 Inf     1.696      2.49   b   
+
+
+
+#### NOT USING THIS #
 # $year
 # diff       lwr      upr     p adj
 # 2023-2022 1.15 -1.192027 3.492027 0.3311938
@@ -608,6 +656,17 @@ aran_tot <- bpf_tot %>%
             sd = sd(Aranaeomorphae), 
             n = n(), 
             se = sd/ sqrt(n))
+
+ar <- glm.nb(Aranaeomorphae ~ date, data = bpf_tot)
+hist(residuals(ar))
+cld(emmeans(ar, ~date), Letters = letters)
+# date       emmean    SE  df asymp.LCL asymp.UCL .group
+# 2023-06-26  0.588 0.198 Inf     0.199     0.976  a    
+# 2023-07-28  0.936 0.176 Inf     0.590     1.282  a    
+# 2022-05-28  1.864 0.139 Inf     1.592     2.136   b   
+# 2022-07-01  2.169 0.131 Inf     1.912     2.427   b 
+
+
 
 # $year
 # diff       lwr       upr p adj
