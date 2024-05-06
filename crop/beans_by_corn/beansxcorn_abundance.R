@@ -6,9 +6,13 @@
 
 # packages ####
 library(tidyverse)
+library(MASS)
+library(multcomp)
+library(emmeans)
 library(vegan)
 library(vegan3d)
 library(plotly)
+library(ggpubr)
 # data ####
 beans <- bean_pf
 corn <- corn_pf
@@ -130,6 +134,7 @@ bc <- bc %>%
   mutate_at(6:25, as.numeric) %>% 
   mutate(date = as.factor(date)) %>% 
   print(n = Inf)
+unique(bc$date)
 
 ###
 ##
@@ -216,56 +221,57 @@ func_bc <- bc %>%
 
 
 
+# no mas
 
 #test anova to check dist 
-test_aov <- aov(Lycosidae ~ crop + trt, bc)
-summary(test_aov)
-TukeyHSD(test_aov)
-hist(residuals(test_aov))
-plot(bc$crop, bc$Lycosidae)
-plot(bc$crop, bc$Carabidae)
-
-func_test <- aov(Aranaeomorphae ~ crop + trt, func_bc)
-summary(func_test)
-TukeyHSD(func_test)
-plot(func_bc$crop, func_bc$Aranaeomorphae)
-# loop 
-
-
-
-sp_list <- func_bc[6:14]
-summary_list <- list()
-tukey_list <- list()
-# crop_p <- list()
-# trt_p <- list()
-for(i in 1:9){
-  print(i)
-  sps <- colnames(sp_list[i])
-  print(sps)
-  bc_loop <- subset(func_bc, select = c("crop", "trt", sps))
-  colnames(bc_loop) <- c("crop", "trt", "sps")
-  
-  model <- aov(sps ~ crop, bc_loop)
-  
-  aov_summary <- summary(model)
-  summary_list[[i]] <- aov_summary
-  
-  aov_tukey <- TukeyHSD(model)
-  tukey_list[[i]] <- aov_tukey
-  
-  print(ggplot(bc_loop, aes(x = crop, y = sps, fill = crop))+
-    geom_bar(position = 'dodge', stat= 'identity'))
-
-
-}
-colnames(sp_list)
-summary_list
-# groups w sig values : 1, 3, 5, 6, 7, 8
-# Formicidae, Ensifera, Carabidae, Aranaeomorphae, Non_Insect_Arth, Other_Coleoptera
-tukey_list[6]
-plot(tukey_list[[6]])
-tukey_list[5]
-plot(tukey_list[[5]])
+# test_aov <- aov(Lycosidae ~ crop + trt, bc)
+# summary(test_aov)
+# TukeyHSD(test_aov)
+# hist(residuals(test_aov))
+# plot(bc$crop, bc$Lycosidae)
+# plot(bc$crop, bc$Carabidae)
+# 
+# func_test <- aov(Aranaeomorphae ~ crop + trt, func_bc)
+# summary(func_test)
+# TukeyHSD(func_test)
+# plot(func_bc$crop, func_bc$Aranaeomorphae)
+# # loop 
+# 
+# 
+# 
+# sp_list <- func_bc[6:14]
+# summary_list <- list()
+# tukey_list <- list()
+# # crop_p <- list()
+# # trt_p <- list()
+# for(i in 1:9){
+#   print(i)
+#   sps <- colnames(sp_list[i])
+#   print(sps)
+#   bc_loop <- subset(func_bc, select = c("crop", "trt", sps))
+#   colnames(bc_loop) <- c("crop", "trt", "sps")
+#   
+#   model <- aov(sps ~ crop, bc_loop)
+#   
+#   aov_summary <- summary(model)
+#   summary_list[[i]] <- aov_summary
+#   
+#   aov_tukey <- TukeyHSD(model)
+#   tukey_list[[i]] <- aov_tukey
+#   
+#   print(ggplot(bc_loop, aes(x = crop, y = sps, fill = crop))+
+#     geom_bar(position = 'dodge', stat= 'identity'))
+# 
+# 
+# }
+# colnames(sp_list)
+# summary_list
+# # groups w sig values : 1, 3, 5, 6, 7, 8
+# # Formicidae, Ensifera, Carabidae, Aranaeomorphae, Non_Insect_Arth, Other_Coleoptera
+# tukey_list[6]
+# plot(tukey_list[[6]])
+# tukey_list[5]
+# plot(tukey_list[[5]])
 
 # main groups of interest: 5 = carabidae beans > corn | 6 = aranaeomorphae corn > beans
 
@@ -276,7 +282,10 @@ func_bc  %>%
             sd = sd(Carabidae), 
             n = n(), 
             se = sd/sqrt(n))
-
+# crop   mean    sd     n    se
+# <fct> <dbl> <dbl> <int> <dbl>
+#   1 beans  5.48  7.37    40 1.17 
+# 2 corn   1     1.72    40 0.273
 
 
 # araneomorphae numbers by crop for paper
@@ -287,6 +296,11 @@ func_bc  %>%
             sd = sd(Aranaeomorphae ), 
             n = n(), 
             se = sd/sqrt(n))
+# crop   mean    sd     n    se
+# <fct> <dbl> <dbl> <int> <dbl>
+#   1 beans  2.17  1.87    40 0.295
+# 2 corn   5.65  3.21    40 0.508
+
 
 # lycosidae number by crop for paper
 lyc <- aov(Lycosidae ~ crop, data = bc)
@@ -298,6 +312,10 @@ bc %>%
             sd = sd(Lycosidae), 
             n = n(), 
             se = sd/sqrt(n))
+# crop   mean    sd     n    se
+# <fct> <dbl> <dbl> <int> <dbl>
+#   1 beans  1.72  1.77    40 0.280
+# 2 corn   4.4   3.18    40 0.502
 
 
 # total arthropods by crop and trt for corn 2022 and beans 2023 ####
@@ -328,8 +346,6 @@ year_crop %>%
 # <fct> <fct> <dbl>
 #   1 2022  corn    305
 # 2 2023  beans   660
-
-
 
 
 
@@ -392,11 +408,16 @@ bc_emm <- cld(emmeans(m3, ~ trt + crop), Letters = letters)
 
 
 tot_se_df <- tot_arth %>% 
-  group_by(crop,trt) %>% 
+  group_by(crop) %>% 
   summarise(mean = mean(sum), 
             sd = sd(sum), 
             n = n(), 
             se = sd/ sqrt(n))
+# crop   mean    sd     n    se
+# <fct> <dbl> <dbl> <int> <dbl>
+#   1 beans 16.5  13.5     40 2.13 
+# 2 corn   7.62  4.53    40 0.716
+
 
 # plots for corn 22 and beans 23 ####
 # total arthropods
@@ -500,7 +521,8 @@ func_tot <- all_arth_bc %>%
          -Elateridae, -Opiliones, -Dermaptera, -Coreidae) %>% 
   rename(Ensifera = Gryllidae,
          Caelifera = Acrididae,
-         Coleoptera_larvae = 'Coleoptera larvae')
+         Coleoptera_larvae = 'Coleoptera larvae') %>% 
+  mutate(date = as.factor(date))
 
 tot_all_years <- func_tot %>% 
   group_by(crop, trt) %>% 
@@ -509,12 +531,17 @@ tot_all_years <- func_tot %>%
   mutate(sum = sum(c_across(6:12))) %>% 
   print(n = Inf)
 
-
+unique(tot_all_years$date)
 
 all_model <- glm.nb(sum ~ crop + year, data = tot_all_years)
 summary(all_model)
 hist(residuals(all_model))
 cld(emmeans(all_model, ~ crop + year), Letters = letters)
+# crop  year emmean     SE  df asymp.LCL asymp.UCL .group
+# corn  2023   1.61 0.0995 Inf      1.41      1.80  a    
+# corn  2022   1.81 0.0975 Inf      1.62      2.00  a    
+# beans 2023   2.62 0.0914 Inf      2.44      2.80   b   
+# beans 2022   2.82 0.0904 Inf      2.64      2.99   b   
 
 
 
@@ -620,22 +647,23 @@ genus %>%
 ggplot(tot_se_years_bc_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
-  annotate("text", x = 1.8, y=18, label = "***", size = 6)+
+  annotate("text", x = 2, y=17, label = "***", size = 12)+
   labs(title = "Total arthropod by crop",
        subtitle = "Years: 2022-2023",
        x = 'Crop',
-       y = 'Mean Arthropod population')+
-  scale_x_discrete(labels=c('Corn', 'Beans'))+
+       y = 'Mean arthropod population / plot')+
+  scale_x_discrete(labels=c('Corn', 'Soybeans'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02"))+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26))
 
 # loop to look at pops by crop ####
 
@@ -680,68 +708,143 @@ all_summary_list[[6]]
   # 1,3,5,6,7,8
 # formicidae, ensifera, carabidae, araneomorphae, non, other_c, other_i
 
+# new models ####
+
 # Carabid plot 
 cartabid_plot <- func_tot %>% 
-  dplyr::dplyr::select(year, crop, Carabidae) %>% 
+  dplyr::select(year, crop, Carabidae) %>% 
   group_by(crop) %>% 
   summarise(mean = mean(Carabidae),
             sd = sd(Carabidae), 
             n = n(),
             se = sd/sqrt(n))
 
-ggplot(cartabid_plot, aes(x = reorder(crop, mean), y = mean, fill = crop))+
+carab_all <- glm.nb(Carabidae ~ crop , data = func_tot)
+hist(residuals(carab_all))
+cld(emmeans(carab_all, ~crop ), Letters = letters)
+# crop  emmean    SE  df asymp.LCL asymp.UCL .group
+# corn   0.253 0.145 Inf   -0.0316     0.537  a    
+# beans  1.576 0.118 Inf    1.3452     1.808   b 
+
+car<-ggplot(cartabid_plot, aes(x =crop, y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
-  annotate("text", x = 1.8, y=7.5, label = "***", size = 12)+
-  labs(title = "Total Carabidae by crop",
-       subtitle = "Years: 2022-2023",
-       x = 'Crop',
-       y = 'Mean Carabidae population')+
-  scale_x_discrete(labels=c('Corn', 'Beans'))+
+  annotate("text", x = 2, y=6, label = "*", size = 12)+
+  labs(title = "Carabid")+
+       #x = 'Crop')+
+  scale_x_discrete(limits = c('corn', 'beans'),
+                   labels=c('Corn', 'Soybeans'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02"))+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_blank(),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26))
 
 # Arane plot
 arane_plot <- func_tot %>% 
-  dplyr::dplyr::select(year, crop, Aranaeomorphae) %>% 
+  dplyr::select(year, crop, Aranaeomorphae) %>% 
   group_by(crop) %>% 
   summarise(mean = mean(Aranaeomorphae),
             sd = sd(Aranaeomorphae), 
             n = n(),
             se = sd/sqrt(n))
 
-ggplot(arane_plot, aes(x = reorder(crop, mean), y = mean, fill = crop))+
+
+aran_all <- glm.nb(Aranaeomorphae ~ crop , data = func_tot)
+hist(residuals(aran_all))
+cld(emmeans(aran_all, ~crop ), Letters = letters)
+# crop  emmean    SE  df asymp.LCL asymp.UCL .group
+# corn    1.17 0.119 Inf     0.937      1.40  a    
+# beans   1.59 0.113 Inf     1.364      1.81   b  
+
+
+ar <- ggplot(arane_plot, aes(x = crop, y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
-  annotate("text", x = 1.8, y=6.5, label = "*", size = 12)+
-  labs(title = "Total Aranaeomorphae by crop",
-       subtitle = "Years: 2022-2023",
-       x = 'Crop',
-       y = 'Mean Aranaeomorphae population')+
-  scale_x_discrete(labels=c('Corn', 'Beans'))+
+  annotate("text", x = 2, y=6, label = "*", size = 12)+
+  labs(title = "Araneomorph")+
+      # x = 'Crop')+
+  scale_x_discrete(limits = c('corn', 'beans'),
+                   labels=c('Corn', 'Soybeans'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02"))+
   theme(legend.position = "none",
-        axis.text.x = element_text(size=18, angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(s = 16), 
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_blank(),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26))
+
+
+# lycosidae only
+all_lyc <- all_arth_bc %>% 
+  mutate(Aranaeomorphae = Thomisidae + Tetragnathidae + Gnaphosidae + Agelenidae +
+           Lyniphiidae + Araneae + Salticidae,
+         Non_Insect_Arth = Diplopoda + Chilopoda, Opiliones,
+         Other_Coleoptera = Staphylinidae + Elateridae,
+         Other_insects = Dermaptera + Coreidae) %>% 
+  dplyr::select(-Thomisidae, -Tetragnathidae, -Gnaphosidae, -Agelenidae, 
+                -Lyniphiidae, -Araneae, -Salticidae, -Diplopoda, -Chilopoda, -Staphylinidae, 
+                -Elateridae, -Opiliones, -Dermaptera, -Coreidae) %>% 
+  rename(Ensifera = Gryllidae,
+         Caelifera = Acrididae,
+         Coleoptera_larvae = 'Coleoptera larvae') %>% 
+  mutate(date = as.factor(date))
+
+lyc_plot <- all_lyc %>% 
+  dplyr::select(year, crop, Lycosidae) %>% 
+  group_by(crop) %>% 
+  summarise(mean = mean(Lycosidae),
+            sd = sd(Lycosidae), 
+            n = n(),
+            se = sd/sqrt(n))
+
+
+lyc_mod <- glm.nb(Lycosidae ~ crop , data = all_lyc)
+hist(residuals(lyc_mod))
+cld(emmeans(lyc_mod, ~crop ), Letters = letters)
+# crop  emmean    SE  df asymp.LCL asymp.UCL .group
+# corn   0.875 0.138 Inf     0.605      1.15  a    
+# beans  1.467 0.129 Inf     1.214      1.72   b  
+
+
+lyc <- ggplot(lyc_plot, aes(x = crop, y = mean, fill = crop))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 2, y=6, label = "*", size = 12)+
+  labs(title = "Lycosidae",
+       x = 'Crop')+
+  scale_x_discrete(limits = c('corn', 'beans'),
+                   labels=c('Corn', 'Soybeans'))+
+  scale_fill_manual(values = c("#1B9E77","#D95F02"))+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_blank(),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26))
 
 
 
 
 
+fig <- ggarrange(ar,car, lyc, labels = c("1", "2", "3"), font.label = list(size = 20, color = 'cornsilk4'))
+annotate_figure(fig,
+                bottom = text_grob("Crop", size = 32),
+                left = text_grob("Average abundance / plot", size = 32, rot = 90))
 
 # permanova all years ####
 #
