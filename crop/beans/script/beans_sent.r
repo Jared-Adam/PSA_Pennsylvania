@@ -27,8 +27,15 @@ sent_years <- beans_sent %>%
   mutate(n.pred = as.double(n.pred),
          d.pred = as.double(d.pred),
          to.predated = as.double(to.predated)) %>% 
-  mutate(growth_stage = as.factor(growth_stage)) %>% 
+  mutate(growth_stage = as.factor(growth_stage)) %>%
+  mutate_at(vars(1:5), as_factor) %>% 
   print(n = Inf)
+
+sent_years %>% 
+  dplyr::select(growth_stage, treatment, to.predated) %>% 
+  filter(growth_stage == 'R3') %>% 
+  print(n = Inf)
+
 
 pred_tot <- sent_years %>% 
   dplyr::select(-pm.absent, -pm.partial, -am.absent, -am.partial, -d.pred, -n.pred)
@@ -84,6 +91,8 @@ nice_table(bent.table, highlight = TRUE)
 
 anova(m0 , m1, m2, m3)
 
+cld(emmeans(m3, ~treatment + growth_stage), Letters = letters)
+
 t_emm <- emmeans(m3, ~treatment)
 pairs(t_emm)
 pwpm(t_emm)
@@ -101,6 +110,15 @@ r2_nakagawa(m3)
 # Marginal R2: 0.866
 result <- binned_residuals(m3)
 plot(result)
+
+# these models may be no good
+# going to compare group means now because R3 trt 4 is 100% predation
+?dunn.test
+dunn.test::dunn.test(sent_years$to.predated,sent_years$treatment)
+
+dunn.test::dunn.test(sent_years$to.predated,sent_years$growth_stage)
+
+
 
 # plot for total/ all data ####
 
@@ -145,9 +163,9 @@ ggplot(trt_prop, aes(x = treatment, y =  prop))+
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
   annotate("text", x = 1, y = .98, label = "a", size = 10)+ #1
-  annotate("text", x = 2, y = .98, label = "ab", size = 10)+ #2
-  annotate("text", x = 3, y = .98, label = "ab", size = 10)+ #4
-  annotate("text", x = 4, y = .98, label = "b", size = 10) #3
+  annotate("text", x = 2, y = .98, label = "bc", size = 10)+ #2
+  annotate("text", x = 3, y = .98, label = "b", size = 10)+ #4
+  annotate("text", x = 4, y = .98, label = "c", size = 10) #3
 
 
 
@@ -190,7 +208,7 @@ ggplot(gs_prop, aes(x = growth_stage, y =  prop))+
         panel.grid.minor = element_blank())+
   annotate("text", x = 1, y = 0.99, label = "a", size = 10)+
   annotate("text", x = 2, y = 0.99, label = "b", size = 10)+
-  annotate("text", x = 3, y = 0.99, label = "ab", size = 10)
+  annotate("text", x = 3, y = 0.99, label = "b", size = 10)
 
 
 # pub plots ####

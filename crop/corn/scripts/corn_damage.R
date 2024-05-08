@@ -449,6 +449,9 @@ DAP: Days after plant"
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
+
+
+
 # bcw models and plot ####
 bcw_model <- new_dmg %>% 
   dplyr::select(year, growth_stage, block, plot_id, treatment, bcw) %>% 
@@ -578,6 +581,77 @@ DAP: Days after plant"
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
   geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+raw_bcw <- bcw_model %>% 
+  group_by(growth_stage, treatment) %>% 
+  summarise(mean = mean(bcw),
+            sd = sd(bcw), 
+            n = n(), 
+            se = sd/sqrt(n)) %>% 
+  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
+                             growth_stage == 'V3' & treatment == '2' ~ 'ab',
+                             growth_stage == 'V3' & treatment == '4' ~ 'ab',
+                             growth_stage == 'V3' & treatment == '3' ~ 'a',
+                             growth_stage == 'V5' & treatment == '1' ~ 'ab',
+                             growth_stage == 'V5' & treatment == '2' ~ 'b',
+                             growth_stage == 'V5' & treatment == '4' ~ 'b',
+                             growth_stage == 'V5' & treatment == '3' ~ 'ab'))
+
+# growth_stage   mean    sd     n      se
+# <fct>         <dbl> <dbl> <int>   <dbl>
+#   1 V3           0.0646 0.246  3388 0.00423
+# 2 V5           0.0239 0.153  3345 0.00264
+
+
+# growth_stage treatment   mean    sd     n      se
+# <fct>        <fct>      <dbl> <dbl> <int>   <dbl>
+# 1 V3           no         0.0850 0.279   859 0.00952
+# 2 V3           early      0.0560 0.230   857 0.00786
+# 3 V3           pg         0.0766 0.266   836 0.00920
+# 4 V3           late       0.0407 0.198   836 0.00684
+# 5 V5           no         0.0267 0.161   863 0.00549
+# 6 V5           early      0.0145 0.120   828 0.00416
+# 7 V5           pg         0.0367 0.188   817 0.00658
+# 8 V5           late       0.0179 0.133   837 0.00459
+
+ggplot(raw_bcw, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = mean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
+  labs(
+    title = "Corn: Black Cutworm Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment termination",
+    y = "Average damage"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 32), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
+
+
+
+
+
+
+
+
 
 # taw models and plot ####
 taw_model <- new_dmg %>% 
@@ -940,6 +1014,71 @@ DAP: Days after plant"
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
   geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
+
+
+raw_mult <- mult_model %>% 
+  group_by(growth_stage) %>% 
+  summarise(mean = mean(multiple),
+            sd = sd(multiple), 
+            n = n(), 
+            se = sd/sqrt(n)) %>% 
+  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'abc',
+                             growth_stage == 'V3' & treatment == '2' ~ 'abc',
+                             growth_stage == 'V3' & treatment == '4' ~ 'abc',
+                             growth_stage == 'V3' & treatment == '3' ~ 'c',
+                             growth_stage == 'V5' & treatment == '1' ~ 'a',
+                             growth_stage == 'V5' & treatment == '2' ~ 'ab',
+                             growth_stage == 'V5' & treatment == '4' ~ 'a',
+                             growth_stage == 'V5' & treatment == '3' ~ 'bc'))
+
+# growth_stage   mean    sd     n      se
+# <fct>         <dbl> <dbl> <int>   <dbl>
+#   1 V3           0.0620 0.241  3388 0.00414
+# 2 V5           0.0422 0.201  3345 0.00347
+
+
+# growth_stage treatment   mean    sd     n      se letters
+# <fct>        <fct>      <dbl> <dbl> <int>   <dbl> <chr>  
+# 1 V3           1         0.0407 0.198   859 0.00675 abc    
+# 2 V3           2         0.0502 0.218   857 0.00746 abc    
+# 3 V3           3         0.106  0.309   836 0.0107  c      
+# 4 V3           4         0.0514 0.221   836 0.00764 abc    
+# 5 V5           1         0.0185 0.135   863 0.00459 a      
+# 6 V5           2         0.0326 0.178   828 0.00618 ab     
+# 7 V5           3         0.0918 0.289   817 0.0101  bc     
+# 8 V5           4         0.0275 0.164   837 0.00565 a 
+
+ggplot(raw_mult, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = mean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
+  labs(
+    title = "Corn: Multiple Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment termination",
+    y = "Average damage"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 32), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(x = treatment, y = 0.13, label = trimws(letters)), size = 10, color = "black")
+
 
 # DO NOT USE: other models and plot ####
 

@@ -360,6 +360,39 @@ ggplot(beans, aes(x = cc, y = yieldbuac, fill = cc))+
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
+
+bean_year <- beans %>% 
+  group_by(year) %>%
+  summarise(mean = mean(yieldbuac),
+            sd = sd(yieldbuac),
+            n = n(), 
+            se = sd/sqrt(n))
+
+ggplot(beans, aes(x = year, y = yieldbuac, fill = year))+
+  geom_boxplot(width = 0.5, alpha = 0.7)+
+  geom_point(size = 2)+
+  scale_fill_manual(values = c("#7570B3","#E7298A"))+
+  ylab(bquote("Yield"(bu / ac ^-1)))+
+  labs(x = 'Year',
+       title = 'Soybean: Yield x year',
+       subtitle = "Years: 2022-2023"
+       #        caption = "DPP: Days pre plant
+       # DAP : Days after plant"
+  )+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=32),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  annotate('text', x = 1, y = 72, label = 'a', size = 10)+
+  annotate('text', x = 2, y = 72, label = 'b', size = 10)
+
+
 # corn - soy: yield
 # 21 -22
 corn_21 <- filter(corn, year == "2021") %>% 
