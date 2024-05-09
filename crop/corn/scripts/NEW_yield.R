@@ -281,7 +281,7 @@ ggplot(corn, aes(x = cc, y = yieldbuac, fill = cc))+
                    labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
   ylab(bquote("Yield"(bu / ac ^-1)))+
-  labs(x = 'Treatment',
+  labs(x = 'Treatment termination',
        title = 'Corn: Yield x Treatment',
        subtitle = "Years: 2021-2023"
 #        ,
@@ -770,15 +770,15 @@ DAP: Days after plant")+
 
 # overall box
 ggplot(filter(cc_mg_model, trt != "check"), aes(x = trt, y = mg_ha, fill = trt))+
-  scale_x_discrete(labels = c("14-21 DPP", "3-7 DPP", "1-3 DAP"))+
+  scale_x_discrete(labels = c("Early", "Late", "Green"))+
   scale_fill_manual(values = c("#D95F02",  "#7570B3","#1B9E77"))+
   geom_boxplot(alpha = 0.7)+
   geom_point(size = 2)+
   labs(title = "Corn: Cover Crop Biomass x Treatment",
        subtitle = "Years: 2021-2023",
-       x = "Treatment",
-       caption = "DPP: Days pre plant
-DAP: Days after plant")+
+       x = "Treatment termination")+
+#        caption = "DPP: Days pre plant
+# DAP: Days after plant")+
   ylab(bquote("Biomass" (Mg / ha ^-1)))+
   theme(legend.position = "none",
         axis.text.x = element_text(size=26),
@@ -1053,15 +1053,15 @@ DAP: Days after plant")+
 # overall box
 ggplot(filter(bcc_mg_model, trt != "check"), aes(x = trt, y = mg_ha, fill = trt))+
   scale_x_discrete(limits = c("br", "grbr", "gr"),
-    labels = c("14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+    labels = c("Early", "Late", "Green"))+
   scale_fill_manual(values = c("#D95F02", "#1B9E77", "#7570B3"))+
   geom_boxplot(alpha = 0.7)+
   geom_point(size = 2)+
   labs(title = "Soybean: Cover Crop Biomass x Treatment",
        subtitle = "Years: 2022-2023",
-       x = "Treatment",
-       caption = "DPP: Days pre plant
-DAP: Days after plant")+
+       x = "Treatment termination")+
+#        caption = "DPP: Days pre plant
+# DAP: Days after plant")+
   ylab(bquote("Biomass" (Mg / ha ^-1)))+
   theme(legend.position = "none",
         axis.text.x = element_text(size=26),

@@ -180,8 +180,8 @@ ggplot(slugs, aes(x = as.character(treatment), y = total_slug, fill = treatment)
   facet_wrap(~year + szn, scales = "free_y")+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-21 DPP", "3-7 DPP", "1-3 DAP"))+
-  labs( x = 'Treatment',
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs( x = 'Treatment termination',
         y = 'Total Slug Counts', 
         title = "Soybean: Total Slugs by Treatment",
         subtitle = " Years: 2022-2023")+
