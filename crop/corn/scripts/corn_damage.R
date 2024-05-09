@@ -372,6 +372,7 @@ theme_zebra(sl.table) %>%
 anova(m0, m1, m2, m3)
 summary(m3)
 r2_nakagawa(m3)
+hist(residuals(m3))
 m3_em <- emmeans(m3, ~treatment+growth_stage)
 cld(m3_em, Letters = letters)
 # treatment growth_stage  emmean    SE  df asymp.LCL asymp.UCL .group
@@ -448,6 +449,64 @@ DAP: Days after plant"
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+
+raw_slug <- slug_model %>% 
+  group_by(growth_stage, treatment) %>% 
+  summarise(mean = mean(s),
+            sd = sd(s), 
+            n = n(), 
+            se = sd/sqrt(n))
+
+# growth_stage  mean    sd     n      se
+# <fct>        <dbl> <dbl> <int>   <dbl>
+#   1 V3           0.601 0.490  3388 0.00841
+# 2 V5           0.531 0.499  3345 0.00863
+
+
+# growth_stage treatment  mean    sd     n     se
+# <fct>        <fct>     <dbl> <dbl> <int>  <dbl>
+#   1 V3           1         0.525 0.500   859 0.0170
+# 2 V3           2         0.681 0.466   857 0.0159
+# 3 V3           3         0.574 0.495   836 0.0171
+# 4 V3           4         0.624 0.485   836 0.0168
+# 5 V5           1         0.524 0.500   863 0.0170
+# 6 V5           2         0.558 0.497   828 0.0173
+# 7 V5           3         0.551 0.498   817 0.0174
+# 8 V5           4         0.491 0.500   837 0.0173
+
+ggplot(raw_slug, aes(color = treatment))+
+  geom_point(aes(x = treatment, y = mean), size = 10,
+             position = position_dodge(width = .75))+
+  facet_wrap(~growth_stage)+
+  geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
+                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
+  labs(
+    title = "Corn: Slug Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment termination",
+    y = "Average damage"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 32), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+
+
 
 
 

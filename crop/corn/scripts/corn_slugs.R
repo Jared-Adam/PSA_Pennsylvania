@@ -199,13 +199,13 @@ ggplot(slug_plot, aes(x = treatment, y = mean, fill = treatment))+
                 color = "black", alpha = 1, width = 0.2, linewidth = 1)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
-  labs( x = 'Treatment',
-        y = 'Total Slug Counts', 
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs( x = 'Treatment termination',
+        y = 'Average slug counts / trap', 
         title = "Corn: Average Slug Counts / Trap x Treatment",
-        subtitle = " Years: 2021-2023",
-        caption = "DPP: Days pre plant
-DAP : Days after plant")+
+        subtitle = " Years: 2021-2023")+
+#         caption = "DPP: Days pre plant
+# DAP : Days after plant")+
   theme(legend.position = "none",
         axis.text.x = element_text(size=26),
         axis.text.y = element_text(size = 26),
