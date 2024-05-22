@@ -343,7 +343,7 @@ ggplot(beans, aes(x = cc, y = yieldbuac, fill = cc))+
                    labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
   ylab(bquote("Yield"(bu / ac ^-1)))+
-  labs(x = 'Treatment',
+  labs(x = 'Treatment termination',
        title = 'Soybean: Yield x Treatment',
        subtitle = "Years: 2022-2023"
 #        caption = "DPP: Days pre plant
@@ -790,8 +790,8 @@ ggplot(filter(cc_mg_model, trt != "check"), aes(x = trt, y = mg_ha, fill = trt))
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 26, color = "grey25"))+
-  annotate("text", x = 1, y = 7, label = "a", size = 10)+
-  annotate("text", x = 2, y = 9, label = "b", size = 10)+
+  annotate("text", x = 1, y = 14, label = "a", size = 10)+
+  annotate("text", x = 2, y = 14, label = "b", size = 10)+
   annotate("text", x = 3, y = 14, label = "c", size = 10)
 
 

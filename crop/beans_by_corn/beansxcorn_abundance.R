@@ -58,6 +58,21 @@ b_clean <- b_wide %>%
   print(n = Inf)
 colnames(b_clean)
 
+#total 
+b_clean %>% 
+  pivot_longer(cols = where(is.numeric),
+               values_to = 'count') %>% 
+  group_by(trt) %>% 
+  summarise(sum = sum(count))
+# trt     sum
+# <fct> <int>
+# 1 1       602
+# 2 3       728
+# 3 2       500
+# 4 4       597
+(602 + 728 + 500 + 597)
+# 2427
+
 b_23 <- b_clean %>% 
   filter(year == 2023) %>% 
   print(n = Inf)
@@ -107,6 +122,21 @@ c_clean <- c_wide %>%
   na.omit() %>%
   print(n = Inf)
 colnames(c_clean)
+
+#total
+c_clean %>% 
+  pivot_longer(cols = where(is.numeric),
+               values_to = 'count') %>% 
+  group_by(trt) %>% 
+  summarise(sum = sum(count))
+# trt     sum
+# <fct> <int>
+# 1 1       226
+# 2 3       224
+# 3 2       249
+# 4 4       309
+(226+224+243+309)
+#1002
 
 c_22 <- c_clean %>% 
   filter(year == 2022) %>% 
