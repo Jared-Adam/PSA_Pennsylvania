@@ -126,7 +126,7 @@ trt_prop <- beans_sent %>%
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
   dplyr::select(-location, -date) %>% 
-  group_by(treatment) %>% 
+  group_by(treatment, ploitid) %>% 
   summarise(prop = mean(to.predated),
             sd = sd(to.predated),
             n = n(),
@@ -168,9 +168,37 @@ ggplot(trt_prop, aes(x = treatment, y =  prop))+
   annotate("text", x = 4, y = .98, label = "c", size = 10) #3
 
 
+ggplot(trt_prop, aes(x = treatment, y = prop, fill = treatment))+
+  geom_boxplot(alpha = 0.7)+
+  scale_x_discrete(labels=c("No CC", "Early", "Late", "Green"),
+                   limits = c("1", "2", "4", "3"))+ 
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  labs(
+    title = "Soybean: Mean predation x Treatment",
+    subtitle = "Years: 2022-2023",
+    x = "Treatment termination",
+    y = "Mean proportion predated ( x / 1 )"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 32),
+        axis.text.y = element_text(size = 26), 
+        # panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1, y = 1, label = "a", size = 10)+ #1
+  annotate("text", x = 2, y = 1, label = "bc", size = 10)+ #2
+  annotate("text", x = 3, y = 1, label = "b", size = 10)+ #4
+  annotate("text", x = 4, y = 1, label = "c", size = 10)+ #3
+  scale_y_continuous(limits = c(0,1))
 
 
-gs_prop <- beans_sent %>% 
+vgs_prop <- beans_sent %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
   dplyr::select(-location, -date) %>% 
@@ -210,6 +238,44 @@ ggplot(gs_prop, aes(x = growth_stage, y =  prop))+
   annotate("text", x = 2, y = 0.99, label = "b", size = 10)+
   annotate("text", x = 3, y = 0.99, label = "b", size = 10)
 
+gs_prop <- beans_sent %>% 
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  dplyr::select(-location, -date) %>% 
+  group_by(growth_stage,ploitid) %>% 
+  summarise(prop = mean(to.predated),
+            sd = sd(to.predated),
+            n = n(),
+            se = sd/sqrt(n)) %>% 
+  mutate_at(vars(1), factor) %>% 
+  print(n= Inf)
+
+ggplot(gs_prop, aes(x = growth_stage, y = prop, fill = growth_stage))+
+  geom_boxplot(alpha = 0.7)+
+  scale_x_discrete(limits = c("V3", "V5", "R3"))+ 
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77"))+
+  labs(
+    title = "Soybean: Mean predation x gs",
+    subtitle = "Years: 2022-2023",
+    x = "Treatment termination",
+    y = "Mean proportion predated ( x / 1 )"
+  )+
+  theme(legend.position = 'none',
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 32),
+        axis.text.y = element_text(size = 26), 
+        # panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  annotate("text", x = 1, y = .98, label = "a", size = 10)+
+  annotate("text", x = 2, y = .98, label = "b", size = 10)+
+  annotate("text", x = 3, y = .98, label = "b", size = 10)+
+  scale_y_continuous(limits = c(0,1))
 
 # pub plots ####
 

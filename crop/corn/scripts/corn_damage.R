@@ -225,19 +225,18 @@ TukeyHSD(a1)
 # dmg severity plot ####
 
 # by growth stage
-ggplot(avg_dam_p, aes(x = treatment, y = mean, fill = treatment))+
-  facet_wrap(~growth_stage)+
+ggplot(avg_dam_p, aes(x = treatment, y = mean, fill = growth_stage))+
   geom_boxplot(alpha = 0.7)+
-  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_fill_manual(values = c("#E7298A", "#1B9E77"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+                   labels=c("No CC", "Early", "Late", "Green"))+
   labs(title = 'Corn: Average Damage Score x Treatment and Growth Stage',
        subtitle = "Years: 2021-2023",
-       x = 'Treatment',
-       y = 'Average Damage Score x Treatment (x / n)',
-       caption = "DPP: Days pre plant
-DAP : Days after plant")+
-  theme(legend.position = "none",
+       x = 'Treatment termination',
+       y = 'Average damage score (x / n)')+
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 24),
+        legend.title = element_text(size = 24),
         axis.text.x = element_text(size=26),
         axis.text.y = element_text(size = 26),
         axis.title = element_text(size = 32),
@@ -246,8 +245,8 @@ DAP : Days after plant")+
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.text = element_text(size = 24),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+        strip.text = element_text(size = 24))+
+  guides(fill = guide_legend(title = 'Growth Stage'))
 
 ggplot(avg_dam_p, aes(x = treatment, y = mean, fill = treatment))+
   facet_wrap(~growth_stage)+
@@ -507,8 +506,41 @@ ggplot(raw_slug, aes(color = treatment))+
 
 
 
+test_slug <- slug_model %>% 
+  group_by(growth_stage, treatment, plot_id) %>% 
+  summarise(mean = mean(s),
+            sd = sd(s), 
+            n = n(), 
+            se = sd/sqrt(n))
 
-
+ggplot(test_slug, aes(x = treatment, y = mean,fill = growth_stage))+
+  geom_boxplot(alpha = 0.7)+
+  scale_fill_manual(values = c("#E7298A", "#1B9E77"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
+  labs(
+    title = "Corn: Slug Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment termination",
+    y = "Average damage"
+  )+
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 24),
+        legend.title = element_text(size = 24),
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 32), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  guides(fill = guide_legend(title = 'Growth Stage'))+
+  expand_limits(y=0)
 
 
 # bcw models and plot ####
@@ -642,7 +674,7 @@ DAP: Days after plant"
   geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
 
 raw_bcw <- bcw_model %>% 
-  group_by(growth_stage, treatment) %>% 
+  group_by(growth_stage, treatment, plot_id) %>% 
   summarise(mean = mean(bcw),
             sd = sd(bcw), 
             n = n(), 
@@ -705,7 +737,35 @@ ggplot(raw_bcw, aes(color = treatment))+
   geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
 
 
-
+ggplot(raw_bcw, aes(x = treatment, y = mean, fill = growth_stage))+
+  geom_boxplot(alpha = 0.7)+
+  scale_fill_manual(values = c("#E7298A",  "#1B9E77"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
+  labs(
+    title = "Corn: Black Cutworm Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment termination",
+    y = "Average damage"
+  )+
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 24),
+        legend.title = element_text(size = 24),
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 32), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  guides(fill = guide_legend(title = 'Growth Stage'))+
+  scale_y_continuous(limits = c(0,.15))+
+  geom_text(aes(y = 0.145, label = letters), size = 10, color = "black", position = position_dodge(width= 0.75))
 
 
 
@@ -1076,7 +1136,7 @@ DAP: Days after plant"
 
 
 raw_mult <- mult_model %>% 
-  group_by(growth_stage) %>% 
+  group_by(growth_stage, treatment, plot_id) %>% 
   summarise(mean = mean(multiple),
             sd = sd(multiple), 
             n = n(), 
@@ -1137,6 +1197,41 @@ ggplot(raw_mult, aes(color = treatment))+
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
   geom_text(aes(x = treatment, y = 0.13, label = trimws(letters)), size = 10, color = "black")
+
+
+
+ggplot(raw_mult, aes(x = treatment, y = mean, fill = growth_stage))+
+  geom_boxplot(alpha = 0.7)+
+  scale_fill_manual(values = c("#E7298A",  "#1B9E77"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+ 
+  labs(
+    title = "Corn: Multiple Damage x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = "Treatment termination",
+    y = "Average damage"
+  )+
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 24),
+        legend.title = element_text(size = 24),
+        axis.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        plot.title = element_text(size = 28),
+        # axis.line = element_line(size = 1.25),
+        # axis.ticks = element_line(size = 1.25),
+        # axis.ticks.length = unit(.25, "cm"),
+        axis.text.x = element_text(size = 26),
+        axis.text.y = element_text(size = 26),
+        strip.text.x = element_text(size = 32), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank())+
+  guides(fill = guide_legend(title = 'Growth Stage'))+
+  scale_y_continuous(limits = c(0,.2))+
+  geom_text(aes(y = 0.19, label = letters), size = 10, color = "black", position = position_dodge(width= 0.75))
+
+
+
 
 
 # DO NOT USE: other models and plot ####

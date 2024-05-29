@@ -1073,8 +1073,8 @@ ggplot(filter(bcc_mg_model, trt != "check"), aes(x = trt, y = mg_ha, fill = trt)
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 26, color = "grey25"))+
-  annotate("text", x = 1, y = 1.25, label = "a", size = 10)+
-  annotate("text", x = 2, y = 2.5, label = "b", size = 10)+
+  annotate("text", x = 1, y = 3.5, label = "a", size = 10)+
+  annotate("text", x = 2, y = 3.5, label = "b", size = 10)+
   annotate("text", x = 3, y = 3.5, label = "b", size = 10)
 
 # corn - soy: cover crops ####
