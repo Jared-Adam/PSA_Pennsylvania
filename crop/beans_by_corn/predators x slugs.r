@@ -394,7 +394,7 @@ ggplot(c_plot, aes(x = pred, y = slugs))+
         axis.title = element_text(size = 32),
         plot.title = element_text(size = 28),
         plot.subtitle = element_text(size = 24), 
-        # panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))

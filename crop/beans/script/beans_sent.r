@@ -188,7 +188,7 @@ ggplot(trt_prop, aes(x = treatment, y = prop, fill = treatment))+
         # axis.ticks.length = unit(.25, "cm"),
         axis.text.x = element_text(size = 32),
         axis.text.y = element_text(size = 26), 
-        # panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   annotate("text", x = 1, y = 1, label = "a", size = 10)+ #1
@@ -257,7 +257,7 @@ ggplot(gs_prop, aes(x = growth_stage, y = prop, fill = growth_stage))+
   labs(
     title = "Soybean: Mean predation x gs",
     subtitle = "Years: 2022-2023",
-    x = "Treatment termination",
+    x = "Growth Stage",
     y = "Mean proportion predated ( x / 1 )"
   )+
   theme(legend.position = 'none',
@@ -269,7 +269,7 @@ ggplot(gs_prop, aes(x = growth_stage, y = prop, fill = growth_stage))+
         # axis.ticks.length = unit(.25, "cm"),
         axis.text.x = element_text(size = 32),
         axis.text.y = element_text(size = 26), 
-        # panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   annotate("text", x = 1, y = .98, label = "a", size = 10)+
