@@ -13,6 +13,12 @@ library(MASS)
 library(nlme)
 library(plotly)
 library(multcomp)
+library(ggpubr)
+install.packages('corrplot')
+library(corrplot)
+install.packages('ggcorrplot')
+library(ggcorrplot)
+
 # data ####
 slugs <- PSA_PA_slugs
 
@@ -49,24 +55,24 @@ slug_clean <- slugs %>%
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
   rename(precip = "7day_precip") %>% 
-  dplyr::select(-date) %>% 
+  # dplyr::select(date) %>% 
   mutate(year = as.factor(year), 
        treatment = as.factor(treatment))%>%
   mutate(season = case_when(season == "fall" ~ "Fall", 
                             season == "spring" ~ "Spring")) %>% 
-  group_by(season, year, month, plot_id, treatment, block, precip, temp) %>% 
+  group_by(season, year, month, plot_id, treatment, block, precip, temp, date) %>% 
   summarise(total_slug =  sum(slug_count))%>% 
   replace(is.na(.),0) %>% 
+  arrange(date, plot_id) %>% 
   print(n = Inf)
 
 #subset by season
 
-fall_slugs <- subset(slug_clean, season == "fall")
-spring_slugs <- subset(slug_clean, season == "spring")
+
 cs_21 <- subset(slug_clean, year == "2021")
 cs_22 <- subset(slug_clean, year == "2022")
 cs_23 <- subset(slug_clean, year == "2023")
-# models ####
+# model choice? ####
 
 # look at overdispersion: variance > mean?
 dispersion_stats <- slug_clean %>% 
@@ -85,106 +91,219 @@ if(dispersion_stats$mean[1] > dispersion_stats$variances[1] &
   }
 
 
-# models ####
+# explore the data ####
+
+#explore
+unique(slug_clean$date)
+slug_clean <- slug_clean %>% 
+  mutate_at(vars(1:6), as_factor) %>% 
+  mutate(date = as.character(date)) %>% 
+  mutate(date = as_factor(date))
+
+cat_resp <- names(slug_clean[10])
+cat_resp <- set_names(cat_resp)
+
+cat_exp <- names(slug_clean[1:6])
+cat_exp <- set_names(cat_exp)
+
+
+box_plots <- function(x,y) {
+  ggplot(slug_clean, aes(x = .data[[x]], y = .data[[y]]))+
+    geom_boxplot()+
+    theme_bw()
+}
+
+cat_plots <- map(cat_exp, ~box_plots(.x, 'total_slug'))
+cat_plots
+ggarrange(plotlist = cat_plots)
+
+
+
+con_resp <- names(slug_clean[10])
+con_resp <- set_names(con_resp)
+
+con_exp <- names(slug_clean[7:8])
+con_exp <- set_names(con_exp)
+
+scatter_plots <- function(x,y){
+  ggplot(slug_clean, aes(x = .data[[x]], y = .data[[y]]))+
+    geom_point()+
+    stat_smooth(method = 'loess', se = FALSE, color = 'grey75')+
+    theme_bw()
+}
+
+con_plots <- map(con_exp, ~scatter_plots(.x, 'total_slug'))
+ggarrange(plotlist = con_plots)
+
+
+ggplot(slug_clean, aes(x = season, y = precip))+
+  geom_boxplot()+
+  theme_bw()
+ggplot(slug_clean, aes(x = season, y = temp))+
+  geom_boxplot()+
+  theme_bw()
+
+
+# correlation test 
+slug_cor <- slug_clean %>% 
+  ungroup() %>% 
+  dplyr::select(total_slug, block, plot_id, season, treatment, year, date)
+
+model.matrix(~0+., data = slug_cor) %>% 
+  cor(use = 'pairwise.complete.obs') %>% 
+  ggcorrplot(show.diag = FALSE, type = 'lower', lab = TRUE, lab_size = 2)
+
+# model selection ####
+# SPRING
+spring_slugs <- subset(slug_clean, season == "Spring")
+spoisson_model <- glmer(total_slug ~ treatment*year + 
+                          (1|date), 
+                        data = spring_slugs, 
+                        family = poisson)
+
+snb_model_trt <- glmer.nb(total_slug ~ treatment*year + 
+                            (1|date), 
+                          data = spring_slugs) 
+
+lrtest(spoisson_model, snb_model_trt)
+# the negative binomial has the higher likelihood score, so we will use that
+
+# FALL
+fall_slugs <- subset(slug_clean, season == "Fall")
 
 # let's see which is better, poisson or nb? 
 # run one of each where the only difference is the family 
-poisson_model <- glmer(total_slug ~ treatment + 
-                         (1|year/block), 
-                       data = slug_clean, 
+fpoisson_model <- glmer(total_slug ~ treatment*year + 
+                         (1|date), 
+                       data = fall_slugs, 
                        family = poisson)
 
-nb_model_trt <- glmer.nb(total_slug ~ treatment + 
-                           (1|year/block), 
-                         data = slug_clean) 
+fnb_model_trt <- glmer.nb(total_slug ~ treatment*year + 
+                           (1|date), 
+                         data = fall_slugs) 
 
-lrtest(poisson_model,nb_model_trt)
+lrtest(fpoisson_model, fnb_model_trt)
 # the negative binomial has the higher likelihood score, so we will use that
 
 
-m0 <- glmer.nb(total_slug ~ +
-                 (1|year/block) + (1|precip) + (1|season),
-               data = slug_clean)
 
-m1 <- glmer.nb(total_slug ~ treatment +
-                 (1|year/block) + (1|precip) + (1|season), data = slug_clean) 
+# models ####
 
-sl.table <- as.data.frame(summary(m1)$coefficients)
-#CI <- confint(m1)
-sl.table <-cbind(row.names(sl.table), sl.table)
-names(sl.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(sl.table, highlight = TRUE)
+# Fall
 
-anova(m0, m1)
+f0 <- glmer.nb(total_slug ~ +
+                 (1|date),
+               data = fall_slugs)
 
-check_model(m1)
-summary(m1)
-check_singularity(m1)
-r2_nakagawa(m1) #with precip
-#  Conditional R2: 0.848
-#  Marginal R2: 0.002
+f1 <- glmer.nb(total_slug ~ treatment +
+                 (1|date), data = fall_slugs) 
 
-cm_emm <- emmeans(m1, ~treatment)
-pairs(cm_emm)
-pwpm(cm_emm)
-cld(cm_emm, Letters = letters)
+f2 <- glmer.nb(total_slug ~ treatment + year +
+                 (1|date), data = fall_slugs) 
+
+f3 <- glmer.nb(total_slug ~ treatment*year +
+                 (1|date), data = fall_slugs) 
 
 
-m1_no_precip <- glmer.nb(total_slug ~ treatment +
-                 (1|year/block) + (1|season), data = slug_clean) 
-r2_nakagawa(m1_no_precip)
+anova(f0, f1, f2, f3)
 
-# without precip: 
-# Conditional R2: 0.043
-# Marginal R2: 0.007
+check_model(f3)
+summary(f3)
+hist(residuals(f3))
+check_singularity(f3)
+r2_nakagawa(f3) 
+cld(emmeans(f3, ~treatment|year),Letters = letters)
+# year = 2021:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 3         0.0426 0.349 Inf   -0.6413     0.726  a    
+# 4         0.2355 0.341 Inf   -0.4335     0.905  ab   
+# 2         0.3506 0.338 Inf   -0.3112     1.013  ab   
+# 1         0.7185 0.329 Inf    0.0746     1.363   b   
+# 
+# year = 2022:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 3         1.4605 0.272 Inf    0.9267     1.994  a    
+# 4         1.7986 0.270 Inf    1.2698     2.327  a    
+# 2         2.2819 0.267 Inf    1.7588     2.805   b   
+# 1         2.4623 0.266 Inf    1.9405     2.984   b   
+# 
+# year = 2023:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 2         1.2894 0.448 Inf    0.4112     2.168  a    
+# 1         1.7285 0.440 Inf    0.8653     2.592  a    
+# 4         1.7641 0.440 Inf    0.9016     2.627  a    
+# 3         1.8716 0.439 Inf    1.0118     2.731  a  
+cld(emmeans(f3, ~treatment), Letters = letters)
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 3           1.12 0.208 Inf     0.718      1.53  a    
+# 4           1.27 0.206 Inf     0.862      1.67  a    
+# 2           1.31 0.207 Inf     0.901      1.71  a    
+# 1           1.64 0.204 Inf     1.237      2.04   b   
 
+
+
+# sl.table <- as.data.frame(summary(m1)$coefficients)
+# #CI <- confint(m1)
+# sl.table <-cbind(row.names(sl.table), sl.table)
+# names(sl.table) <- c("Term", "B", "SE", "t", "p")
+# nice_table(sl.table, highlight = TRUE)
+
+
+# Spring
+
+s0 <- glmer.nb(total_slug ~ +
+                 (1|date),
+               data = spring_slugs)
+
+s1 <- glmer.nb(total_slug ~ treatment +
+                 (1|date), data = spring_slugs) 
+
+s2 <- glmer.nb(total_slug ~ treatment + year +
+                 (1|date), data = spring_slugs) 
+
+s3 <- glmer.nb(total_slug ~ treatment*year +
+                 (1|date), data = spring_slugs) 
+
+
+anova(s0, s1, s2, s3)
+
+check_model(s3)
+summary(s3)
+hist(residuals(s3))
+check_singularity(s3)
+r2_nakagawa(s3) 
+cld(emmeans(s3, ~treatment|year),Letters = letters)
+# year = 2021:
+#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          1.1587 0.597 Inf    -0.011    2.3284  a    
+# 4          1.4228 0.594 Inf     0.259    2.5862  ab   
+# 2          1.5517 0.593 Inf     0.390    2.7136  ab   
+# 3          1.8102 0.592 Inf     0.650    2.9704   b   
+# 
+# year = 2022:
+#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
+# 1         -1.9395 0.942 Inf    -3.785   -0.0940  a    
+# 2         -1.6942 0.913 Inf    -3.484    0.0952  a    
+# 4         -1.2619 0.871 Inf    -2.970    0.4459  a    
+# 3         -1.0525 0.860 Inf    -2.738    0.6334  a    
+# 
+# year = 2023:
+#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
+# 3         -0.2238 0.697 Inf    -1.590    1.1420  a    
+# 1         -0.1949 0.696 Inf    -1.560    1.1700  a    
+# 2         -0.1114 0.696 Inf    -1.475    1.2518  a    
+# 4          0.0581 0.694 Inf    -1.302    1.4180  a    
+
+cld(emmeans(s3, ~treatment), Letters = letters)
+# treatment  emmean    SE  df asymp.LCL asymp.UCL .group
+# 1         -0.3252 0.439 Inf    -1.186     0.536  a    
+# 2         -0.0846 0.432 Inf    -0.931     0.762  a    
+# 4          0.0730 0.422 Inf    -0.754     0.900  a    
+# 3          0.1780 0.419 Inf    -0.644     1.000  a 
 
 
 # plots corn slugs ####
-ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = season))+
-  geom_boxplot()+
-  facet_wrap(~year)+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
-  labs( x = 'Treatment',
-        y = 'Total Slug Counts', 
-        title = "Total Spring Slugs by Treatment")+
-  theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
-        axis.text.y = element_text(size = 12))
-
-ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
-  geom_boxplot()+
-  facet_wrap(.~year)+
-  ggtitle("Total Slugs by Treatment")+
-  scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
-  ylab("Total slug counts")+
-  xlab("")+
-  theme(axis.text.x = element_text(size=12),
-        axis.text.y = element_text(size = 12))
-
-# final figure by season and year
-slug_clean$szn <- factor(slug_clean$season, levels = c("Spring", "Fall"))
-ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = treatment))+
-  geom_boxplot(alpha = 0.7)+
-  facet_wrap(year~szn, scales = "free_y", ncol = 2)+
-  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "Early", "Late", "Green"))+
-  labs( x = 'Treatment termination',
-        y = 'Total Slug Counts', 
-        title = "Corn: Total Slugs by Treatment",
-        subtitle = " Years: 2021-2023")+
-  theme(legend.position = "none",
-        axis.text.x = element_text(size=18),
-        axis.text.y = element_text(size = 18),
-        strip.text = element_text(size = 16),
-        axis.title = element_text(size = 20),
-        plot.title = element_text(size = 20),
-        plot.subtitle = element_text(size = 16), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())
-
-
+# overall
 
 slug_plot <- slug_clean %>% 
   group_by(treatment) %>% 
@@ -217,7 +336,139 @@ ggplot(slug_plot, aes(x = treatment, y = mean, fill = treatment))+
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
-ggplotly(test)
+# fall
+fall_plot <- fall_slugs %>% 
+  mutate(group = case_when(
+    year == '2021' & treatment == '3' ~ 'a',
+    year == '2021' & treatment == '4' ~ 'ab', 
+    year == '2021' & treatment == '2' ~ 'ab', 
+    year == '2021' & treatment == '1' ~ 'b', 
+    year == '2022' & treatment == '3' ~ 'a', 
+    year == '2022' & treatment == '4' ~ 'a', 
+    year == '2022' & treatment == '2' ~ 'b', 
+    year == '2022' & treatment == '1' ~ 'b', 
+    year == '2023' & treatment == '1' ~ 'a', 
+    year == '2023' & treatment == '2' ~ 'a', 
+    year == '2023' & treatment == '3' ~ 'a', 
+    year == '2023' & treatment == '4' ~ 'a'
+  ))
+
+ggplot(fall_plot, aes(x = treatment, y = total_slug, fill = treatment))+
+  geom_boxplot(alpha = 0.7)+
+  geom_point(size = 1.5)+
+  facet_wrap(~year)+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs( x = 'Treatment termination',
+        y = 'Average slug counts / trap', 
+        title = "Corn: Fall Average Slug Counts / Trap x Treatment",
+        subtitle = " Years: 2021-2023")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(label = group, y = 44), size = 10)
+
+
+# spring 
+spring_plot <- spring_slugs %>% 
+  mutate(group = case_when(
+    year == '2021' & treatment == '1' ~ 'a',
+    year == '2021' & treatment == '4' ~ 'ab',
+    year == '2021' & treatment == '2' ~ 'ab',
+    year == '2021' & treatment == '3' ~ 'b',
+    year == '2022' & treatment == '1' ~ 'a',
+    year == '2022' & treatment == '2' ~ 'a',
+    year == '2022' & treatment == '3' ~ 'a',
+    year == '2022' & treatment == '4' ~ 'a',
+    year == '2023' & treatment == '3' ~ 'a',
+    year == '2023' & treatment == '1' ~ 'a',
+    year == '2023' & treatment == '2' ~ 'a',
+    year == '2023' & treatment == '4' ~ 'a'
+  ))
+
+ggplot(spring_plot, aes(x = treatment, y = total_slug, fill = treatment))+
+  geom_boxplot(alpha = 0.7)+
+  geom_point(size = 1.5)+
+  facet_wrap(~year)+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs( x = 'Treatment termination',
+        y = 'Average slug counts / trap', 
+        title = "Corn: Spring Average Slug Counts / Trap x Treatment",
+        subtitle = " Years: 2021-2023")+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
+  geom_text(aes(label = group, y = 44), size = 10)
+
+
+# 
+# ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = season))+
+#   geom_boxplot()+
+#   facet_wrap(~year)+
+#   scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
+#   labs( x = 'Treatment',
+#         y = 'Total Slug Counts', 
+#         title = "Total Spring Slugs by Treatment")+
+#   theme(axis.text.x = element_text(size=12, angle = 45, hjust = 1),
+#         axis.text.y = element_text(size = 12))
+# 
+# ggplot(fall_slugs, aes(x = treatment, y = total_slug, fill = year))+
+#   geom_boxplot()+
+#   facet_wrap(.~year)+
+#   ggtitle("Total Slugs by Treatment")+
+#   scale_x_discrete(labels=c("Check", "Brown", "Green", "Gr-Br"))+
+#   ylab("Total slug counts")+
+#   xlab("")+
+#   theme(axis.text.x = element_text(size=12),
+#         axis.text.y = element_text(size = 12))
+# 
+# # final figure by season and year
+# slug_clean$szn <- factor(slug_clean$season, levels = c("Spring", "Fall"))
+# ggplot(slug_clean, aes(x = treatment, y = total_slug, fill = treatment))+
+#   geom_boxplot(alpha = 0.7)+
+#   facet_wrap(year~szn, scales = "free_y", ncol = 2)+
+#   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+#   scale_x_discrete(limits = c("1", "2", "4", "3"),
+#                    labels=c("No CC", "Early", "Late", "Green"))+
+#   labs( x = 'Treatment termination',
+#         y = 'Total Slug Counts', 
+#         title = "Corn: Total Slugs by Treatment",
+#         subtitle = " Years: 2021-2023")+
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(size=18),
+#         axis.text.y = element_text(size = 18),
+#         strip.text = element_text(size = 16),
+#         axis.title = element_text(size = 20),
+#         plot.title = element_text(size = 20),
+#         plot.subtitle = element_text(size = 16), 
+#         panel.grid.major.y = element_line(color = "darkgrey"),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor = element_blank())
+# 
+# 
+# 
+# 
+# 
+# ggplotly(test)
 
 # pub plot ####
 

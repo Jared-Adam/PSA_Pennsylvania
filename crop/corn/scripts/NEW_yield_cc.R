@@ -10,6 +10,7 @@ library(multcomp)
 library(rempsyc)
 library(flextable)
 library(performance)
+library(ggpubr)
 
 # data ####
 wield <- wallace_yield_cb
@@ -102,7 +103,35 @@ corn %>%
 
 # corn stats ####
 
-corn
+corn <- corn %>% 
+  relocate(yieldbuac)
+
+# explore
+c_resp <- names(corn[1])
+c_expl <- names(corn[2:6])
+
+c_resp <- set_names(c_resp)
+c_expl <- set_names(c_expl)
+
+
+
+box_plots <- function(x,y) {
+  ggplot(corn, aes(x = .data[[x]], y = .data[[y]]))+
+    geom_boxplot()+
+    theme_bw()
+}
+
+box_plots(x = 'block', y = 'yieldbuac')
+
+clots <- map(c_expl, ~box_plots(.x, 'yieldbuac'))
+clots
+
+ggarrange(plotlist = clots)
+##
+
+# getting them all on the same grid
+ggarrange(plotlist = plots)
+
 c0 <- lmer(yieldbuac ~ (1|block), data = corn)
 c1 <- lmer(yieldbuac ~ cc + (1|block), data = corn)
 c2 <- lmer(yieldbuac ~ cc + year + (1|block), data = corn)
@@ -110,6 +139,7 @@ c3 <- lmer(yieldbuac ~ cc * year + (1|block), data = corn)
 summary(c1)
 anova(c0,c1,c2,c3)
 hist(residuals(c3))
+check_model(c3)
 
 cld(emmeans(c3, ~cc|year), Letters = letters)
 # year = 2021:
@@ -143,6 +173,31 @@ cld(emmeans(c3, ~cc), Letters= letters)
 
 
 # bean stats ####
+
+beans <- beans %>% 
+  relocate(yieldbuac)
+
+# explore
+b_resp <- names(beans[1])
+b_expl <- names(beans[2:6])
+
+b_resp <- set_names(b_resp)
+b_expl <- set_names(b_expl)
+
+box_plots <- function(x,y) {
+  ggplot(beans, aes(x = .data[[x]], y = .data[[y]]))+
+    geom_boxplot()+
+    theme_bw()
+}
+
+box_plots(x = 'block', y = 'yieldbuac')
+
+blots <- map(b_expl, ~box_plots(.x, 'yieldbuac'))
+blots
+
+ggarrange(plotlist = blots)
+
+
 
 b0 <- lmer(yieldbuac ~ (1|block), data = beans)
 b1 <- lmer(yieldbuac ~ cc + (1|block), data = beans)
@@ -530,12 +585,59 @@ cc_figure_df <- cc_new %>%
 corn_cc <- cc_new %>% 
   filter(Crop == 'corn')
 
+# exploratory plots
+corn_cc
+# isolate the explanatory and response variables
+resp <- names(corn_cc[7])
+expl <- names(corn_cc[1:5])
+
+resp <- set_names(resp)
+resp
+expl <- set_names(expl)
+expl
+
+# option 1
+# create a plotting function for categorical expl and continuous response
+# in this instance, hard coding the data set into the fxn bc I am only working with one df
+# strings can not be directly added to aes, so the use of the .data pronoun is needed
+scatter <- function(x,y) {
+  ggplot(corn_cc, aes(x = .data[[x]], y = .data[[y]]))+
+    geom_boxplot()+
+    theme_bw()
+}
+
+scatter(x = 'CC', y = 'Mg_ha')
+
+plots <- map(expl, ~scatter(.x, 'Mg_ha'))
+plots
+
+# getting them all on the same grid
+ggarrange(plotlist = plots)
+
+#option 2
+#another option is to create all combinations, and then plot them
+resp_expl <- tidyr::expand_grid(resp, expl)
+resp_expl
+# pmap now to loop through the rows of this tibble
+plots2 <- pmap(resp_expl, ~scatter(x = .y, y = .x))
+plots2
+
+
+
+
+
 m0 <- lmer(Mg_ha ~ (1|Block), data = corn_cc)
 m1 <- lmer(Mg_ha ~ CC +(1|Block), data = corn_cc)
 m2 <- lmer(Mg_ha ~ CC + Year + (1|Block), data = corn_cc)
-m3 <- lmer(Mg_ha ~ CC * Year +(1|Block), data = corn_cc)
+m3 <- lmer(Mg_ha ~ CC * Year +(1|Block/Plot), data = corn_cc)
 anova(m0, m1, m2, m3)
 hist(residuals(m3))
+check_model(m3)
+summary(m3)
+
+
+
+
 
 cld(emmeans(m3, ~CC|Year), Letters = letters)
 # Year = 2021:
