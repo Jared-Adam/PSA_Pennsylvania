@@ -14,9 +14,7 @@ library(nlme)
 library(plotly)
 library(multcomp)
 library(ggpubr)
-install.packages('corrplot')
 library(corrplot)
-install.packages('ggcorrplot')
 library(ggcorrplot)
 
 # data ####
@@ -69,28 +67,9 @@ slug_clean <- slugs %>%
 #subset by season
 
 
-cs_21 <- subset(slug_clean, year == "2021")
-cs_22 <- subset(slug_clean, year == "2022")
-cs_23 <- subset(slug_clean, year == "2023")
-# model choice? ####
-
-# look at overdispersion: variance > mean?
-dispersion_stats <- slug_clean %>% 
-  group_by(treatment) %>%
-  summarise(
-    mean = mean(total_slug, na.rm=TRUE),
-    variances = var(total_slug, na.rm=TRUE),
-    ratio = variances/mean) 
-if(dispersion_stats$mean[1] > dispersion_stats$variances[1] & 
-   dispersion_stats$mean[2] > dispersion_stats$variances[2] &
-   dispersion_stats$mean[3] > dispersion_stats$variances[3] &
-   dispersion_stats$mean[4] > dispersion_stats$variances[4]){
-  print("run a poisson, probs")
-  } else {
-    print("these jawns overdispersed")
-  }
-
-
+# cs_21 <- subset(slug_clean, year == "2021")
+# cs_22 <- subset(slug_clean, year == "2022")
+# cs_23 <- subset(slug_clean, year == "2023")
 # explore the data ####
 
 #explore
@@ -153,6 +132,25 @@ model.matrix(~0+., data = slug_cor) %>%
   cor(use = 'pairwise.complete.obs') %>% 
   ggcorrplot(show.diag = FALSE, type = 'lower', lab = TRUE, lab_size = 2)
 
+# model choice? ####
+
+# look at overdispersion: variance > mean?
+dispersion_stats <- slug_clean %>% 
+  group_by(treatment) %>%
+  summarise(
+    mean = mean(total_slug, na.rm=TRUE),
+    variances = var(total_slug, na.rm=TRUE),
+    ratio = variances/mean) 
+if(dispersion_stats$mean[1] > dispersion_stats$variances[1] & 
+   dispersion_stats$mean[2] > dispersion_stats$variances[2] &
+   dispersion_stats$mean[3] > dispersion_stats$variances[3] &
+   dispersion_stats$mean[4] > dispersion_stats$variances[4]){
+  print("run a poisson, probs")
+  } else {
+    print("these jawns overdispersed")
+  }
+
+
 # model selection ####
 # SPRING
 spring_slugs <- subset(slug_clean, season == "Spring")
@@ -206,6 +204,14 @@ f3 <- glmer.nb(total_slug ~ treatment*year +
 
 
 anova(f0, f1, f2, f3)
+# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+# f0    3 1747.8 1759.2 -870.88   1741.8                         
+# f1    6 1713.9 1736.9 -850.94   1701.9 39.881  3  1.129e-08 ***
+#   f2    8 1705.3 1735.9 -844.64   1689.3 12.599  2   0.001837 ** 
+#   f3   14 1682.8 1736.4 -827.38   1654.8 34.520  6  5.339e-06 ***
+
+# ?waldtest
+# waldtest(f1, test = 'F')
 
 check_model(f3)
 summary(f3)
@@ -240,6 +246,11 @@ cld(emmeans(f3, ~treatment), Letters = letters)
 # 2           1.31 0.207 Inf     0.901      1.71  a    
 # 1           1.64 0.204 Inf     1.237      2.04   b   
 
+cld(emmeans(f3, ~year), Letters = letters)
+# year emmean    SE  df asymp.LCL asymp.UCL .group
+# 2021  0.337 0.308 Inf    -0.266      0.94  a    
+# 2023  1.663 0.420 Inf     0.840      2.49   b   
+# 2022  2.001 0.257 Inf     1.497      2.51   b 
 
 
 # sl.table <- as.data.frame(summary(m1)$coefficients)
@@ -266,6 +277,11 @@ s3 <- glmer.nb(total_slug ~ treatment*year +
 
 
 anova(s0, s1, s2, s3)
+# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
+# s0    3 1326.8 1338.2 -660.38   1320.8                       
+# s1    6 1325.9 1348.9 -656.95   1313.9 6.8575  3    0.07658 .
+# s2    8 1322.6 1353.2 -653.31   1306.6 7.2718  2    0.02636 *
+#   s3   14 1328.5 1382.1 -650.25   1300.5 6.1147  6    0.41047  
 
 check_model(s3)
 summary(s3)
@@ -300,6 +316,12 @@ cld(emmeans(s3, ~treatment), Letters = letters)
 # 2         -0.0846 0.432 Inf    -0.931     0.762  a    
 # 4          0.0730 0.422 Inf    -0.754     0.900  a    
 # 3          0.1780 0.419 Inf    -0.644     1.000  a 
+
+cld(emmeans(s3, ~year), Letters = letters)
+# year emmean    SE  df asymp.LCL asymp.UCL .group
+# 2022 -1.487 0.807 Inf    -3.069    0.0951  a    
+# 2023 -0.118 0.675 Inf    -1.441    1.2050  ab   
+# 2021  1.486 0.580 Inf     0.349    2.6223   b 
 
 
 # plots corn slugs ####

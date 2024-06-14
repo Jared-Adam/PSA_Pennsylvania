@@ -132,12 +132,18 @@ ggarrange(plotlist = clots)
 # getting them all on the same grid
 ggarrange(plotlist = plots)
 
-c0 <- lmer(yieldbuac ~ (1|block), data = corn)
-c1 <- lmer(yieldbuac ~ cc + (1|block), data = corn)
-c2 <- lmer(yieldbuac ~ cc + year + (1|block), data = corn)
-c3 <- lmer(yieldbuac ~ cc * year + (1|block), data = corn)
-summary(c1)
-anova(c0,c1,c2,c3)
+# c0 <- lm(yieldbuac ~ (1|block), data = corn)
+c1 <- lm(yieldbuac ~ cc , data = corn)
+c2 <- lm(yieldbuac ~ cc + year, data = corn)
+c3 <- lm(yieldbuac ~ cc * year, data = corn)
+
+summary(c3)
+anova(c1,c2,c3)
+# Res.Df   RSS Df Sum of Sq      F  Pr(>F)  
+# 1     56 22503                              
+# 2     54 19520  2    2983.2 4.9608 0.01101 *
+# 3     48 14433  6    5086.8 2.8196 0.01970 *
+
 hist(residuals(c3))
 check_model(c3)
 
@@ -163,12 +169,11 @@ cld(emmeans(c3, ~cc|year), Letters = letters)
 # 3-7 DPP      145 7.75 48    129.4      161   b   
 # 1-3 DAP      169 7.75 48    153.2      184   b   
 
-cld(emmeans(c3, ~cc), Letters= letters)
-# cc        emmean   SE   df lower.CL upper.CL .group
-# No CC        117 4.48 35.2      108      126  a    
-# 3-7 DPP      139 4.48 35.2      130      148   b   
-# 14-28 DPP    140 4.48 35.2      130      149   b   
-# 1-3 DAP      140 4.48 35.2      131      149   b  
+cld(emmeans(c3, ~year), Letters= letters)
+# year emmean   SE df lower.CL upper.CL .group
+# 2022    125 3.88 48      117      132  a    
+# 2021    135 3.88 48      127      143  ab   
+# 2023    142 3.88 48      134      150   b   
 
 
 
@@ -199,12 +204,17 @@ ggarrange(plotlist = blots)
 
 
 
-b0 <- lmer(yieldbuac ~ (1|block), data = beans)
-b1 <- lmer(yieldbuac ~ cc + (1|block), data = beans)
-b2 <- lmer(yieldbuac ~ cc + year + (1|block), data = beans)
-b3 <- lmer(yieldbuac ~ cc * year + (1|block), data = beans)
-summary(b2)
-anova(b0,b1,b2,b3)
+# b0 <- lmer(yieldbuac ~ (1|block), data = beans)
+b1 <- lm(yieldbuac ~ cc , data = beans)
+b2 <- lm(yieldbuac ~ cc + year , data = beans)
+b3 <- lm(yieldbuac ~ cc * year, data = beans)
+summary(b3)
+anova(b1,b2,b3)
+# Res.Df    RSS Df Sum of Sq      F  Pr(>F)  
+# 1     36 4704.9                              
+# 2     35 4056.9  1    648.03 5.5660 0.02458 *
+# 3     32 3725.6  3    331.27 0.9485 0.42885  
+
 hist(residuals(b3))
 
 cld(emmeans(b3, ~cc|year), Letters = letters)
@@ -222,16 +232,10 @@ cld(emmeans(b3, ~cc|year), Letters = letters)
 # 14-28 DPP   58.8 4.83 32     49.0     68.6  a    
 # 1-3 DAP     63.6 4.83 32     53.8     73.4  a    
 
-cld(emmeans(b3, ~cc + year), Letters= letters)
-# cc        year emmean   SE df lower.CL upper.CL .group
-# 1-3 DAP   2022   47.4 4.83 32     37.6     57.2  a    
-# 3-7 DPP   2022   47.6 4.83 32     37.8     57.4  a    
-# No CC     2022   47.6 4.83 32     37.8     57.4  a    
-# No CC     2023   47.6 4.83 32     37.8     57.4  a    
-# 14-28 DPP 2022   50.0 4.83 32     40.2     59.8  a    
-# 3-7 DPP   2023   54.8 4.83 32     45.0     64.6  a    
-# 14-28 DPP 2023   58.8 4.83 32     49.0     68.6  a    
-# 1-3 DAP   2023   63.6 4.83 32     53.8     73.4  a 
+cld(emmeans(b3, ~year), Letters= letters)
+# year emmean   SE df lower.CL upper.CL .group
+# 2022   48.1 2.41 32     43.2     53.1  a    
+# 2023   56.2 2.41 32     51.3     61.1   b 
 
 # plots ####
 # corn 
@@ -626,17 +630,20 @@ plots2
 
 
 
-m0 <- lmer(Mg_ha ~ (1|Block), data = corn_cc)
-m1 <- lmer(Mg_ha ~ CC +(1|Block), data = corn_cc)
-m2 <- lmer(Mg_ha ~ CC + Year + (1|Block), data = corn_cc)
-m3 <- lmer(Mg_ha ~ CC * Year +(1|Block/Plot), data = corn_cc)
-anova(m0, m1, m2, m3)
+# m0 <- lm(Mg_ha ~ (1|Block), data = corn_cc)
+m1 <- glm(Mg_ha ~ CC , data = corn_cc)
+m2 <- glm(Mg_ha ~ CC + Year , data = corn_cc)
+m3 <- glm(Mg_ha ~ CC * Year , data = corn_cc)
+
+anova(m1, m2, m3, test = 'F')
+# Resid. Df Resid. Dev Df Deviance      F    Pr(>F)    
+# 1        42     47.587                                 
+# 2        40     16.749  2   30.837 119.15 < 2.2e-16 ***
+# 3        36      4.658  4   12.091  23.36 1.388e-09 ***
+
 hist(residuals(m3))
 check_model(m3)
 summary(m3)
-
-
-
 
 
 cld(emmeans(m3, ~CC|Year), Letters = letters)
@@ -675,6 +682,9 @@ s1 <- lmer(Mg_ha ~ CC +(1|Block), data = soy_cc)
 s2 <- lmer(Mg_ha ~ CC + Year + (1|Block), data = soy_cc)
 s3 <- lmer(Mg_ha ~ CC * Year +(1|Block), data = soy_cc)
 anova(s0, s1, s2, s3)
+
+summary(s3)
+check_model(s3)
 hist(residuals(s3))
 
 cld(emmeans(s3, ~CC|Year), Letters = letters)
