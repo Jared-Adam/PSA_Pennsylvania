@@ -138,9 +138,11 @@ sm3 <- glmer(damage_score ~ treatment*growth_stage +
                 data = avg_dmg, 
                 family = poisson)
 
-
+?glmer
 
 anova(sm0, sm1, sm2, sm3)
+hist(residuals(sm3)
+)
 summary(sm3)
 binned_residuals(sm3)
 check_model(sm3)
@@ -331,6 +333,7 @@ DAP : Days after plant")+
 slug_model <- new_dmg %>% 
   dplyr::select(year, growth_stage, block, plot_id, treatment, s)
 unique(slug_model$treatment)
+
 m0 <- glmer(s ~ +
         (1|year/block/plot_id/growth_stage), data = slug_model,
       family = binomial)
@@ -342,47 +345,62 @@ m1 <- glmer(s ~ treatment +
 m2 <- glmer(s ~ treatment+growth_stage +
               (1|year/block/plot_id/growth_stage), data = slug_model,
             family = binomial)
+## trying something new
 
-m3 <- glmer(s ~ treatment*growth_stage +
-              (1|year/block/plot_id/growth_stage), data = slug_model,
+test0 <- glmer(s ~ 
+              (1|block/growth_stage), data = slug_model,
             family = binomial)
 
-sl.table <- as.data.frame(summary(m3)$coefficients)
-#CI <- confint(m3)
-sl.table <-cbind(row.names(sl.table), sl.table)
-names(sl.table) <- c("Term", "B", "SE", "t", "p")
-sl.table <- as_tibble(sl.table) %>% 
-  mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
-         Term == 'treatment4' ~ '3-7 DPP',
-         Term == 'treatment3' ~ '1-3 DAP',
-         Term == 'growth_stageV5' ~ 'V5',
-         Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-         Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-         Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-         .default = as.character(Term)))
-sl.table <- flextable(sl.table)
-sl.table <- autofit(sl.table)
-sl.table <- add_header_lines(sl.table,
-                              values = 'Slug: Summary')
-theme_zebra(sl.table) %>% 
-  save_as_docx(path = 'slug_summary_table.docx')
+test1 <- glmer(s ~ treatment+
+              (1|block/growth_stage), data = slug_model,
+            family = binomial)
+
+test2 <- glmer(s ~ treatment + year +
+              (1|block/growth_stage), data = slug_model,
+            family = binomial)
+
+test3 <- glmer(s ~ treatment*year +
+              (1|block/growth_stage), data = slug_model,
+            family = binomial)
+
+# plogis(confint(m3))
+anova(test0, test1, test2, test3)
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# test0    3 9062.4 9082.9 -4528.2   9056.4                          
+# test1    6 9035.0 9075.9 -4511.5   9023.0  33.403  3  2.648e-07 ***
+# test2    8 8201.7 8256.2 -4092.9   8185.7 837.331  2  < 2.2e-16 ***
+# test3   14 8063.3 8158.7 -4017.6   8035.3 150.464  6  < 2.2e-16 ***
+
+summary(test3)
+confint(test3)
+r2_nakagawa(test3)
+hist(residuals(test3))
+qqnorm(residuals(test3))
+cld(emmeans(test3, ~treatment))
 
 
-anova(m0, m1, m2, m3)
-summary(m3)
-r2_nakagawa(m3)
-hist(residuals(m3))
-m3_em <- emmeans(m3, ~treatment+growth_stage)
-cld(m3_em, Letters = letters)
-# treatment growth_stage  emmean    SE  df asymp.LCL asymp.UCL .group
-# 4         V5           -0.7789 0.629 Inf    -2.012     0.455  a    
-# 2         V5           -0.5599 0.632 Inf    -1.798     0.679  a    
-# 1         V3           -0.1994 0.622 Inf    -1.419     1.020  a    
-# 1         V5           -0.1961 0.626 Inf    -1.423     1.031  a    
-# 3         V3           -0.1753 0.625 Inf    -1.400     1.049  a    
-# 3         V5           -0.0736 0.625 Inf    -1.299     1.152  a    
-# 4         V3            0.0321 0.628 Inf    -1.198     1.262  a    
-# 2         V3            0.2632 0.627 Inf    -0.967     1.493  a
+
+# sl.table <- as.data.frame(summary(m3)$coefficients)
+# #CI <- confint(m3)
+# sl.table <-cbind(row.names(sl.table), sl.table)
+# names(sl.table) <- c("Term", "B", "SE", "t", "p")
+# sl.table <- as_tibble(sl.table) %>% 
+#   mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
+#          Term == 'treatment4' ~ '3-7 DPP',
+#          Term == 'treatment3' ~ '1-3 DAP',
+#          Term == 'growth_stageV5' ~ 'V5',
+#          Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+#          Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+#          Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+#          .default = as.character(Term)))
+# sl.table <- flextable(sl.table)
+# sl.table <- autofit(sl.table)
+# sl.table <- add_header_lines(sl.table,
+#                               values = 'Slug: Summary')
+# theme_zebra(sl.table) %>% 
+#   save_as_docx(path = 'slug_summary_table.docx')
+
+
 
 
 slug_em <- as.data.frame(m3_em)

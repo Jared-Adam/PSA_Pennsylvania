@@ -10,6 +10,8 @@ library(performance)
 library(jtools)
 library(huxtable)
 library(rempsyc)
+library(multcomp)
+library(ggpubr)
 
 # data #####
 damage_inc <- PSA_PA_Inc
@@ -89,6 +91,17 @@ damage_done %>%
   print(n = Inf)
 
 # model ####
+# correlation test 
+dmg_cor <- damage_done %>% 
+  ungroup() %>% 
+  dplyr::select(prop_damaged, block, plotid, treatment, year, growth)
+
+model.matrix(~0+., data = dmg_cor) %>% 
+  cor(use = 'pairwise.complete.obs') %>% 
+  ggcorrplot(show.diag = FALSE, type = 'lower', lab = TRUE, lab_size = 2)
+
+
+
 damage_done
 
 m0 <- glmer(prop_damaged ~ 
@@ -110,18 +123,29 @@ m3 <- glmer(prop_damaged ~ treatment * growth +
               (1|year/block/plotid/growth), 
                  data = damage_done, family = binomial, 
                  weights = total_sum)
-t <- summary(m3)
-stats.table <- as.data.frame(summary(m3)$coefficients)
-#CI <- confint(m3)
-stats.table <-cbind(row.names(stats.table), stats.table)
-names(stats.table) <- c("Term", "B", "SE", "t", "p")
 
-nice_table(stats.table, highlight = TRUE)
+m4 <- glmer(prop_damaged ~ treatment * year + 
+              (1|block/plotid/growth), 
+            data = damage_done, family = binomial, 
+            weights = total_sum)
 
+check_model(m4)
+check_model(m3)
+binned_residuals(m4)
+summary(m4)
+
+
+
+isSingular(m3)
 anova(m0, m1, m2, m3)
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# m0    5 887.95 901.88 -438.97   877.95                          
+# m1    8 887.04 909.34 -435.52   871.04  6.9101  3  0.0748198 .  
+# m2    9 877.20 902.29 -429.60   859.20 11.8368  1  0.0005807 ***
+# m3   12 878.32 911.77 -427.16   854.32  4.8779  3  0.1809610  
 
 
-
+summary(m3)
 r2_nakagawa(m3)
 # Conditional R2: 0.129
 # Marginal R2: 0.062
@@ -129,6 +153,21 @@ m3_em <- emmeans(m3, ~growth)
 pairs(m3_em)
 pwpm(m3_em)
 cld(m3_em, Letters = letters)
+
+
+
+
+# stats.table <- as.data.frame(summary(m3)$coefficients)
+# #CI <- confint(m3)
+# stats.table <-cbind(row.names(stats.table), stats.table)
+# names(stats.table) <- c("Term", "B", "SE", "t", "p")
+# nice_table(stats.table, highlight = TRUE)
+
+
+
+
+
+
 
 # plot ####
 
