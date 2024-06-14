@@ -84,29 +84,63 @@ m3 <- glmer(to.predated ~ treatment*growth_stage +
             data = sent_years, 
             family = binomial)
 
-cent.table <- as.data.frame(summary(m3)$coefficients)
-#CI <- confint(m1)
-cent.table <-cbind(row.names(cent.table), cent.table)
-names(cent.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(cent.table, highlight = TRUE)
-
 check_model(m3)
+hist(residuals(m3))
 anova(m0, m1, m2, m3)
+# npar     AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# m0    5 1017.36 1042.3 -503.68  1007.36                          
+# m1    6 1011.11 1041.0 -499.56   999.11  8.2527  1   0.004069 ** 
+# m2    8  989.19 1029.1 -486.60   973.19 25.9173  2  2.356e-06 ***
+# m3   10  991.60 1041.5 -485.80   971.60  1.5936  2   0.450774 
 summary(m3)
-m3_plot <- binned_residuals(m3)
-plot(m3_plot)
 r2_nakagawa(m3)
 #   Conditional R2: 0.555
 #   Marginal R2: 0.101
-m_emm <- emmeans(m3, ~ treatment, type = 'pairwise')
-pairs(m_emm, simple = "each")
-pwpm(m_emm)
-cld(m_emm, Letters = letters)
 
-mg_emm <- emmeans(m3, ~ growth_stage, type = 'pairwise')
-pairs(mg_emm, simple = "each")
-pwpm(mg_emm)
-cld(mg_emm, Letters = letters)
+
+cld(emmeans(m3, ~ growth_stage), Letters = letters)
+# growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# V3            0.843 0.758 Inf    -0.642      2.33  a    
+# V5            2.150 0.776 Inf     0.630      3.67   b   
+# R3            2.522 0.791 Inf     0.971      4.07   b 
+
+cld(emmeans(m3, ~treatment|growth_stage), Letters = letters)
+# growth_stage = R3:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          2.150 0.900 Inf     0.386      3.91  a    
+# 2          2.297 0.911 Inf     0.512      4.08  a    
+# 3          2.667 0.923 Inf     0.858      4.48  a    
+# 4          2.973 0.935 Inf     1.140      4.81  a    
+# 
+# growth_stage = V3:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          0.387 0.846 Inf    -1.271      2.05  a    
+# 2          0.703 0.850 Inf    -0.963      2.37  a    
+# 3          1.068 0.844 Inf    -0.586      2.72  a    
+# 4          1.223 0.855 Inf    -0.452      2.90  a    
+# 
+# growth_stage = V5:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          1.124 0.851 Inf    -0.545      2.79  a    
+# 2          1.970 0.873 Inf     0.259      3.68  a    
+# 3          2.472 0.897 Inf     0.714      4.23  a    
+# 4          3.027 0.942 Inf     1.181      4.87  a  
+
+cld(emmeans(m3, ~treatment), Letters = letters)
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1           1.22 0.775 Inf    -0.299      2.74  a    
+# 2           1.66 0.781 Inf     0.125      3.19  ab   
+# 3           2.07 0.786 Inf     0.528      3.61  ab   
+# 4           2.41 0.798 Inf     0.844      3.97   b   
+
+
+# cent.table <- as.data.frame(summary(m3)$coefficients)
+# #CI <- confint(m1)
+# cent.table <-cbind(row.names(cent.table), cent.table)
+# names(cent.table) <- c("Term", "B", "SE", "t", "p")
+# nice_table(cent.table, highlight = TRUE)
+
+
 
 
 # plots ####

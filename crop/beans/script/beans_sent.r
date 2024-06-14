@@ -83,13 +83,10 @@ m3 <- glmer(to.predated ~ treatment*growth_stage +
             data = sent_years,
             family = binomial)
 
-bent.table <- as.data.frame(summary(m3)$coefficients)
-#CI <- confint(m1)
-bent.table <-cbind(row.names(bent.table), bent.table)
-names(bent.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(bent.table, highlight = TRUE)
-
 anova(m0 , m1, m2, m3)
+check_model(m3)
+p <- binned_residuals(m3)
+plot(p)
 
 cld(emmeans(m3, ~treatment + growth_stage), Letters = letters)
 
@@ -110,6 +107,13 @@ r2_nakagawa(m3)
 # Marginal R2: 0.866
 result <- binned_residuals(m3)
 plot(result)
+bent.table <- as.data.frame(summary(m3)$coefficients)
+#CI <- confint(m1)
+bent.table <-cbind(row.names(bent.table), bent.table)
+names(bent.table) <- c("Term", "B", "SE", "t", "p")
+nice_table(bent.table, highlight = TRUE)
+
+
 
 # these models may be no good
 # going to compare group means now because R3 trt 4 is 100% predation
