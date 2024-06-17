@@ -216,6 +216,9 @@ anova(f0, f1, f2, f3)
 check_model(f3)
 summary(f3)
 hist(residuals(f3))
+res <- residuals(f3)
+qqnorm(res)
+plot(fitted(f3), res)
 check_singularity(f3)
 r2_nakagawa(f3) 
 cld(emmeans(f3, ~treatment|year),Letters = letters)
@@ -375,10 +378,12 @@ fall_plot <- fall_slugs %>%
     year == '2023' & treatment == '4' ~ 'a'
   ))
 
+f.labs <- c('2021 a', '2022 b', '2023 b')
+names(f.labs) <- c('2021', '2022', '2023')
 ggplot(fall_plot, aes(x = treatment, y = total_slug, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
   geom_point(size = 1.5)+
-  facet_wrap(~year)+
+  facet_wrap(~year, labeller = labeller(year = f.labs))+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
@@ -416,11 +421,16 @@ spring_plot <- spring_slugs %>%
     year == '2023' & treatment == '2' ~ 'a',
     year == '2023' & treatment == '4' ~ 'a'
   ))
-
+# year emmean    SE  df asymp.LCL asymp.UCL .group
+# 2022 -1.487 0.807 Inf    -3.069    0.0951  a    
+# 2023 -0.118 0.675 Inf    -1.441    1.2050  ab   
+# 2021  1.486 0.580 Inf     0.349    2.6223   b 
+s.labs <- c('2021 a', '2022 b', '2023 ab')
+names(s.labs) <- c('2021', '2022', '2023')
 ggplot(spring_plot, aes(x = treatment, y = total_slug, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
   geom_point(size = 1.5)+
-  facet_wrap(~year)+
+  facet_wrap(~year, labeller = labeller(year = s.labs))+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+

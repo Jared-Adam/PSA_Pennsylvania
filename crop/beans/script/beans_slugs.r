@@ -205,6 +205,10 @@ anova(f0, f1, f2, f3)
 #   f2    7 572.06 595.15 -279.03   558.06  0.1551  1     0.6937    
 # f3   10 577.90 610.89 -278.95   557.90  0.1556  3     0.9844 
 summary(f3)
+hist(residuals(f3))
+res <- residuals(f3)
+qqnorm(res)
+plot(fitted(f3), res)
 r2_nakagawa(f3)
 binned_residuals(f3)
 check_model(f3)
@@ -269,10 +273,14 @@ anova(m0, m1, m2, m3)
 # m0    4 830.18 843.37 -411.09   822.18                          
 # m1    7 835.11 858.20 -410.56   821.11  1.0623  3     0.7862    
 # m2    8 739.71 766.09 -361.85   723.71 97.4088  1     <2e-16 ***
-#   m3   11 745.26 781.54 -361.63   723.26  0.4508  3     0.9296  
+# m3   11 745.26 781.54 -361.63   723.26  0.4508  3     0.9296  
 
 
 summary(m3)
+hist(residuals(m3))
+res <- residuals(m3)
+qqnorm(res)
+plot(fitted(m3), res)
 r2_nakagawa(m3)
 binned_residuals(m3)
 check_model(m3)
@@ -371,7 +379,7 @@ ggplot(fall_plot, aes(x = treatment, y = total_slug, fill = treatment))+
         panel.grid.minor = element_blank(),
         strip.text = element_text(size = 26),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  geom_text(aes(label = group, y = 18), size = 10)
+  geom_text(aes(label = group, y = 16), size = 10)
 
 
 
