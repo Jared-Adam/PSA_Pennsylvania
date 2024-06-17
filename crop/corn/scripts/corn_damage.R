@@ -141,8 +141,12 @@ sm3 <- glmer(damage_score ~ treatment*growth_stage +
 ?glmer
 
 anova(sm0, sm1, sm2, sm3)
-hist(residuals(sm3)
-)
+# npar   AIC   BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# sm0    4 13968 13995 -6979.8    13960                          
+# sm1    7 13898 13946 -6942.2    13884 75.0965  3  3.455e-16 ***
+# sm2    8 13898 13952 -6940.9    13882  2.7371  1    0.09804 .  
+# sm3   11 13878 13952 -6927.8    13856 26.1636  3  8.814e-06 ***
+hist(residuals(sm3))
 summary(sm3)
 binned_residuals(sm3)
 check_model(sm3)
@@ -150,35 +154,38 @@ r2_nakagawa(sm3)
 # Conditional R2: 0.094
 # Marginal R2: 0.027
 
-sm_em <- emmeans(sm3, ~treatment*growth_stage)
-dmg_score_plot <- cld(sm_em, Letters = letters)
-dmg_score_plot
-# treatment growth_stage  emmean     SE  df asymp.LCL asymp.UCL .group
-# 4         V5           -0.4917 0.0806 Inf    -0.650  -0.33370  a    
-# 2         V5           -0.4710 0.0807 Inf    -0.629  -0.31294  ab   
-# 1         V5           -0.4444 0.0798 Inf    -0.601  -0.28800  ab   
-# 1         V3           -0.3168 0.0787 Inf    -0.471  -0.16253  a c  
-# 4         V3           -0.2246 0.0779 Inf    -0.377  -0.07192  abcd 
-# 2         V3           -0.1464 0.0771 Inf    -0.298   0.00467   b d 
-# 3         V3           -0.1011 0.0767 Inf    -0.251   0.04930     d 
-# 3         V5           -0.0779 0.0770 Inf    -0.229   0.07295    cd 
+cld(emmeans(sm3, ~treatment|growth_stage), Letters = letters)
 
-d_s.table <- as.data.frame(summary(sm3)$coefficients)
-d_s.table <-cbind(row.names(d_s.table), d_s.table)
-d_s.table <- as_tibble(d_s.table) %>% 
-  mutate(`row.names(d_s.table)` = case_when(`row.names(d_s.table)` == 'treatment2' ~ '14-28 DPP',
-                          `row.names(d_s.table)` == 'treatment4' ~ '3-7 DPP',
-                          `row.names(d_s.table)` == 'treatment3' ~ '1-3 DAP',
-                          `row.names(d_s.table)` == 'growth_stageV5' ~ 'V5',
-                          `row.names(d_s.table)` == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-                          `row.names(d_s.table)` == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-                          `row.names(d_s.table)` == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-                          .default = as.character(`row.names(d_s.table)`)))
-names(d_s.table) <- c("Term", "B", "SE", "t", "p")
-d_s.table <- flextable(d_s.table)
-d_s.table <- autofit(d_s.table)
-theme_zebra(d_s.table) %>% 
-  save_as_docx(path = 'damage_coef_summarytable.docx')
+# growth_stage = V3:
+#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
+# 1         -0.3168 0.0787 Inf    -0.471  -0.16253  a    
+# 4         -0.2246 0.0779 Inf    -0.377  -0.07192  ab   
+# 2         -0.1464 0.0771 Inf    -0.298   0.00467   b   
+# 3         -0.1011 0.0767 Inf    -0.251   0.04930   b   
+# 
+# growth_stage = V5:
+#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
+# 4         -0.4917 0.0806 Inf    -0.650  -0.33370  a    
+# 2         -0.4710 0.0807 Inf    -0.629  -0.31294  a    
+# 1         -0.4444 0.0798 Inf    -0.601  -0.28800  a    
+# 3         -0.0779 0.0770 Inf    -0.229   0.07295   b   
+
+# d_s.table <- as.data.frame(summary(sm3)$coefficients)
+# d_s.table <-cbind(row.names(d_s.table), d_s.table)
+# d_s.table <- as_tibble(d_s.table) %>% 
+#   mutate(`row.names(d_s.table)` = case_when(`row.names(d_s.table)` == 'treatment2' ~ '14-28 DPP',
+#                           `row.names(d_s.table)` == 'treatment4' ~ '3-7 DPP',
+#                           `row.names(d_s.table)` == 'treatment3' ~ '1-3 DAP',
+#                           `row.names(d_s.table)` == 'growth_stageV5' ~ 'V5',
+#                           `row.names(d_s.table)` == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+#                           `row.names(d_s.table)` == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+#                           `row.names(d_s.table)` == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+#                           .default = as.character(`row.names(d_s.table)`)))
+# names(d_s.table) <- c("Term", "B", "SE", "t", "p")
+# d_s.table <- flextable(d_s.table)
+# d_s.table <- autofit(d_s.table)
+# theme_zebra(d_s.table) %>% 
+#   save_as_docx(path = 'damage_coef_summarytable.docx')
 
 
 
@@ -225,6 +232,54 @@ a1 <- aov(sum ~ year , data = sum_dmg)
 TukeyHSD(a1)  
 
 # dmg severity plot ####
+#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
+# 1         -0.3168 0.0787 Inf    -0.471  -0.16253  a    
+# 4         -0.2246 0.0779 Inf    -0.377  -0.07192  ab   
+# 2         -0.1464 0.0771 Inf    -0.298   0.00467   b   
+# 3         -0.1011 0.0767 Inf    -0.251   0.04930   b   
+# 
+# growth_stage = V5:
+#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
+# 4         -0.4917 0.0806 Inf    -0.650  -0.33370  a    
+# 2         -0.4710 0.0807 Inf    -0.629  -0.31294  a    
+# 1         -0.4444 0.0798 Inf    -0.601  -0.28800  a    
+# 3         -0.0779 0.0770 Inf    -0.229   0.07295   b   
+
+# facet gs
+cld_av_dmg <- avg_dam_p %>% 
+  mutate(group = case_when(
+    treatment %in% c('2','3') & growth_stage %in% c('V3', 'V5') ~ 'b',
+    treatment == '1' & growth_stage == 'V3' ~ 'a',
+    treatment == '4' & growth_stage == 'V3' ~ 'ab',
+    treatment %in% c('4','2','1') & growth_stage == 'V5' ~'a',
+    treatment == '3' & growth_stage == 'V5' ~ 'b'
+  ))
+
+ggplot(cld_av_dmg, aes(x = treatment, y = mean, fill = treatment))+
+  geom_boxplot(alpha = 0.7)+
+  facet_wrap(~growth_stage)+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs(title = 'Corn: Average Damage Score x Treatment and Growth Stage',
+       subtitle = "Years: 2021-2023",
+       x = 'Treatment termination',
+       y = 'Average damage')+
+  theme(legend.position = "none",
+        legend.text = element_text(size = 24),
+        legend.title = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 24))+
+  guides(fill = guide_legend(title = 'Growth Stage'))+
+  geom_text(aes(label = group, y = 1.15), size = 10)
+
 
 # by growth stage
 ggplot(avg_dam_p, aes(x = treatment, y = mean, fill = growth_stage))+
@@ -345,38 +400,52 @@ m1 <- glmer(s ~ treatment +
 m2 <- glmer(s ~ treatment+growth_stage +
               (1|year/block/plot_id/growth_stage), data = slug_model,
             family = binomial)
+
+m3 <- glmer(s ~ treatment*growth_stage +
+              (1|year/block/plot_id/growth_stage), data = slug_model,
+            family = binomial)
+
+anova(m0,m1,m2,m3)
+summary(m3)
+res <- residuals(m3)
+qqline(res)
+plot(fitted(m3), res)
+hist(residuals(m3))
+plot(density(res))
+
+
 ## trying something new
-
-test0 <- glmer(s ~ 
-              (1|block/growth_stage), data = slug_model,
-            family = binomial)
-
-test1 <- glmer(s ~ treatment+
-              (1|block/growth_stage), data = slug_model,
-            family = binomial)
-
-test2 <- glmer(s ~ treatment + year +
-              (1|block/growth_stage), data = slug_model,
-            family = binomial)
-
-test3 <- glmer(s ~ treatment*year +
-              (1|block/growth_stage), data = slug_model,
-            family = binomial)
-
-# plogis(confint(m3))
-anova(test0, test1, test2, test3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# test0    3 9062.4 9082.9 -4528.2   9056.4                          
-# test1    6 9035.0 9075.9 -4511.5   9023.0  33.403  3  2.648e-07 ***
-# test2    8 8201.7 8256.2 -4092.9   8185.7 837.331  2  < 2.2e-16 ***
-# test3   14 8063.3 8158.7 -4017.6   8035.3 150.464  6  < 2.2e-16 ***
-
-summary(test3)
-confint(test3)
-r2_nakagawa(test3)
-hist(residuals(test3))
-qqnorm(residuals(test3))
-cld(emmeans(test3, ~treatment))
+# 
+# test0 <- glmer(s ~ 
+#               (1|block/growth_stage), data = slug_model,
+#             family = binomial)
+# 
+# test1 <- glmer(s ~ treatment+
+#               (1|block/growth_stage), data = slug_model,
+#             family = binomial)
+# 
+# test2 <- glmer(s ~ treatment + year +
+#               (1|block/growth_stage), data = slug_model,
+#             family = binomial)
+# 
+# test3 <- glmer(s ~ treatment*year +
+#               (1|block/growth_stage), data = slug_model,
+#             family = binomial)
+# 
+# # plogis(confint(m3))
+# anova(test0, test1, test2, test3)
+# # npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# # test0    3 9062.4 9082.9 -4528.2   9056.4                          
+# # test1    6 9035.0 9075.9 -4511.5   9023.0  33.403  3  2.648e-07 ***
+# # test2    8 8201.7 8256.2 -4092.9   8185.7 837.331  2  < 2.2e-16 ***
+# # test3   14 8063.3 8158.7 -4017.6   8035.3 150.464  6  < 2.2e-16 ***
+# 
+# summary(test3)
+# confint(test3)
+# r2_nakagawa(test3)
+# hist(residuals(test3))
+# qqnorm(residuals(test3))
+# cld(emmeans(test3, ~treatment))
 
 
 
@@ -583,128 +652,66 @@ bm3 <- glmer(bcw ~ treatment*growth_stage +
               (1|year/block/plot_id/growth_stage), data = bcw_model,
             family = binomial)
 
-bcw.table <- as.data.frame(summary(bm3)$coefficients)
-#CI <- confint(m3)
-bcw.table <-cbind(row.names(bcw.table), bcw.table)
-names(bcw.table) <- c("Term", "B", "SE", "t", "p")
-bcw.table <- as_tibble(bcw.table) %>% 
-  mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
-                          Term == 'treatment4' ~ '3-7 DPP',
-                          Term == 'treatment3' ~ '1-3 DAP',
-                          Term == 'growth_stageV5' ~ 'V5',
-                          Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-                          Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-                          Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-                          .default = as.character(Term)))
-bcw.table <- flextable(bcw.table)
-bcw.table <- autofit(bcw.table)
-bcw.table <- add_header_lines(bcw.table,
-                               values = 'Black Cutworm: Summary')
-theme_zebra(bcw.table) %>% 
-  save_as_docx(path = 'bcw_summary_table.docx')
-
 anova(bm0, bm1, bm2, bm3)
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# bm0    5 2124.6 2158.7 -1057.3   2114.6                          
+# bm1    8 2124.3 2178.8 -1054.2   2108.3  6.3038  3    0.09773 .  
+# bm2    9 2110.3 2171.7 -1046.2   2092.3 15.9656  1   6.45e-05 ***
+# bm3   12 2114.9 2196.6 -1045.4   2090.9  1.4770  3    0.68759  
+
 summary(bm3)
+hist(residuals(bm3))
+resb <- residuals(bm3)
+qqnorm(resb)
 r2_nakagawa(bm3)
-bm3_em <- emmeans(bm3, ~treatment+growth_stage)
+cld(emmeans(bm3, ~growth_stage), Letters = letters)
+# growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# V5            -4.01 0.513 Inf     -5.02     -3.01  a    
+# V3            -3.02 0.504 Inf     -4.01     -2.04   b   
 
-pwpm(bm3_em)
 
-bcw_em <- as.data.frame(cld(bm3_em, Letters = letters))
-# treatment growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
-# 2         V5            -4.39 0.613 Inf     -5.59     -3.19  a    
-# 4         V5            -4.22 0.602 Inf     -5.40     -3.05  a    
-# 1         V5            -3.85 0.585 Inf     -4.99     -2.70  ab   
-# 4         V3            -3.65 0.585 Inf     -4.80     -2.50  ab   
-# 3         V5            -3.58 0.580 Inf     -4.72     -2.45  ab   
-# 2         V3            -3.02 0.564 Inf     -4.13     -1.92  ab   
-# 3         V3            -2.73 0.558 Inf     -3.82     -1.63   b   
-# 1         V3            -2.69 0.560 Inf     -3.79     -1.59   b   
+# bcw.table <- as.data.frame(summary(bm3)$coefficients)
+# #CI <- confint(m3)
+# bcw.table <-cbind(row.names(bcw.table), bcw.table)
+# names(bcw.table) <- c("Term", "B", "SE", "t", "p")
+# bcw.table <- as_tibble(bcw.table) %>% 
+#   mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
+#                           Term == 'treatment4' ~ '3-7 DPP',
+#                           Term == 'treatment3' ~ '1-3 DAP',
+#                           Term == 'growth_stageV5' ~ 'V5',
+#                           Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+#                           Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+#                           Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+#                           .default = as.character(Term)))
+# bcw.table <- flextable(bcw.table)
+# bcw.table <- autofit(bcw.table)
+# bcw.table <- add_header_lines(bcw.table,
+#                                values = 'Black Cutworm: Summary')
+# theme_zebra(bcw.table) %>% 
+#   save_as_docx(path = 'bcw_summary_table.docx')
+
+
 
 
 
 gs.labs <- c("V3  a", "V5  b")
 names(gs.labs) <- c("V3", "V5")
 
-
-ggplot(bcw_em, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = emmean), size = 10,
-             position = position_dodge(width = .75))+
-  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
-  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
-                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "Early", "Late", "Green"))+ 
-  labs(
-    title = "Corn: Black Cutworm Damage x Treatment",
-    subtitle = "Years: 2021-2023",
-    x = "Treatment termination",
-    y = "Damage Emmean"
-  )+
-  theme(legend.position = 'none',
-        axis.title = element_text(size = 32),
-        plot.subtitle = element_text(size = 24),
-        plot.title = element_text(size = 28),
-        # axis.line = element_line(size = 1.25),
-        # axis.ticks = element_line(size = 1.25),
-        # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 26),
-        axis.text.y = element_text(size = 26),
-        strip.text.x = element_text(size = 32), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
-
-
-ggplot(bcw_em, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = emmean), size = 10,
-             position = position_dodge(width = .75), color = "black")+
-  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
-  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
-                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
-  labs(
-    title = "Corn: Black Cutworm Damage x Treatment",
-    subtitle = "Years: 2021-2023",
-    x = "Treatment",
-    y = "Damage Emmean",
-    caption = "DPP: Days pre plant
-DAP: Days after plant"
-  )+
-  theme(legend.position = 'none',
-        axis.title = element_text(size = 32),
-        plot.subtitle = element_text(size = 24),
-        plot.title = element_text(size = 28),
-        # axis.line = element_line(size = 1.25),
-        # axis.ticks = element_line(size = 1.25),
-        # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 26),
-        axis.text.y = element_text(size = 26),
-        strip.text.x = element_text(size = 26), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
-
 raw_bcw <- bcw_model %>% 
   group_by(growth_stage, treatment, plot_id) %>% 
   summarise(mean = mean(bcw),
             sd = sd(bcw), 
             n = n(), 
-            se = sd/sqrt(n)) %>% 
-  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
-                             growth_stage == 'V3' & treatment == '2' ~ 'ab',
-                             growth_stage == 'V3' & treatment == '4' ~ 'ab',
-                             growth_stage == 'V3' & treatment == '3' ~ 'a',
-                             growth_stage == 'V5' & treatment == '1' ~ 'ab',
-                             growth_stage == 'V5' & treatment == '2' ~ 'b',
-                             growth_stage == 'V5' & treatment == '4' ~ 'b',
-                             growth_stage == 'V5' & treatment == '3' ~ 'ab'))
+            se = sd/sqrt(n))
+# %>% 
+#   mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
+#                              growth_stage == 'V3' & treatment == '2' ~ 'ab',
+#                              growth_stage == 'V3' & treatment == '4' ~ 'ab',
+#                              growth_stage == 'V3' & treatment == '3' ~ 'a',
+#                              growth_stage == 'V5' & treatment == '1' ~ 'ab',
+#                              growth_stage == 'V5' & treatment == '2' ~ 'b',
+#                              growth_stage == 'V5' & treatment == '4' ~ 'b',
+#                              growth_stage == 'V5' & treatment == '3' ~ 'ab'))
 
 # growth_stage   mean    sd     n      se
 # <fct>         <dbl> <dbl> <int>   <dbl>
@@ -755,9 +762,10 @@ ggplot(raw_bcw, aes(color = treatment))+
   geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
 
 
-ggplot(raw_bcw, aes(x = treatment, y = mean, fill = growth_stage))+
+ggplot(raw_bcw, aes(x = treatment, y = mean, fill = treatment))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_boxplot(alpha = 0.7)+
-  scale_fill_manual(values = c("#E7298A",  "#1B9E77"))+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+ 
   labs(
@@ -766,7 +774,7 @@ ggplot(raw_bcw, aes(x = treatment, y = mean, fill = growth_stage))+
     x = "Treatment termination",
     y = "Average damage"
   )+
-  theme(legend.position = "bottom",
+  theme(legend.position = "none",
         legend.text = element_text(size = 24),
         legend.title = element_text(size = 24),
         axis.title = element_text(size = 32),
@@ -782,8 +790,7 @@ ggplot(raw_bcw, aes(x = treatment, y = mean, fill = growth_stage))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   guides(fill = guide_legend(title = 'Growth Stage'))+
-  scale_y_continuous(limits = c(0,.15))+
-  geom_text(aes(y = 0.145, label = letters), size = 10, color = "black", position = position_dodge(width= 0.75))
+  scale_y_continuous(limits = c(0,.15))
 
 
 
@@ -1048,142 +1055,89 @@ mm3 <- glmer(multiple ~ treatment*growth_stage +
                 (1|year/block/plot_id/growth_stage), data = mult_model,
               family = binomial)
 
-mult.table <- as.data.frame(summary(mm3)$coefficients)
-#CI <- confint(m3)
-mult.table <-cbind(row.names(mult.table), mult.table)
-names(mult.table) <- c("Term", "B", "SE", "t", "p")
-mult.table <- as_tibble(mult.table) %>% 
-  mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
-                          Term == 'treatment4' ~ '3-7 DPP',
-                          Term == 'treatment3' ~ '1-3 DAP',
-                          Term == 'growth_stageV5' ~ 'V5',
-                          Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-                          Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-                          Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-                          .default = as.character(Term)))
-mult.table <- flextable(mult.table)
-mult.table <- autofit(mult.table)
-mult.table <- add_header_lines(mult.table,
-                              values = 'Multiple Pest: Summary')
-theme_zebra(mult.table) %>% 
-  save_as_docx(path = 'mult_summary_table.docx')
 
 anova(mm0, mm1, mm2, mm3)
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# mm0    5 2558.5 2592.6 -1274.3   2548.5                          
+# mm1    8 2542.8 2597.3 -1263.4   2526.8 21.7210  3  7.456e-05 ***
+# mm2    9 2537.9 2599.2 -1260.0   2519.9  6.8994  1   0.008623 ** 
+# mm3   12 2542.5 2624.3 -1259.3   2518.5  1.3982  3   0.705956 
+
+isSingular(mm3)
 summary(mm3)
+hist(residuals(mm3))
+resmm <- residuals(mm3)
+qqnorm(resmm)
 r2_nakagawa(mm3)
-mm3_em <- emmeans(mm3, ~treatment+growth_stage)
+cld(emmeans(mm3, ~treatment), Letters = letters)
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          -3.88 0.294 Inf     -4.45     -3.30  a    
+# 4          -3.46 0.275 Inf     -4.00     -2.92  a    
+# 2          -3.40 0.275 Inf     -3.94     -2.86  a    
+# 3          -2.47 0.253 Inf     -2.97     -1.98   b   
 
-pwpm(mm3_em)
+cld(emmeans(mm3, ~growth_stage), Letters = letters)
+# growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# V5            -3.59 0.243 Inf     -4.07     -3.11  a    
+# V3            -3.01 0.227 Inf     -3.46     -2.57   b  
 
-mm_em <- as.data.frame(cld(mm3_em, Letters = letters))
-# treatment growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
-# 1         V5            -4.28 0.392 Inf     -5.04     -3.51  a    
-# 4         V5            -3.82 0.360 Inf     -4.53     -3.12  a    
-# 2         V5            -3.69 0.360 Inf     -4.39     -2.98  ab   
-# 1         V3            -3.48 0.343 Inf     -4.15     -2.81  abc  
-# 2         V3            -3.11 0.323 Inf     -3.75     -2.48  abc  
-# 4         V3            -3.10 0.323 Inf     -3.73     -2.46  abc  
-# 3         V5            -2.58 0.311 Inf     -3.19     -1.97   bc  
-# 3         V3            -2.37 0.304 Inf     -2.96     -1.77    c  
+cld(emmeans(mm3, ~treatment|growth_stage), Letters = letters)
+# growth_stage = V3:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          -3.48 0.343 Inf     -4.15     -2.81  a    
+# 2          -3.11 0.323 Inf     -3.75     -2.48  ab   
+# 4          -3.10 0.323 Inf     -3.73     -2.46  ab   
+# 3          -2.37 0.304 Inf     -2.96     -1.77   b   
+# 
+# growth_stage = V5:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          -4.28 0.392 Inf     -5.04     -3.51  a    
+# 4          -3.82 0.360 Inf     -4.53     -3.12  a    
+# 2          -3.69 0.360 Inf     -4.39     -2.98  a    
+# 3          -2.58 0.311 Inf     -3.19     -1.97   b   
+
+
+# mult.table <- as.data.frame(summary(mm3)$coefficients)
+# #CI <- confint(m3)
+# mult.table <-cbind(row.names(mult.table), mult.table)
+# names(mult.table) <- c("Term", "B", "SE", "t", "p")
+# mult.table <- as_tibble(mult.table) %>% 
+#   mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
+#                           Term == 'treatment4' ~ '3-7 DPP',
+#                           Term == 'treatment3' ~ '1-3 DAP',
+#                           Term == 'growth_stageV5' ~ 'V5',
+#                           Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
+#                           Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
+#                           Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
+#                           .default = as.character(Term)))
+# mult.table <- flextable(mult.table)
+# mult.table <- autofit(mult.table)
+# mult.table <- add_header_lines(mult.table,
+#                               values = 'Multiple Pest: Summary')
+# theme_zebra(mult.table) %>% 
+#   save_as_docx(path = 'mult_summary_table.docx')
+
+
 
 gs.labs <- c("V3  a", "V5  b")
 names(gs.labs) <- c("V3", "V5")
-
-
-ggplot(mm_em, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = emmean), size = 10,
-             position = position_dodge(width = .75))+
-  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
-  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
-                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "Early", "Late", "Green"))+ 
-  labs(
-    title = "Corn: Multiple Pest Damage x Treatment",
-    subtitle = "Years: 2021-2023",
-    x = "Treatment termination",
-    y = "Damage Emmean"
-  )+
-  theme(legend.position = 'none',
-        axis.title = element_text(size = 32),
-        plot.subtitle = element_text(size = 24),
-        plot.title = element_text(size = 28),
-        # axis.line = element_line(size = 1.25),
-        # axis.ticks = element_line(size = 1.25),
-        # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 26),
-        axis.text.y = element_text(size = 26),
-        strip.text.x = element_text(size = 32), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank())+
-  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
-
-ggplot(mm_em, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = emmean), size = 10,
-             position = position_dodge(width = .75), color = 'black')+
-  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
-  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
-                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+ 
-  labs(
-    title = "Corn: Multiple Pest Damage x Treatment",
-    subtitle = "Years: 2021-2023",
-    x = "Treatment",
-    y = "Damage Emmean",
-    caption = "DPP: Days pre plant
-DAP: Days after plant"
-  )+
-  theme(legend.position = 'none',
-        axis.title = element_text(size = 32),
-        plot.subtitle = element_text(size = 24),
-        plot.title = element_text(size = 28),
-        # axis.line = element_line(size = 1.25),
-        # axis.ticks = element_line(size = 1.25),
-        # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 26),
-        axis.text.y = element_text(size = 26),
-        strip.text.x = element_text(size = 26), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
-
 
 raw_mult <- mult_model %>% 
   group_by(growth_stage, treatment, plot_id) %>% 
   summarise(mean = mean(multiple),
             sd = sd(multiple), 
             n = n(), 
-            se = sd/sqrt(n)) %>% 
-  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'abc',
-                             growth_stage == 'V3' & treatment == '2' ~ 'abc',
-                             growth_stage == 'V3' & treatment == '4' ~ 'abc',
-                             growth_stage == 'V3' & treatment == '3' ~ 'c',
+            se = sd/sqrt(n)) %>%
+  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
+                             growth_stage == 'V3' & treatment == '2' ~ 'ab',
+                             growth_stage == 'V3' & treatment == '4' ~ 'ab',
+                             growth_stage == 'V3' & treatment == '3' ~ 'b',
                              growth_stage == 'V5' & treatment == '1' ~ 'a',
-                             growth_stage == 'V5' & treatment == '2' ~ 'ab',
+                             growth_stage == 'V5' & treatment == '2' ~ 'a',
                              growth_stage == 'V5' & treatment == '4' ~ 'a',
-                             growth_stage == 'V5' & treatment == '3' ~ 'bc'))
-
-# growth_stage   mean    sd     n      se
-# <fct>         <dbl> <dbl> <int>   <dbl>
-#   1 V3           0.0620 0.241  3388 0.00414
-# 2 V5           0.0422 0.201  3345 0.00347
+                             growth_stage == 'V5' & treatment == '3' ~ 'b'))
 
 
-# growth_stage treatment   mean    sd     n      se letters
-# <fct>        <fct>      <dbl> <dbl> <int>   <dbl> <chr>  
-# 1 V3           1         0.0407 0.198   859 0.00675 abc    
-# 2 V3           2         0.0502 0.218   857 0.00746 abc    
-# 3 V3           3         0.106  0.309   836 0.0107  c      
-# 4 V3           4         0.0514 0.221   836 0.00764 abc    
-# 5 V5           1         0.0185 0.135   863 0.00459 a      
-# 6 V5           2         0.0326 0.178   828 0.00618 ab     
-# 7 V5           3         0.0918 0.289   817 0.0101  bc     
-# 8 V5           4         0.0275 0.164   837 0.00565 a 
 
 ggplot(raw_mult, aes(color = treatment))+
   geom_point(aes(x = treatment, y = mean), size = 10,
@@ -1214,22 +1168,23 @@ ggplot(raw_mult, aes(color = treatment))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  geom_text(aes(x = treatment, y = 0.13, label = trimws(letters)), size = 10, color = "black")
+  geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
 
 
 
-ggplot(raw_mult, aes(x = treatment, y = mean, fill = growth_stage))+
+ggplot(raw_mult, aes(x = treatment, y = mean, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
-  scale_fill_manual(values = c("#E7298A",  "#1B9E77"))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "Early", "Late", "Green"))+ 
+                   labels=c("No CC", "Early", "Late", "Green"))+
   labs(
     title = "Corn: Multiple Damage x Treatment",
     subtitle = "Years: 2021-2023",
     x = "Treatment termination",
     y = "Average damage"
   )+
-  theme(legend.position = "bottom",
+  theme(legend.position = "none",
         legend.text = element_text(size = 24),
         legend.title = element_text(size = 24),
         axis.title = element_text(size = 32),
@@ -1246,7 +1201,7 @@ ggplot(raw_mult, aes(x = treatment, y = mean, fill = growth_stage))+
         panel.grid.minor = element_blank())+
   guides(fill = guide_legend(title = 'Growth Stage'))+
   scale_y_continuous(limits = c(0,.2))+
-  geom_text(aes(y = 0.19, label = letters), size = 10, color = "black", position = position_dodge(width= 0.75))
+  geom_text(aes(x = treatment, y = .18, label = trimws(letters)), size = 10, color = "black")
 
 
 

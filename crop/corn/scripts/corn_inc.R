@@ -146,15 +146,20 @@ anova(m0, m1, m2, m3)
 
 
 summary(m3)
+hist(residuals(m3))
+res <- residuals(m3)
+plot(fitted(m3), res)
+qqline(res)
+plot(density(res))
+
+
 r2_nakagawa(m3)
 # Conditional R2: 0.129
 # Marginal R2: 0.062
-m3_em <- emmeans(m3, ~growth)
-pairs(m3_em)
-pwpm(m3_em)
-cld(m3_em, Letters = letters)
-
-
+cld(emmeans(m3, ~growth), Letters = letters)
+# growth emmean    SE  df asymp.LCL asymp.UCL .group
+# V5      0.683 0.219 Inf     0.254      1.11  a    
+# V3      1.491 0.219 Inf     1.062      1.92   b  
 
 
 # stats.table <- as.data.frame(summary(m3)$coefficients)
@@ -170,6 +175,35 @@ cld(m3_em, Letters = letters)
 
 
 # plot ####
+
+dmg_growth <- c('V3 a', 'V5 b')
+names(dmg_growth) <- c('V3', 'V5')
+
+ggplot(damage_done, aes(x = treatment, y = prop_damaged, fill = treatment))+
+  geom_boxplot(alpha = 0.7)+
+  facet_wrap(~growth, labeller = labeller(growth = dmg_growth))+
+  geom_point(size = 2)+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs(
+    title = "Corn: Damage Incidence x Treatment",
+    subtitle = "Years: 2021-2023",
+    x = 'Treatment termination',
+    y = 'Proportion damaged (damaged / total)')+
+  theme(legend.position = "none",
+        legend.text = element_text(size = 24),
+        legend.title = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 24))
+
 
 ggplot(dam_plot, aes(color = treatment))+
   geom_point(aes(x = treatment, y = mean), size = 10)+
