@@ -82,7 +82,7 @@ m2 <- glmer(to.predated ~ treatment+growth_stage +
             family = binomial)
  
 m3 <- glmer(to.predated ~ treatment*growth_stage +
-              (1|year/block/plot_id),
+              (growth_stage|year/block/plot_id),
             data = sent_years, 
             family = binomial)
 
