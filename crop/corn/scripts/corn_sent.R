@@ -63,26 +63,30 @@ sent_prop
 sent_years <- sent_years %>% 
   mutate_at(vars(1:6), as.factor)
 
+# messed with this on 6/18/24
+# removed growth stage from the random effects term
 # model I am using for now 
 m0 <- glmer(to.predated ~ 
-              (1|year/block/plot_id/growth_stage),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
 
 m1 <- glmer(to.predated ~ treatment +
-              (1|year/block/plot_id/growth_stage),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
 
 m2 <- glmer(to.predated ~ treatment+growth_stage +
-              (1|year/block/plot_id/growth_stage),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
  
 m3 <- glmer(to.predated ~ treatment*growth_stage +
-              (1|year/block/plot_id/growth_stage),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
+
+
 
 check_model(m3)
 hist(residuals(m3))

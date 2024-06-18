@@ -170,18 +170,40 @@ if(dispersion_stats$mean[1] > dispersion_stats$variances[1] &
 }
 
 # model selection ####
-fall_slugs <- subset(slugs, season == "Fall")
+fall_slugs <- subset(slugs, season == "Fall") %>% 
+  mutate(plot = as.factor(plot))
 
 poisson_model <- glmer(total_slug ~ treatment*year + 
-                         (1|date), 
+                         (1|block), 
                        data = fall_slugs, 
                        family = poisson)
 
-nb_model_trt <- glmer.nb(total_slug ~ treatment*year + 
-                           (1|date), 
+nb_model_trt <- glmer.nb(total_slug ~ treatment*date +
+                           (1|year/block) + (1+date|year/block),
                          data = fall_slugs) 
 
-lrtest(poisson_model,nb_model_trt)
+gaus_model_trt <- lmer(total_slug ~ treatment*year + 
+                           (1|block), 
+                         data = fall_slugs) 
+
+
+anova(poisson_model, nb_model_trt, gaus_model_trt)
+
+
+test_model <- lme(total_slug ~ treatment*year,
+                  random = ~1|block, data = fall_slugs)
+
+                  correlation = corARMA(form = ~date|block),
+                  
+
+
+
+
+
+
+
+
+
 
 # fall
 f0 <- glmer.nb(total_slug ~  + 
@@ -194,7 +216,7 @@ f2 <- glmer.nb(total_slug ~ treatment+year +
                  (1|date), 
                data = fall_slugs) 
 f3 <- glmer.nb(total_slug ~ treatment*year + 
-                 (1|date), 
+                 (1|block) + (0+year|block), 
                data = fall_slugs) 
 
 isSingular(f3)
@@ -264,7 +286,7 @@ m2 <- glmer.nb(total_slug ~ treatment+year +
            (1|block/date), 
          data = spring_slugs) 
 m3 <- glmer.nb(total_slug ~ treatment*year + 
-           (1|block/date), 
+           (1|block), 
          data = spring_slugs) 
 
 isSingular(m3)
