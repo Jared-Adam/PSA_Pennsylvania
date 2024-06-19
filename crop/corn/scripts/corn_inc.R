@@ -105,44 +105,44 @@ model.matrix(~0+., data = dmg_cor) %>%
 damage_done
 
 m0 <- glmer(prop_damaged ~ 
-            (1|year/block/plotid/growth), 
+            (growth|year/block/plotid), 
             data = damage_done, family = binomial, 
             weights = total_sum)
 
 m1 <- glmer(prop_damaged ~ treatment + 
-              (1|year/block/plotid/growth), 
+              (growth|year/block/plotid), 
             data = damage_done, family = binomial, 
             weights = total_sum)
 
 m2 <- glmer(prop_damaged ~ treatment + growth + 
-              (1|year/block/plotid/growth), 
+              (growth|year/block/plotid), 
             data = damage_done, family = binomial, 
             weights = total_sum)
 
 m3 <- glmer(prop_damaged ~ treatment * growth + 
-              (1|year/block/plotid/growth), 
+              (growth|year/block/plotid), 
                  data = damage_done, family = binomial, 
                  weights = total_sum)
 
-m4 <- glmer(prop_damaged ~ treatment * year + 
-              (1|block/plotid/growth), 
-            data = damage_done, family = binomial, 
-            weights = total_sum)
-
-check_model(m4)
-check_model(m3)
-binned_residuals(m4)
-summary(m4)
+# m4 <- glmer(prop_damaged ~ treatment * year + 
+#               (1|block/plotid/growth), 
+#             data = damage_done, family = binomial, 
+#             weights = total_sum)
+# 
+# check_model(m4)
+# check_model(m3)
+# binned_residuals(m4)
+# summary(m4)
 
 
 
 isSingular(m3)
 anova(m0, m1, m2, m3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# m0    5 887.95 901.88 -438.97   877.95                          
-# m1    8 887.04 909.34 -435.52   871.04  6.9101  3  0.0748198 .  
-# m2    9 877.20 902.29 -429.60   859.20 11.8368  1  0.0005807 ***
-# m3   12 878.32 911.77 -427.16   854.32  4.8779  3  0.1809610  
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
+# m0   10 841.14 869.01 -410.57   821.14                         
+# m1   13 835.20 871.44 -404.60   809.20 11.9320  3    0.00762 **
+# m2   14 836.23 875.25 -404.11   808.23  0.9777  1    0.32277   
+# m3   17 833.37 880.76 -399.69   799.37  8.8539  3    0.03130 * 
 
 
 summary(m3)
@@ -154,12 +154,29 @@ plot(density(res))
 
 
 r2_nakagawa(m3)
-# Conditional R2: 0.129
-# Marginal R2: 0.062
-cld(emmeans(m3, ~growth), Letters = letters)
-# growth emmean    SE  df asymp.LCL asymp.UCL .group
-# V5      0.683 0.219 Inf     0.254      1.11  a    
-# V3      1.491 0.219 Inf     1.062      1.92   b  
+# Conditional R2: 0.364
+# Marginal R2: 0.059
+cld(emmeans(m3, ~treatment), Letters = letters)
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          0.777 0.238 Inf     0.311      1.24  a    
+# 4          0.849 0.239 Inf     0.381      1.32  a    
+# 2          1.022 0.241 Inf     0.548      1.49  ab   
+# 3          1.588 0.242 Inf     1.113      2.06   b 
+
+cld(emmeans(m3, ~treatment|growth), Letters = letters)
+# growth = V3:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          0.936 0.353 Inf     0.244      1.63  a    
+# 4          1.483 0.358 Inf     0.782      2.18  ab   
+# 2          1.620 0.360 Inf     0.914      2.32   b   
+# 3          1.707 0.358 Inf     1.004      2.41   b   
+# 
+# growth = V5:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 4          0.215 0.517 Inf    -0.798      1.23  a    
+# 2          0.424 0.521 Inf    -0.597      1.44  a    
+# 1          0.619 0.519 Inf    -0.398      1.64  ab   
+# 3          1.469 0.523 Inf     0.444      2.49   b 
 
 
 # stats.table <- as.data.frame(summary(m3)$coefficients)
@@ -176,12 +193,28 @@ cld(emmeans(m3, ~growth), Letters = letters)
 
 # plot ####
 
-dmg_growth <- c('V3 a', 'V5 b')
-names(dmg_growth) <- c('V3', 'V5')
+# dmg_growth <- c('V3 a', 'V5 b')
+# names(dmg_growth) <- c('V3', 'V5')
+# facet_wrap(~growth, labeller = labeller(growth = dmg_growth))+
+
+
+damage_done <- damage_done %>% 
+  mutate(group = case_when(
+    treatment == '1' & growth == 'V3' ~ 'a',
+    treatment == '4' & growth == 'V3' ~ 'ab',
+    treatment == '2' & growth == 'V3' ~ 'b',
+    treatment == '3' & growth == 'V3' ~ 'b',
+    treatment == '4' & growth == 'V5' ~ 'a',
+    treatment == '2' & growth == 'V5' ~ 'a',
+    treatment == '1' & growth == 'V5' ~ 'ab',
+    treatment == '3' & growth == 'V5' ~ 'b',
+  ))
+
+
 
 ggplot(damage_done, aes(x = treatment, y = prop_damaged, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
-  facet_wrap(~growth, labeller = labeller(growth = dmg_growth))+
+  facet_wrap(~growth)+
   geom_point(size = 2)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
@@ -202,7 +235,8 @@ ggplot(damage_done, aes(x = treatment, y = prop_damaged, fill = treatment))+
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.text = element_text(size = 24))
+        strip.text = element_text(size = 24))+
+  geom_text(aes(label = group, y = 1), size = 10)
 
 
 ggplot(dam_plot, aes(color = treatment))+
