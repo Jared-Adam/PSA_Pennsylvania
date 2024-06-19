@@ -64,64 +64,67 @@ sent_years <- sent_years %>%
   mutate_at(vars(1:5), as_factor)
 
 m0 <- glmer(to.predated ~ 
-              (1|year/block/plot_id/growth_stage),
+              (0+growth_stage|block/plot_id),
             data = sent_years,
             family = binomial)
 
 m1 <- glmer(to.predated ~ treatment +
-              (1|year/block/plot_id/growth_stage),
+              (0+growth_stage|block/plot_id),
             data = sent_years,
             family = binomial)
 
 m2 <- glmer(to.predated ~ treatment + growth_stage +
-              (1|year/block/plot_id/growth_stage),
+              (0+growth_stage|block/plot_id),
             data = sent_years,
             family = binomial)
 
 m3 <- glmer(to.predated ~ treatment*growth_stage +
-              (1|year/block/plot_id/growth_stage),
+              (growth_stage|block/plot_id),
             data = sent_years,
             family = binomial)
 
+isSingular(m3)
+rePCA(m3)
+
+?isSingular
+?rePCA
+?lme4::convergence
+?lme4::troubleshooting
+
+gm_all <- allFit(m3)
+ss <- summary(gm_all)
+ss$which.OK
+ss$llik
+
 anova(m0 , m1, m2, m3)
+# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)   
+# m0   13 477.28 536.81 -225.64   451.28                        
+# m1   16 467.68 540.94 -217.84   435.68 15.607  3   0.001365 **
+# m2   18 464.96 547.39 -214.48   428.96  6.715  2   0.034822 * 
+# m3   24 469.34 579.25 -210.67   421.34  7.616  6   0.267610  
 check_model(m3)
-p <- binned_residuals(m3)
-plot(p)
+binned_residuals(m3)
+hist(residuals(m3))
 
-cld(emmeans(m3, ~treatment + growth_stage), Letters = letters)
+cld(emmeans(m3, ~treatment), Letters = letters)
+# treatment emmean      SE  df asymp.LCL asymp.UCL .group
+# 1           1.67   0.230 Inf      1.22      2.12  a    
+# 2           2.60   0.303 Inf      2.00      3.19  ab   
+# 3           3.35   0.450 Inf      2.47      4.23   b   
+# 4           7.61 727.076 Inf  -1417.44   1432.65  ab   
 
-t_emm <- emmeans(m3, ~treatment)
-pairs(t_emm)
-pwpm(t_emm)
-cld(t_emm, Letters = letters)
-
-g_emm <- emmeans(m3, ~growth_stage)
-pairs(g_emm)
-pwpm(g_emm)
-cld(g_emm, Letters = letters)
-
-
-summary(m3)
-r2_nakagawa(m3)
-# Conditional R2: 0.891
-# Marginal R2: 0.866
-result <- binned_residuals(m3)
-plot(result)
-bent.table <- as.data.frame(summary(m3)$coefficients)
-#CI <- confint(m1)
-bent.table <-cbind(row.names(bent.table), bent.table)
-names(bent.table) <- c("Term", "B", "SE", "t", "p")
-nice_table(bent.table, highlight = TRUE)
+cld(emmeans(m3, ~growth_stage), Letters = letters)
+# growth_stage emmean      SE  df asymp.LCL asymp.UCL .group
+# V3             1.64   0.302 Inf      1.05      2.23  a    
+# V5             2.50   0.279 Inf      1.95      3.04   b   
+# R3             7.28 545.307 Inf  -1061.50   1076.07  ab 
 
 
-
-# these models may be no good
-# going to compare group means now because R3 trt 4 is 100% predation
-?dunn.test
-dunn.test::dunn.test(sent_years$to.predated,sent_years$treatment)
-
-dunn.test::dunn.test(sent_years$to.predated,sent_years$growth_stage)
-
+# bent.table <- as.data.frame(summary(m3)$coefficients)
+# #CI <- confint(m1)
+# bent.table <-cbind(row.names(bent.table), bent.table)
+# names(bent.table) <- c("Term", "B", "SE", "t", "p")
+# nice_table(bent.table, highlight = TRUE)
 
 
 # plot for total/ all data ####
@@ -171,7 +174,11 @@ ggplot(trt_prop, aes(x = treatment, y =  prop))+
   annotate("text", x = 3, y = .98, label = "b", size = 10)+ #4
   annotate("text", x = 4, y = .98, label = "c", size = 10) #3
 
-
+# treatment emmean      SE  df asymp.LCL asymp.UCL .group
+# 1           1.67   0.230 Inf      1.22      2.12  a    
+# 2           2.60   0.303 Inf      2.00      3.19  ab   
+# 3           3.35   0.450 Inf      2.47      4.23   b   
+# 4           7.61 727.076 Inf  -1417.44   1432.65  ab   
 ggplot(trt_prop, aes(x = treatment, y = prop, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
   scale_x_discrete(labels=c("No CC", "Early", "Late", "Green"),
@@ -196,9 +203,9 @@ ggplot(trt_prop, aes(x = treatment, y = prop, fill = treatment))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   annotate("text", x = 1, y = 1, label = "a", size = 10)+ #1
-  annotate("text", x = 2, y = 1, label = "bc", size = 10)+ #2
-  annotate("text", x = 3, y = 1, label = "b", size = 10)+ #4
-  annotate("text", x = 4, y = 1, label = "c", size = 10)+ #3
+  annotate("text", x = 2, y = 1, label = "ab", size = 10)+ #2
+  annotate("text", x = 3, y = 1, label = "ab", size = 10)+ #4
+  annotate("text", x = 4, y = 1, label = "b", size = 10)+ #3
   scale_y_continuous(limits = c(0,1))
 
 
@@ -253,7 +260,10 @@ gs_prop <- beans_sent %>%
             se = sd/sqrt(n)) %>% 
   mutate_at(vars(1), factor) %>% 
   print(n= Inf)
-
+# growth_stage emmean      SE  df asymp.LCL asymp.UCL .group
+# V3             1.64   0.302 Inf      1.05      2.23  a    
+# V5             2.50   0.279 Inf      1.95      3.04   b   
+# R3             7.28 545.307 Inf  -1061.50   1076.07  ab 
 ggplot(gs_prop, aes(x = growth_stage, y = prop, fill = growth_stage))+
   geom_boxplot(alpha = 0.7)+
   scale_x_discrete(limits = c("V3", "V5", "R3"))+ 
@@ -278,7 +288,7 @@ ggplot(gs_prop, aes(x = growth_stage, y = prop, fill = growth_stage))+
         panel.grid.minor = element_blank())+
   annotate("text", x = 1, y = .98, label = "a", size = 10)+
   annotate("text", x = 2, y = .98, label = "b", size = 10)+
-  annotate("text", x = 3, y = .98, label = "b", size = 10)+
+  annotate("text", x = 3, y = .98, label = "ab", size = 10)+
   scale_y_continuous(limits = c(0,1))
 
 # pub plots ####

@@ -153,31 +153,37 @@ if(dispersion_stats$mean[1] > dispersion_stats$variances[1] &
 
 # model selection ####
 # SPRING
-spring_slugs <- subset(slug_clean, season == "Spring")
+spring_slugs <- subset(slug_clean, season == "Spring") %>% 
+  mutate_at(vars(1:6), as.factor)
 spoisson_model <- glmer(total_slug ~ treatment*year + 
-                          (1|date), 
+                          (1|block), 
                         data = spring_slugs, 
                         family = poisson)
 
 snb_model_trt <- glmer.nb(total_slug ~ treatment*year + 
-                            (1|date), 
+                            (1|block), 
                           data = spring_slugs) 
 
-lrtest(spoisson_model, snb_model_trt)
+gaus_model <- lmer(total_slug ~ treatment*year + 
+                      (1|block), 
+                    data = spring_slugs)
+
+lrtest(spoisson_model, snb_model_trt, gaus_model)
 # the negative binomial has the higher likelihood score, so we will use that
 
 # FALL
-fall_slugs <- subset(slug_clean, season == "Fall")
+fall_slugs <- subset(slug_clean, season == "Fall")%>% 
+  mutate_at(vars(1:6), as.factor)
 
 # let's see which is better, poisson or nb? 
 # run one of each where the only difference is the family 
 fpoisson_model <- glmer(total_slug ~ treatment*year + 
-                         (1|date), 
+                         (1|block), 
                        data = fall_slugs, 
                        family = poisson)
 
 fnb_model_trt <- glmer.nb(total_slug ~ treatment*year + 
-                           (1|date), 
+                           (1|block), 
                          data = fall_slugs) 
 
 lrtest(fpoisson_model, fnb_model_trt)
@@ -190,25 +196,28 @@ lrtest(fpoisson_model, fnb_model_trt)
 # Fall
 
 f0 <- glmer.nb(total_slug ~ +
-                 (1|date),
+                 (1|year/block),
                data = fall_slugs)
 
-f1 <- glmer.nb(total_slug ~ treatment +
-                 (1|date), data = fall_slugs) 
+f1 <- glmer.nb(total_slug ~ treatment+
+                 (1|block), data = fall_slugs) 
 
-f2 <- glmer.nb(total_slug ~ treatment + year +
-                 (1|date), data = fall_slugs) 
+f2 <- glmer.nb(total_slug ~ treatment+year +
+                 (1|block), data = fall_slugs) 
 
 f3 <- glmer.nb(total_slug ~ treatment*year +
-                 (1|date), data = fall_slugs) 
+                 (1|block/plot_id), data = fall_slugs) 
 
+p3 <- glmer.nb(total_slug ~ precip +
+                 (1|year/block), data = fall_slugs) 
+anova(f3, p3)
+
+rePCA(f3)
 
 anova(f0, f1, f2, f3)
 # npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-# f0    3 1747.8 1759.2 -870.88   1741.8                         
-# f1    6 1713.9 1736.9 -850.94   1701.9 39.881  3  1.129e-08 ***
-# f2    8 1705.3 1735.9 -844.64   1689.3 12.599  2   0.001837 ** 
-# f3   14 1682.8 1736.4 -827.38   1654.8 34.520  6  5.339e-06 ***
+# f0    4 1862.3 1877.6 -927.16   1854.3                         
+# f3    7 1844.8 1871.6 -915.41   1830.8 23.492  3  3.188e-05 ***
 
 # ?waldtest
 # waldtest(f1, test = 'F')
@@ -221,27 +230,7 @@ qqnorm(res)
 plot(fitted(f3), res)
 check_singularity(f3)
 r2_nakagawa(f3) 
-cld(emmeans(f3, ~treatment|year),Letters = letters)
-# year = 2021:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 3         0.0426 0.349 Inf   -0.6413     0.726  a    
-# 4         0.2355 0.341 Inf   -0.4335     0.905  ab   
-# 2         0.3506 0.338 Inf   -0.3112     1.013  ab   
-# 1         0.7185 0.329 Inf    0.0746     1.363   b   
-# 
-# year = 2022:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 3         1.4605 0.272 Inf    0.9267     1.994  a    
-# 4         1.7986 0.270 Inf    1.2698     2.327  a    
-# 2         2.2819 0.267 Inf    1.7588     2.805   b   
-# 1         2.4623 0.266 Inf    1.9405     2.984   b   
-# 
-# year = 2023:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 2         1.2894 0.448 Inf    0.4112     2.168  a    
-# 1         1.7285 0.440 Inf    0.8653     2.592  a    
-# 4         1.7641 0.440 Inf    0.9016     2.627  a    
-# 3         1.8716 0.439 Inf    1.0118     2.731  a  
+
 cld(emmeans(f3, ~treatment), Letters = letters)
 # treatment emmean    SE  df asymp.LCL asymp.UCL .group
 # 3           1.12 0.208 Inf     0.718      1.53  a    
@@ -249,11 +238,6 @@ cld(emmeans(f3, ~treatment), Letters = letters)
 # 2           1.31 0.207 Inf     0.901      1.71  a    
 # 1           1.64 0.204 Inf     1.237      2.04   b   
 
-cld(emmeans(f3, ~year), Letters = letters)
-# year emmean    SE  df asymp.LCL asymp.UCL .group
-# 2021  0.337 0.308 Inf    -0.266      0.94  a    
-# 2023  1.663 0.420 Inf     0.840      2.49   b   
-# 2022  2.001 0.257 Inf     1.497      2.51   b 
 
 
 # sl.table <- as.data.frame(summary(m1)$coefficients)
@@ -266,25 +250,26 @@ cld(emmeans(f3, ~year), Letters = letters)
 # Spring
 
 s0 <- glmer.nb(total_slug ~ +
-                 (1|date),
+                 (1|block),
                data = spring_slugs)
 
 s1 <- glmer.nb(total_slug ~ treatment +
-                 (1|date), data = spring_slugs) 
+                 (1|block), data = spring_slugs) 
 
 s2 <- glmer.nb(total_slug ~ treatment + year +
-                 (1|date), data = spring_slugs) 
+                 (1|block), data = spring_slugs) 
 
-s3 <- glmer.nb(total_slug ~ treatment*year +
-                 (1|date), data = spring_slugs) 
-
+s3 <- glmer.nb(total_slug ~ treatment +
+                 (1|year/block), data = spring_slugs)
+rePCA(s3)
+isSingular(s3)
 
 anova(s0, s1, s2, s3)
-# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
-# s0    3 1326.8 1338.2 -660.38   1320.8                       
-# s1    6 1325.9 1348.9 -656.95   1313.9 6.8575  3    0.07658 .
-# s2    8 1322.6 1353.2 -653.31   1306.6 7.2718  2    0.02636 *
-#   s3   14 1328.5 1382.1 -650.25   1300.5 6.1147  6    0.41047  
+# npar    AIC    BIC  logLik deviance    Chisq Df Pr(>Chisq)    
+# s0    3 1609.7 1621.2 -801.85   1603.7                           
+# s1    6 1611.3 1634.2 -799.64   1599.3   4.4230  3     0.2193    
+# s2    8 1510.3 1540.9 -747.14   1494.3 104.9994  2     <2e-16 ***
+# s3   14 1518.6 1572.2 -745.29   1490.6   3.6926  6     0.7182    
 
 check_model(s3)
 summary(s3)
