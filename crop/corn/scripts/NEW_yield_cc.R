@@ -129,21 +129,29 @@ clots
 ggarrange(plotlist = clots)
 ##
 
-# getting them all on the same grid
-ggarrange(plotlist = plots)
+plot(density(corn$yieldbuac))
+# test <- corn %>% 
+#   mutate(yieldbuac = log(yieldbuac))
 
-# c0 <- lm(yieldbuac ~ (1|block), data = corn)
-c1 <- lm(yieldbuac ~ cc , data = corn)
-c2 <- lm(yieldbuac ~ cc + year, data = corn)
-c3 <- lm(yieldbuac ~ cc * year, data = corn)
+c0 <- lmer(yieldbuac ~ (1|block), data = corn)
+c1 <- lmer(yieldbuac ~ cc + (1|block), data = corn)
+c2 <- lmer(yieldbuac ~ cc + year + (1|block), data = corn)
+c3 <- lmer(yieldbuac ~ cc*year + (1|block), data = corn)
+
+isSingular(c3)
+rePCA(c3)
 
 summary(c3)
-anova(c1,c2,c3)
-# Res.Df   RSS Df Sum of Sq      F  Pr(>F)  
-# 1     56 22503                              
-# 2     54 19520  2    2983.2 4.9608 0.01101 *
-# 3     48 14433  6    5086.8 2.8196 0.01970 *
+anova(c0, c1, c2, c3)
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
+# c0    3 545.65 551.93 -269.82   539.65                         
+# c1    6 537.90 550.46 -262.95   525.90 13.7512  3   0.003264 **
+# c2    8 533.36 550.12 -258.68   517.36  8.5333  2   0.014028 * 
+# c3   14 527.25 556.57 -249.62   499.25 18.1148  6   0.005952 **
 
+res<- residuals(c3)
+qqnorm(res)
+plot(density(res))
 hist(residuals(c3))
 check_model(c3)
 
@@ -169,11 +177,18 @@ cld(emmeans(c3, ~cc|year), Letters = letters)
 # 3-7 DPP      145 7.75 48    129.4      161   b   
 # 1-3 DAP      169 7.75 48    153.2      184   b   
 
+cld(emmeans(c3, ~cc), Letters= letters)
+# cc        emmean   SE   df lower.CL upper.CL .group
+# No CC        117 4.48 35.2      108      126  a    
+# 3-7 DPP      139 4.48 35.2      130      148   b   
+# 14-28 DPP    140 4.48 35.2      130      149   b   
+# 1-3 DAP      140 4.48 35.2      131      149   b  
+
 cld(emmeans(c3, ~year), Letters= letters)
-# year emmean   SE df lower.CL upper.CL .group
-# 2022    125 3.88 48      117      132  a    
-# 2021    135 3.88 48      127      143  ab   
-# 2023    142 3.88 48      134      150   b   
+# year emmean   SE   df lower.CL upper.CL .group
+# 2022    125 3.88 26.4      117      133  a    
+# 2021    135 3.88 26.4      127      143  ab   
+# 2023    142 3.88 26.4      134      150   b 
 
 
 
@@ -207,7 +222,7 @@ ggarrange(plotlist = blots)
 # b0 <- lmer(yieldbuac ~ (1|block), data = beans)
 b1 <- lm(yieldbuac ~ cc , data = beans)
 b2 <- lm(yieldbuac ~ cc + year , data = beans)
-b3 <- lm(yieldbuac ~ cc * year, data = beans)
+b3 <- lmer(yieldbuac ~ cc * year +(1|block), data = beans)
 summary(b3)
 anova(b1,b2,b3)
 # Res.Df    RSS Df Sum of Sq      F  Pr(>F)  
@@ -628,19 +643,21 @@ plots2
 
 
 
-
-
+cc_t <- corn_cc %>% 
+  mutate(Block = as.character(Block))
 # m0 <- lm(Mg_ha ~ (1|Block), data = corn_cc)
 m1 <- glm(Mg_ha ~ CC , data = corn_cc)
 m2 <- glm(Mg_ha ~ CC + Year , data = corn_cc)
-m3 <- glm(Mg_ha ~ CC * Year , data = corn_cc)
+m3 <- glm(Mg_ha ~ CC * Year, data = corn_cc)
+        
+# suppression for singularity in lmer   
+           # control = lmerControl(check.conv.singular = .makeCC(action = 'ignore', 
+           #                                                     tol = 1e-4)))
 
-anova(m1, m2, m3, test = 'F')
-# Resid. Df Resid. Dev Df Deviance      F    Pr(>F)    
-# 1        42     47.587                                 
-# 2        40     16.749  2   30.837 119.15 < 2.2e-16 ***
-# 3        36      4.658  4   12.091  23.36 1.388e-09 ***
+anova(m1, m2, m3)
 
+
+AIC(m3)
 hist(residuals(m3))
 check_model(m3)
 summary(m3)

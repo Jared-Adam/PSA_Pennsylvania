@@ -196,28 +196,30 @@ lrtest(fpoisson_model, fnb_model_trt)
 # Fall
 
 f0 <- glmer.nb(total_slug ~ +
-                 (1|year/block),
+                 (1|block/plot_id),
                data = fall_slugs)
 
 f1 <- glmer.nb(total_slug ~ treatment+
-                 (1|block), data = fall_slugs) 
+                 (1|block/plot_id), data = fall_slugs) 
 
 f2 <- glmer.nb(total_slug ~ treatment+year +
-                 (1|block), data = fall_slugs) 
+                 (1|block/plot_id), data = fall_slugs) 
 
 f3 <- glmer.nb(total_slug ~ treatment*year +
                  (1|block/plot_id), data = fall_slugs) 
 
-p3 <- glmer.nb(total_slug ~ precip +
-                 (1|year/block), data = fall_slugs) 
+# p3 <- glmer.nb(total_slug ~ precip +
+#                  (1|year/block), data = fall_slugs) 
 anova(f3, p3)
 
 rePCA(f3)
 
 anova(f0, f1, f2, f3)
-# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)    
-# f0    4 1862.3 1877.6 -927.16   1854.3                         
-# f3    7 1844.8 1871.6 -915.41   1830.8 23.492  3  3.188e-05 ***
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# f0    4 1997.6 2012.9 -994.79   1989.6                          
+# f1    7 1984.1 2010.9 -985.06   1970.1  19.452  3  0.0002204 ***
+# f2    9 1833.4 1867.8 -907.69   1815.4 154.733  2  < 2.2e-16 ***
+# f3   15 1826.8 1884.2 -898.38   1796.8  18.617  6  0.0048620 ** 
 
 # ?waldtest
 # waldtest(f1, test = 'F')
@@ -250,17 +252,17 @@ cld(emmeans(f3, ~treatment), Letters = letters)
 # Spring
 
 s0 <- glmer.nb(total_slug ~ +
-                 (1|block),
+                 (1|block/plot_id),
                data = spring_slugs)
 
 s1 <- glmer.nb(total_slug ~ treatment +
-                 (1|block), data = spring_slugs) 
+                 (1|block/plot_id), data = spring_slugs) 
 
 s2 <- glmer.nb(total_slug ~ treatment + year +
-                 (1|block), data = spring_slugs) 
+                 (1|block/plot_id), data = spring_slugs) 
 
-s3 <- glmer.nb(total_slug ~ treatment +
-                 (1|year/block), data = spring_slugs)
+s3 <- glmer.nb(total_slug ~ treatment*year +
+                 (1|block/plot_id), data = spring_slugs)
 rePCA(s3)
 isSingular(s3)
 
