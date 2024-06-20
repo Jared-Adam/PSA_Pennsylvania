@@ -134,34 +134,34 @@ plot(density(corn$yieldbuac))
 #   mutate(yieldbuac = log(yieldbuac))
 
 # unique terms for block 1,2,3,4,5 6,7,8,9,10, 11,12,13,14,15
-test <- corn %>% 
-  mutate(block_new = case_when(
-    year == '2021' & block == 'B1' ~'1',
-    year == '2021' & block == 'B2' ~'2',
-    year == '2021' & block == 'B3' ~'3',
-    year == '2021' & block == 'B4' ~'4',
-    year == '2021' & block == 'B5' ~'5',
-    year == '2022' & block == 'B1' ~'6',
-    year == '2022' & block == 'B2' ~'7',
-    year == '2022' & block == 'B3' ~'8',
-    year == '2022' & block == 'B4' ~'9',
-    year == '2022' & block == 'B5' ~'10',
-    year == '2023' & block == 'B1' ~'11',
-    year == '2023' & block == 'B2' ~'12',
-    year == '2023' & block == 'B3' ~'13',
-    year == '2023' & block == 'B4' ~'14',
-    year == '2023' & block == 'B5' ~'15',
-  )) %>% 
-  mutate(block_new = as.factor(block_new)) %>% 
-  print(n = Inf)
+# test <- corn %>% 
+#   mutate(block_new = case_when(
+#     year == '2021' & block == 'B1' ~'1',
+#     year == '2021' & block == 'B2' ~'2',
+#     year == '2021' & block == 'B3' ~'3',
+#     year == '2021' & block == 'B4' ~'4',
+#     year == '2021' & block == 'B5' ~'5',
+#     year == '2022' & block == 'B1' ~'6',
+#     year == '2022' & block == 'B2' ~'7',
+#     year == '2022' & block == 'B3' ~'8',
+#     year == '2022' & block == 'B4' ~'9',
+#     year == '2022' & block == 'B5' ~'10',
+#     year == '2023' & block == 'B1' ~'11',
+#     year == '2023' & block == 'B2' ~'12',
+#     year == '2023' & block == 'B3' ~'13',
+#     year == '2023' & block == 'B4' ~'14',
+#     year == '2023' & block == 'B5' ~'15',
+#   )) %>% 
+#   mutate(block_new = as.factor(block_new)) %>% 
+#   print(n = Inf)
 
 
 
 
-c0 <- lmer(yieldbuac ~ (1|block_new), data = test)
-c1 <- lmer(yieldbuac ~ cc + (1|block_new), data = test)
-c2 <- lmer(yieldbuac ~ cc + year + (1|block_new), data = test)
-c3 <- lmer(yieldbuac ~ cc*year + (1|block_new), data = test)
+c0 <- lmer(yieldbuac ~ (1|block_new), data = corn)
+c1 <- lmer(yieldbuac ~ cc + (1|block_new), data = corn)
+c2 <- lmer(yieldbuac ~ cc + year + (1|block_new), data = corn)
+c3 <- lmer(yieldbuac ~ cc*year + (1|block_new), data = corn)
 
 isSingular(c3)
 rePCA(c3)
@@ -244,16 +244,17 @@ ggarrange(plotlist = blots)
 
 
 
-# b0 <- lmer(yieldbuac ~ (1|block), data = beans)
-b1 <- lm(yieldbuac ~ cc , data = beans)
-b2 <- lm(yieldbuac ~ cc + year , data = beans)
+b0 <- lmer(yieldbuac ~ (1|block), data = beans)
+b1 <- lmer(yieldbuac ~ cc + (1|block), data = beans)
+b2 <- lmer(yieldbuac ~ cc + year + (1|block), data = beans)
 b3 <- lmer(yieldbuac ~ cc * year +(1|block), data = beans)
 summary(b3)
-anova(b1,b2,b3)
-# Res.Df    RSS Df Sum of Sq      F  Pr(>F)  
-# 1     36 4704.9                              
-# 2     35 4056.9  1    648.03 5.5660 0.02458 *
-# 3     32 3725.6  3    331.27 0.9485 0.42885  
+anova(b0,b1,b2,b3)
+# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
+# b0    3 313.31 318.38 -153.66   307.31                       
+# b1    6 316.21 326.35 -152.11   304.21 3.0980  3    0.37676  
+# b2    7 312.29 324.11 -149.14   298.29 5.9277  1    0.01491 *
+# b3   10 314.88 331.77 -147.44   294.88 3.4074  3    0.33297    
 
 hist(residuals(b3))
 
@@ -274,8 +275,8 @@ cld(emmeans(b3, ~cc|year), Letters = letters)
 
 cld(emmeans(b3, ~year), Letters= letters)
 # year emmean   SE df lower.CL upper.CL .group
-# 2022   48.1 2.41 32     43.2     53.1  a    
-# 2023   56.2 2.41 32     51.3     61.1   b 
+# 2022   48.1 2.41 14       43     53.3  a    
+# 2023   56.2 2.41 14       51     61.4   b
 
 # plots ####
 # corn 
@@ -310,7 +311,8 @@ ggplot(corn, aes(x = cc, y = yieldbuac, fill = cc))+
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())+
-geom_text(aes(label = group, y = 196), size = 10)
+geom_text(aes(label = group, y = 197), size = 10)+
+  ylim(0,200)
 
 
 
@@ -356,11 +358,13 @@ beans <- beans %>%
   mutate(group = case_when(
     year %in% c('2022', '2023') ~ 'a'
   ))
+bean_labs <- c('2022 a', '2023 b')
+names(bean_labs) <- c('2022', '2023')
 
 ggplot(beans, aes(x = cc, y = yieldbuac, fill = cc))+
   geom_boxplot(width = 0.5, alpha = 0.7)+
   geom_point(size = 2)+
-  facet_wrap(~year)+
+  facet_wrap(~year, labeller = labeller(year = bean_labs))+
   scale_x_discrete(limits = c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"),
                    labels = c('No CC', 'Early', 'Late', 'Green'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02","#7570B3","#E7298A"))+
@@ -379,6 +383,7 @@ ggplot(beans, aes(x = cc, y = yieldbuac, fill = cc))+
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())+
+  ylim(0,80)
   geom_text(aes(label = group, y = 72), size = 10)
 
 
@@ -670,17 +675,21 @@ plots2
 
 cc_t <- corn_cc %>% 
   mutate(Block = as.character(Block))
-# m0 <- lm(Mg_ha ~ (1|Block), data = corn_cc)
-m1 <- glm(Mg_ha ~ CC , data = corn_cc)
-m2 <- glm(Mg_ha ~ CC + Year , data = corn_cc)
-m3 <- glm(Mg_ha ~ CC * Year, data = corn_cc)
+m0 <- lmer(Mg_ha ~ (1|Block), data = corn_cc)
+m1 <- lmer(Mg_ha ~ CC +(1|Block), data = corn_cc)
+m2 <- lmer(Mg_ha ~ CC + Year +(1|Block), data = corn_cc)
+m3 <- lmer(Mg_ha ~ CC * Year +(1|Block), data = corn_cc)
         
 # suppression for singularity in lmer   
            # control = lmerControl(check.conv.singular = .makeCC(action = 'ignore', 
            #                                                     tol = 1e-4)))
 
-anova(m1, m2, m3)
-
+anova(m0, m1, m2, m3)
+# npar     AIC     BIC  logLik deviance  Chisq Df Pr(>Chisq)    
+# m0    3 178.094 183.514 -86.047  172.094                         
+# m1    5 140.220 149.253 -65.110  130.220 41.875  2  8.073e-10 ***
+# m2    7  97.231 109.878 -41.616   83.231 46.989  2  6.260e-11 ***
+# m3   11  47.645  67.519 -12.823   25.645 57.586  4  9.322e-12 ***
 
 AIC(m3)
 hist(residuals(m3))
@@ -714,6 +723,12 @@ cld(emmeans(m3, ~Year), Letters = letters)
 # 2022   3.14 0.0929 24     2.95     3.33   b   
 # 2021   3.38 0.0929 24     3.19     3.57   b   
 
+cld(emmeans(m3, ~CC), Letters = letters)
+# CC    emmean     SE df lower.CL upper.CL .group
+# early   1.21 0.0929 24     1.02     1.40  a    
+# late    2.51 0.0929 24     2.32     2.70   b   
+# green   4.32 0.0929 24     4.12     4.51    c  
+
 
 # soybean
 soy_cc <- cc_new %>% 
@@ -724,7 +739,11 @@ s1 <- lmer(Mg_ha ~ CC +(1|Block), data = soy_cc)
 s2 <- lmer(Mg_ha ~ CC + Year + (1|Block), data = soy_cc)
 s3 <- lmer(Mg_ha ~ CC * Year +(1|Block), data = soy_cc)
 anova(s0, s1, s2, s3)
-
+# npar     AIC     BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# s0    3 127.759 133.179 -60.880  121.759                          
+# s1    5  79.637  88.670 -34.818   69.637 52.1225  2  4.805e-12 ***
+# s2    6  79.871  90.711 -33.936   67.871  1.7655  1     0.1839    
+# s3    8  63.962  78.415 -23.981   47.962 19.9091  2  4.751e-05 ***
 summary(s3)
 check_model(s3)
 hist(residuals(s3))
@@ -742,10 +761,11 @@ cld(emmeans(s3, ~CC|Year), Letters = letters)
 # green  1.750 0.199 37.5    1.347    2.154   b   
 # late   1.759 0.199 37.5    1.355    2.162   b 
 
-cld(emmeans(s3, ~Year), Letters = letters)
-# Year emmean     SE    df lower.CL upper.CL .group
-# 2023   1.46 0.1217 17.42     1.20     1.72  a    
-# 2022   1.68 0.0927  6.87     1.46     1.90  a
+# cld(emmeans(s3, ~CC), Letters = letters)
+# CC    emmean    SE df lower.CL upper.CL .group
+# early  0.671 0.128 20    0.404    0.938  a    
+# late   1.732 0.128 20    1.465    1.998   b   
+# green  2.307 0.128 20    2.040    2.573    c 
 
 
 # corn cover crop plots ####
@@ -763,10 +783,12 @@ cld_cc_figure_df <- cc_figure_df %>%
   )) %>% 
   arrange(Crop, Year, CC)
 
+corncc_labs <- c('2021 a', '2022 a', '2023 b')
+names(corncc_labs) <- c('2021', '2022', '2023')
 
 ggplot(filter(cld_cc_figure_df, Crop == 'corn'), aes(x = CC, y = mean, fill = CC))+  
   geom_bar(stat = 'identity', position = 'dodge', alpha = 0.75)+
-  facet_wrap(~Year)+
+  facet_wrap(~Year, labeller = labeller(Year = corncc_labs))+
   scale_x_discrete(limits = c('early', 'late', 'green'),
                      labels = c("Early", "Late", "Green"))+
   scale_fill_manual(values = c("#D95F02", "#1B9E77","#7570B3"))+
