@@ -133,10 +133,35 @@ plot(density(corn$yieldbuac))
 # test <- corn %>% 
 #   mutate(yieldbuac = log(yieldbuac))
 
-c0 <- lmer(yieldbuac ~ (1|block), data = corn)
-c1 <- lmer(yieldbuac ~ cc + (1|block), data = corn)
-c2 <- lmer(yieldbuac ~ cc + year + (1|block), data = corn)
-c3 <- lmer(yieldbuac ~ cc*year + (1|block), data = corn)
+# unique terms for block 1,2,3,4,5 6,7,8,9,10, 11,12,13,14,15
+test <- corn %>% 
+  mutate(block_new = case_when(
+    year == '2021' & block == 'B1' ~'1',
+    year == '2021' & block == 'B2' ~'2',
+    year == '2021' & block == 'B3' ~'3',
+    year == '2021' & block == 'B4' ~'4',
+    year == '2021' & block == 'B5' ~'5',
+    year == '2022' & block == 'B1' ~'6',
+    year == '2022' & block == 'B2' ~'7',
+    year == '2022' & block == 'B3' ~'8',
+    year == '2022' & block == 'B4' ~'9',
+    year == '2022' & block == 'B5' ~'10',
+    year == '2023' & block == 'B1' ~'11',
+    year == '2023' & block == 'B2' ~'12',
+    year == '2023' & block == 'B3' ~'13',
+    year == '2023' & block == 'B4' ~'14',
+    year == '2023' & block == 'B5' ~'15',
+  )) %>% 
+  mutate(block_new = as.factor(block_new)) %>% 
+  print(n = Inf)
+
+
+
+
+c0 <- lmer(yieldbuac ~ (1|block_new), data = test)
+c1 <- lmer(yieldbuac ~ cc + (1|block_new), data = test)
+c2 <- lmer(yieldbuac ~ cc + year + (1|block_new), data = test)
+c3 <- lmer(yieldbuac ~ cc*year + (1|block_new), data = test)
 
 isSingular(c3)
 rePCA(c3)

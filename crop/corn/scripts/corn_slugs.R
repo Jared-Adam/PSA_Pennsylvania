@@ -192,6 +192,10 @@ lrtest(fpoisson_model, fnb_model_trt)
 
 
 # models ####
+unique(fall_slugs$date)
+
+
+
 
 # Fall
 
@@ -233,7 +237,7 @@ plot(fitted(f3), res)
 check_singularity(f3)
 r2_nakagawa(f3) 
 
-cld(emmeans(f3, ~treatment), Letters = letters)
+cld(emmeans(f3, ~treatment|year, type = 'response'), Letters = letters)
 # treatment emmean    SE  df asymp.LCL asymp.UCL .group
 # 3           1.12 0.208 Inf     0.718      1.53  a    
 # 4           1.27 0.206 Inf     0.862      1.67  a    
