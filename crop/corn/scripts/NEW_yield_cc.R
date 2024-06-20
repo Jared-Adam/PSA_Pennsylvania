@@ -140,7 +140,7 @@ c3 <- lmer(yieldbuac ~ cc*year + (1|block), data = corn)
 
 isSingular(c3)
 rePCA(c3)
-
+plot(c3)
 summary(c3)
 anova(c0, c1, c2, c3)
 # npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
