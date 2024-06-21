@@ -169,63 +169,52 @@ if(dispersion_stats$mean[1] > dispersion_stats$variances[1] &
   print("these jawns overdispersed")
 }
 
-# model selection ####
+# model selection (as seen in corn thesis models) ####
 fall_slugs <- subset(slugs, season == "Fall") %>% 
   mutate(plot = as.factor(plot))
+fs <- fall_slugs %>% 
+  group_by(year, treatment, block) %>% 
+  summarise(average = mean(total_slug))
 
-poisson_model <- glmer(total_slug ~ treatment*year + 
+poisson_model <- glmer(average ~ treatment*year + 
                          (1|block), 
-                       data = fall_slugs, 
+                       data = fs, 
                        family = poisson)
 
-nb_model_trt <- glmer.nb(total_slug ~ treatment*date +
-                           (1|year/block) + (1+date|year/block),
-                         data = fall_slugs) 
+nb_model_trt <- glmer.nb(average ~ treatment*year + 
+                           (1|block),
+                         data = fs) 
 
-gaus_model_trt <- lmer(total_slug ~ treatment*year + 
-                           (1|block), 
-                         data = fall_slugs) 
+gaus_model_trt <- lmer(average ~ treatment*year + 
+                         (1|block), 
+                         data = fs) 
 
 
 anova(poisson_model, nb_model_trt, gaus_model_trt)
 
-
-test_model <- lme(total_slug ~ treatment*year,
-                  random = ~1|block, data = fall_slugs)
-
-                  correlation = corARMA(form = ~date|block),
                   
-
-
-
-
-
-
-
-
-
-
 # fall
-f0 <- glmer.nb(total_slug ~  + 
-                 (1|date), 
-               data = fall_slugs) 
-f1 <- glmer.nb(total_slug ~ treatment + 
-                 (1|date), 
-               data = fall_slugs) 
-f2 <- glmer.nb(total_slug ~ treatment+year + 
-                 (1|date), 
-               data = fall_slugs) 
-f3 <- glmer.nb(total_slug ~ treatment*year + 
-                 (1|block) + (0+year|block), 
-               data = fall_slugs) 
+f0 <- glmer.nb(average ~ 
+                 (1|block), 
+               data = fs) 
+f1 <- glmer.nb(average ~ treatment + 
+                 (1|block), 
+               data = fs) 
+f2 <- glmer.nb(average ~ treatment+year + 
+                 (1|block), 
+               data = fs) 
+f3 <- glmer.nb(average ~ treatment*year + 
+                 (1|block), 
+               data = fs) 
 
 isSingular(f3)
 anova(f0, f1, f2, f3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# f0    3 590.64 600.54 -292.32   584.64                          
-# f1    6 570.21 590.00 -279.11   558.21 26.4304  3   7.75e-06 ***
-#   f2    7 572.06 595.15 -279.03   558.06  0.1551  1     0.6937    
-# f3   10 577.90 610.89 -278.95   557.90  0.1556  3     0.9844 
+# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
+# f0    3 113.17 118.23 -53.583  107.166                       
+# f1    6 111.76 121.89 -49.879   99.758 7.4081  3    0.05997 .
+# f2    7 107.73 119.56 -46.866   93.733 6.0249  1    0.01411 *
+# f3   10 113.69 130.58 -46.846   93.691 0.0418  3    0.99776  
+
 summary(f3)
 hist(residuals(f3))
 res <- residuals(f3)
@@ -235,97 +224,106 @@ r2_nakagawa(f3)
 binned_residuals(f3)
 check_model(f3)
 
-cld(emmeans(f3, ~treatment), Letters = letters)
-# treatment  emmean    SE  df asymp.LCL asymp.UCL .group
-# 4         -0.6361 0.393 Inf    -1.406     0.134  a    
-# 3         -0.4107 0.386 Inf    -1.167     0.346  a    
-# 2         -0.0566 0.371 Inf    -0.784     0.671  ab   
-# 1          0.3447 0.361 Inf    -0.363     1.052   b 
+cld(emmeans(f3, ~year), Letters = letters)
+# year emmean    SE  df asymp.LCL asymp.UCL .group
+# 2023 -0.230 0.258 Inf    -0.735     0.275  a
+# 2022  0.469 0.182 Inf     0.113     0.825   b
 
 cld(emmeans(f3, ~treatment|year), Letters = letters)
 # year = 2022:
-#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
-# 4         -0.5566 0.418 Inf    -1.377     0.264  a    
-# 3         -0.2209 0.409 Inf    -1.022     0.580  a    
-# 2          0.0687 0.401 Inf    -0.718     0.855  ab   
-# 1          0.4857 0.393 Inf    -0.285     1.256   b   
+#   treatment    emmean    SE  df asymp.LCL asymp.UCL .group
+# 4         -4.50e-06 0.445 Inf   -0.8720     0.872  a    
+# 3          2.73e-01 0.379 Inf   -0.4702     1.017  a    
+# 2          5.72e-01 0.330 Inf   -0.0757     1.219  a    
+# 1          1.03e+00 0.256 Inf    0.5270     1.532  a    
 # 
 # year = 2023:
-#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
-# 4         -0.7156 0.665 Inf    -2.019     0.587  a    
-# 3         -0.6004 0.654 Inf    -1.883     0.682  a    
-# 2         -0.1819 0.624 Inf    -1.405     1.041  a    
-# 1          0.2037 0.605 Inf    -0.983     1.390  a
+#   treatment    emmean    SE  df asymp.LCL asymp.UCL .group
+# 4         -6.29e-01 0.614 Inf   -1.8317     0.575  a    
+# 3         -5.11e-01 0.566 Inf   -1.6211     0.599  a    
+# 2         -6.90e-02 0.457 Inf   -0.9643     0.826  a    
+# 1          2.88e-01 0.379 Inf   -0.4548     1.030  a 
 
 ##
 
 # spring
-spring_slugs <- subset(slugs, season == "Spring")
-# let's see which is better, poisson or nb? 
-# run one of each where the only difference is the family 
-poisson_model <- glmer(total_slug ~ treatment*year + 
-                         (1|date), 
-                       data = spring_slugs, 
+spring_slugs <- subset(slugs, season == "Spring")%>% 
+  mutate(plot = as.factor(plot))
+
+ss <- spring_slugs %>% 
+  group_by(year, treatment, block) %>% 
+  summarise(average = mean(total_slug))
+
+poisson_model <- glmer(average ~ treatment*year + 
+                         (1|block), 
+                       data = ss, 
                        family = poisson)
 
-nb_model_trt <- glmer.nb(total_slug ~ treatment*year + 
-                           (1|block/date), 
-                         data = spring_slugs) 
+nb_model_trt <- glmer.nb(average ~ treatment*year + 
+                           (1|block),
+                         data = ss) 
 
-lrtest(poisson_model,nb_model_trt)
-# the negative binomial has the higher likelihood score, so we will use that
+gaus_model_trt <- lmer(average ~ treatment*year + 
+                         (1|block), 
+                       data = ss) 
+
+
+anova(poisson_model, nb_model_trt, gaus_model_trt)
+
 
 # spring
-m0 <- glmer.nb(total_slug ~  + 
-           (1|block/date), 
-         data = spring_slugs) 
-m1 <- glmer.nb(total_slug ~ treatment + 
-           (1|block/date), 
-         data = spring_slugs) 
-m2 <- glmer.nb(total_slug ~ treatment+year + 
-           (1|block/date), 
-         data = spring_slugs) 
-m3 <- glmer.nb(total_slug ~ treatment*year + 
-           (1|block), 
-         data = spring_slugs) 
-
-isSingular(m3)
-anova(m0, m1, m2, m3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# m0    4 830.18 843.37 -411.09   822.18                          
-# m1    7 835.11 858.20 -410.56   821.11  1.0623  3     0.7862    
-# m2    8 739.71 766.09 -361.85   723.71 97.4088  1     <2e-16 ***
-# m3   11 745.26 781.54 -361.63   723.26  0.4508  3     0.9296  
+s0 <- glmer.nb(average ~ 
+                 (1|block), 
+               data = ss) 
+s1 <- glmer.nb(average ~ treatment + 
+                 (1|block), 
+               data = ss) 
+s2 <- glmer.nb(average ~ treatment+year + 
+                 (1|block), 
+               data = ss) 
+s3 <- glmer.nb(average ~ treatment*year + 
+                 (1|block), 
+               data = ss) 
 
 
-summary(m3)
-hist(residuals(m3))
-res <- residuals(m3)
+isSingular(s3)
+anova(s0, s1, s2, s3)
+# npar    AIC    BIC   logLik deviance    Chisq Df Pr(>Chisq)    
+# s0    3 287.80 292.86 -140.899  281.798                           
+# s1    6 292.60 302.73 -140.300  280.600   1.1982  3     0.7534    
+# s2    7 113.59 125.42  -49.797   99.594 181.0055  1     <2e-16 ***
+# s3   10 119.50 136.39  -49.751   99.502   0.0922  3     0.9928 
+
+
+summary(s3)
+hist(residuals(s3))
+res <- residuals(s3)
 qqnorm(res)
-plot(fitted(m3), res)
-r2_nakagawa(m3)
-binned_residuals(m3)
-check_model(m3)
-cld(emmeans(m3, ~treatment|year), Letters = letters)
+plot(fitted(s3), res)
+r2_nakagawa(s3)
+binned_residuals(s3)
+check_model(s3)
+cld(emmeans(s3, ~treatment|year), Letters = letters)
 # year = 2022:
 #   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 3          -3.23 1.025 Inf     -5.24     -1.22  a    
-# 1          -3.23 1.025 Inf     -5.24     -1.22  a    
-# 2          -3.21 1.024 Inf     -5.22     -1.21  a    
-# 4          -2.53 0.742 Inf     -3.99     -1.08  a    
+# 2          -3.04 1.683 Inf     -6.34    0.2593  a    
+# 3          -3.04 1.558 Inf     -6.09    0.0142  a    
+# 1          -3.04 1.190 Inf     -5.37   -0.7079  a    
+# 4          -2.35 1.253 Inf     -4.80    0.1090  a    
 # 
 # year = 2023:
 #   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 3           1.60 0.179 Inf      1.25      1.95  a    
-# 2           1.75 0.177 Inf      1.40      2.10  a    
-# 4           1.76 0.176 Inf      1.42      2.11  a    
-# 1           1.76 0.176 Inf      1.42      2.11  a  
+# 3           1.75 0.226 Inf      1.30    2.1915  a    
+# 2           1.92 0.214 Inf      1.50    2.3408  a    
+# 1           1.93 0.214 Inf      1.51    2.3441  a    
+# 4           2.01 0.209 Inf      1.60    2.4154  a    
+# 
 # 
 
-cld(emmeans(m3, ~year), Letters = letters)
+cld(emmeans(s3, ~year), Letters = letters)
 # year emmean    SE  df asymp.LCL asymp.UCL .group
-# 2022  -3.05 0.507 Inf     -4.04     -2.06  a    
-# 2023   1.72 0.141 Inf      1.44      1.99   b   
+# 2022  -2.87 0.884 Inf     -4.60     -1.13  a    
+# 2023   1.90 0.159 Inf      1.59      2.21   b  
 
 
 # bsl.table <- as.data.frame(summary(m1)$coefficients)
@@ -371,18 +369,12 @@ ggplot(slug_plot, aes(x = treatment, y = mean, fill = treatment))+
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 
-fall_plot <- fall_slugs %>% 
-  mutate(group = case_when(
-    year == '2022' & treatment %in% c('4','3') ~ 'a', 
-    year == '2022' & treatment == '2' ~ 'ab',
-    year == '2022' & treatment == '1' ~ 'b', 
-    year == '2023' ~ 'a'
-  ))
-
+fall_labs <- c('2022 a', '2023 b')
+names(fall_labs) <- c('2022', '2023')
 ggplot(fall_plot, aes(x = treatment, y = total_slug, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
   geom_point(size = 1.5)+
-  facet_wrap(~year)+
+  facet_wrap(~year, labeller = labeller(year = fall_labs))+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
@@ -400,9 +392,7 @@ ggplot(fall_plot, aes(x = treatment, y = total_slug, fill = treatment))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         strip.text = element_text(size = 26),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  geom_text(aes(label = group, y = 16), size = 10)
-
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 
 spring_plot <- spring_slugs %>% 

@@ -151,29 +151,171 @@ if(dispersion_stats$mean[1] > dispersion_stats$variances[1] &
   }
 
 
-# model selection ####
+# balance dates ####
 # SPRING
+# balance the number of weekly observations
+
 spring_slugs <- subset(slug_clean, season == "Spring") %>% 
   mutate_at(vars(1:6), as.factor)
-spoisson_model <- glmer(total_slug ~ treatment*year + 
-                          (1|block), 
+
+#2021
+spring_slugs %>% 
+  ungroup() %>% 
+  mutate(date = as.Date(date)) %>% 
+  dplyr::select(date, year) %>% 
+  subset(year == '2021') %>% 
+  distinct(date)
+# date      
+# <date>    
+# 1 2021-05-25
+# 2 2021-06-01
+# 3 2021-06-08
+# 4 2021-06-15
+# 5 2021-06-23
+# 6 2021-06-30
+# 7 2021-07-07
+
+spring_slugs %>% 
+  ungroup() %>% 
+  mutate(date = as.Date(date)) %>% 
+  dplyr::select(date, year) %>% 
+  subset(year == '2022') %>% 
+  distinct(date)
+# date      
+# <date>    
+# 1 2022-06-07
+# 2 2022-06-13
+# 3 2022-06-24
+# 4 2022-06-29
+
+spring_slugs %>% 
+  ungroup() %>% 
+  mutate(date = as.Date(date)) %>% 
+  dplyr::select(date, year) %>% 
+  subset(year == '2023') %>% 
+  distinct(date)
+# 1 2023-05-31
+# 2 2023-06-05
+# 3 2023-06-12
+# 4 2023-06-19
+# 5 2023-06-26
+# 6 2023-07-03
+
+spring_slugs <- spring_slugs %>% 
+  filter(!date %in% c('2021-06-23',
+                      '2021-06-30',
+                      '2021-07-07',
+                      '2023-06-26',
+                      '2023-07-03')) %>% 
+  mutate(week = case_when(
+    date == '2021-05-25' ~ '1',
+    date == '2021-06-01' ~ '2',
+    date == '2021-06-08' ~ '3',
+    date == '2021-06-15' ~ '4',
+    date == '2022-06-07' ~ '1',
+    date == '2022-06-13' ~ '2',
+    date == '2022-06-24' ~ '3',
+    date == '2022-06-29' ~ '4',
+    date == '2023-05-31' ~ '1',
+    date == '2023-06-05' ~ '2',
+    date == '2023-06-12' ~ '3',
+    date == '2023-06-19' ~ '4'
+  )) %>% 
+  mutate(week = as.factor(week)) %>% 
+  print(n = Inf)
+unique(spring_slugs$date)
+
+
+# FALL
+fall_slugs <- subset(slug_clean, season == "Fall")%>% 
+  mutate_at(vars(1:6), as.factor)
+#2021
+fall_slugs %>% 
+  ungroup() %>% 
+  mutate(date = as.Date(date)) %>% 
+  dplyr::select(date, year) %>% 
+  subset(year == '2021') %>% 
+  distinct(date)
+# date      
+# <date>    
+# 1 2021-09-13
+# 2 2021-09-24
+# 3 2021-10-01
+# 4 2021-10-07
+# 5 2021-10-13
+# 6 2021-10-22
+
+fall_slugs %>% 
+  ungroup() %>% 
+  mutate(date = as.Date(date)) %>% 
+  dplyr::select(date, year) %>% 
+  subset(year == '2022') %>% 
+  distinct(date)
+# date      
+# <date>    
+# 1 2022-09-16
+# 2 2022-09-21
+# 3 2022-09-28
+# 4 2022-10-05
+# 5 2022-10-12
+# 6 2022-10-21
+# 7 2022-10-26
+# 8 2022-11-02
+
+fall_slugs %>% 
+  ungroup() %>% 
+  mutate(date = as.Date(date)) %>% 
+  dplyr::select(date, year) %>% 
+  subset(year == '2023') %>% 
+  distinct(date)
+# date      
+# <date>    
+# 1 2023-09-18
+# 2 2023-09-29
+# 3 2023-10-03
+
+fall_slugs <- fall_slugs %>% 
+  filter(!date %in% c('2021-10-07',
+                      '2021-10-13',
+                      '2021-10-22',
+                      '2022-10-05',
+                      '2022-10-12',
+                      '2022-10-21',
+                      '2022-10-26',
+                      '2022-11-02')) %>% 
+  mutate(week = case_when(
+    date == '2021-09-13' ~ '1',
+    date == '2021-09-24' ~ '2',
+    date == '2021-10-01' ~ '3',
+    date == '2022-09-16' ~ '1',
+    date == '2022-09-21' ~ '2',
+    date == '2022-09-28' ~ '3',
+    date == '2023-09-18' ~ '1',
+    date == '2023-09-29' ~ '2',
+    date == '2023-10-03' ~ '3'
+  )) %>% 
+  mutate(week = as.factor(week)) %>% 
+  print(n = Inf)
+unique(fall_slugs$date)
+
+
+# model selection ####
+spoisson_model <- glmer(total_slug ~ treatment*year*week + 
+                          (week|block/plot_id), 
                         data = spring_slugs, 
                         family = poisson)
 
-snb_model_trt <- glmer.nb(total_slug ~ treatment*year + 
-                            (1|block), 
+snb_model_trt <- glmer.nb(total_slug ~ treatment*year*week + 
+                            (week|block/plot_id), 
                           data = spring_slugs) 
 
-gaus_model <- lmer(total_slug ~ treatment*year + 
-                      (1|block), 
+gaus_model <- lmer(total_slug ~ treatment*year*week + 
+                      (week|block/plot_id), 
                     data = spring_slugs)
 
 lrtest(spoisson_model, snb_model_trt, gaus_model)
 # the negative binomial has the higher likelihood score, so we will use that
 
-# FALL
-fall_slugs <- subset(slug_clean, season == "Fall")%>% 
-  mutate_at(vars(1:6), as.factor)
 
 # let's see which is better, poisson or nb? 
 # run one of each where the only difference is the family 
@@ -191,26 +333,40 @@ lrtest(fpoisson_model, fnb_model_trt)
 
 
 
-# models ####
+# NOT in thesis RM models ####
 unique(fall_slugs$date)
-
-
-
 
 # Fall
 
 f0 <- glmer.nb(total_slug ~ +
-                 (1|block/plot_id),
+                 (week|block/plot_id),
                data = fall_slugs)
 
-f1 <- glmer.nb(total_slug ~ treatment+
-                 (1|block/plot_id), data = fall_slugs) 
+f1 <- glmer.nb(total_slug ~ treatment +
+                 (week|block/plot_id),
+               data = fall_slugs)
 
-f2 <- glmer.nb(total_slug ~ treatment+year +
-                 (1|block/plot_id), data = fall_slugs) 
+f2 <- glmer.nb(total_slug ~ treatment+year+
+                 (week|block/plot_id),
+               data = fall_slugs)
 
-f3 <- glmer.nb(total_slug ~ treatment*year +
-                 (1|block/plot_id), data = fall_slugs) 
+f3 <- glmer.nb(total_slug ~ treatment+year+week+
+                 (week|block/plot_id),
+               data = fall_slugs)
+
+
+f4 <- glmer.nb(total_slug ~ treatment*year+week+
+                 (week|block/plot_id),
+               data = fall_slugs)
+
+f4.5 <- glmer.nb(total_slug ~ treatment + year * week +
+                 (week|block/plot_id), data = fall_slugs) 
+
+f5 <- glmer.nb(total_slug ~   year + treatment* week +
+                 (week|block/plot_id), data = fall_slugs) 
+
+f6 <- glmer.nb(total_slug ~ treatment*year*week +
+                 (week|block/plot_id), data = fall_slugs) 
 
 # p3 <- glmer.nb(total_slug ~ precip +
 #                  (1|year/block), data = fall_slugs) 
@@ -218,31 +374,127 @@ anova(f3, p3)
 
 rePCA(f3)
 
-anova(f0, f1, f2, f3)
+anova(f0, f1, f2, f3, f4 , f4.5, f5, f6)
 # npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# f0    4 1997.6 2012.9 -994.79   1989.6                          
-# f1    7 1984.1 2010.9 -985.06   1970.1  19.452  3  0.0002204 ***
-# f2    9 1833.4 1867.8 -907.69   1815.4 154.733  2  < 2.2e-16 ***
-# f3   15 1826.8 1884.2 -898.38   1796.8  18.617  6  0.0048620 ** 
-
+# f0     14 893.10 937.80 -432.55   865.10                          
+# f1     17 892.44 946.72 -429.22   858.44  6.6622  3   0.083482 .  
+# f2     19 848.57 909.24 -405.29   810.57 47.8643  2  4.040e-11 *** #yr
+# f3     21 839.53 906.59 -398.77   797.53 13.0380  2   0.001475 ** #week
+# f4.5   25 820.55 900.37 -385.27   770.55 26.9864  4  2.000e-05 *** #trt*yr
+# f4     27 828.05 914.26 -387.02   774.05  0.0000  2   1.000000    
+# f5     27 846.01 932.22 -396.01   792.01  0.0000  0               
+# f6     49 811.61 968.07 -356.81   713.61 78.3983 22  2.967e-08 *** #trt*yr*week
 # ?waldtest
 # waldtest(f1, test = 'F')
 
-check_model(f3)
-summary(f3)
-hist(residuals(f3))
-res <- residuals(f3)
+check_model(f6)
+summary(f6)
+hist(residuals(f6))
+res <- residuals(f6)
 qqnorm(res)
-plot(fitted(f3), res)
-check_singularity(f3)
-r2_nakagawa(f3) 
+plot(fitted(f6), res)
+check_singularity(f6)
+r2_nakagawa(f6) 
+
+cld(emmeans(f3, ~week, type = 'response'), Letters = letters)
+# week response    SE  df asymp.LCL asymp.UCL .group
+# 1        1.38 0.349 Inf      0.84      2.26  a    
+# 2        2.83 0.410 Inf      2.13      3.76   b   
+# 3        5.84 0.703 Inf      4.61      7.39    c  
+
+cld(emmeans(f3, ~year, type = 'response'), Letters = letters)
+# year response    SE  df asymp.LCL asymp.UCL .group
+# 2021     1.43 0.259 Inf      1.01      2.04  a    
+# 2022     3.09 0.509 Inf      2.24      4.27   b   
+# 2023     5.14 0.814 Inf      3.77      7.01    c  
 
 cld(emmeans(f3, ~treatment|year, type = 'response'), Letters = letters)
-# treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 3           1.12 0.208 Inf     0.718      1.53  a    
-# 4           1.27 0.206 Inf     0.862      1.67  a    
-# 2           1.31 0.207 Inf     0.901      1.71  a    
-# 1           1.64 0.204 Inf     1.237      2.04   b   
+# year = 2021:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3             1.05 0.247 Inf     0.664      1.67  a    
+# 4             1.35 0.297 Inf     0.881      2.08  ab   
+# 2             1.39 0.299 Inf     0.908      2.12  ab   
+# 1             2.13 0.447 Inf     1.415      3.22   b   
+# 
+# year = 2022:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3             2.27 0.510 Inf     1.459      3.53  a    
+# 4             2.92 0.605 Inf     1.946      4.38  ab   
+# 2             2.99 0.601 Inf     2.017      4.43  ab   
+# 1             4.60 0.899 Inf     3.135      6.75   b   
+# 
+# year = 2023:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3             3.77 0.777 Inf     2.522      5.65  a    
+# 4             4.86 0.964 Inf     3.294      7.17  ab   
+# 2             4.98 1.019 Inf     3.331      7.43  ab   
+# 1             7.65 1.534 Inf     5.167     11.33   b  
+
+
+
+cld(emmeans(f3, ~treatment|year|week, type = 'response'), Letters = letters)
+# year = 2021, week = 3:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            2.166 0.482 Inf     1.400      3.35  a    
+# 4            2.788 0.584 Inf     1.850      4.20  ab   
+# 2            2.856 0.590 Inf     1.904      4.28  ab   
+# 1            4.392 0.869 Inf     2.980      6.47   b   
+# 
+# year = 2022, week = 3:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            4.671 0.977 Inf     3.099      7.04  a    
+# 4            6.013 1.157 Inf     4.123      8.77  ab   
+# 2            6.158 1.151 Inf     4.269      8.88  ab   
+# 1            9.471 1.695 Inf     6.669     13.45   b   
+# 
+# year = 2023, week = 3:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            7.773 1.533 Inf     5.281     11.44  a    
+# 4           10.006 1.923 Inf     6.865     14.58  ab   
+# 2           10.247 2.049 Inf     6.925     15.16  ab   
+# 1           15.761 3.049 Inf    10.788     23.03   b   
+# 
+# year = 2021, week = 1:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            0.512 0.164 Inf     0.273      0.96  a    
+# 4            0.659 0.204 Inf     0.360      1.21  ab   
+# 2            0.675 0.206 Inf     0.371      1.23  ab   
+# 1            1.038 0.313 Inf     0.575      1.87   b   
+# 
+# year = 2022, week = 1:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            1.104 0.343 Inf     0.600      2.03  a    
+# 4            1.421 0.422 Inf     0.794      2.54  ab   
+# 2            1.455 0.425 Inf     0.821      2.58  ab   
+# 1            2.238 0.646 Inf     1.271      3.94   b   
+# 
+# year = 2023, week = 1:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            1.837 0.537 Inf     1.036      3.26  a    
+# 4            2.365 0.676 Inf     1.350      4.14  ab   
+# 2            2.422 0.702 Inf     1.373      4.27  ab   
+# 1            3.725 1.069 Inf     2.122      6.54   b   
+# 
+# year = 2021, week = 2:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            1.049 0.246 Inf     0.662      1.66  a    
+# 4            1.351 0.296 Inf     0.880      2.07  ab   
+# 2            1.383 0.298 Inf     0.907      2.11  ab   
+# 1            2.128 0.447 Inf     1.409      3.21   b   
+# 
+# year = 2022, week = 2:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            2.263 0.527 Inf     1.433      3.57  a    
+# 4            2.913 0.626 Inf     1.912      4.44  ab   
+# 2            2.983 0.623 Inf     1.981      4.49  ab   
+# 1            4.588 0.940 Inf     3.070      6.86   b   
+# 
+# year = 2023, week = 2:
+#   treatment response    SE  df asymp.LCL asymp.UCL .group
+# 3            3.765 0.802 Inf     2.480      5.72  a    
+# 4            4.847 0.994 Inf     3.243      7.24  ab   
+# 2            4.964 1.049 Inf     3.281      7.51  ab   
+# 1            7.635 1.591 Inf     5.075     11.49   b 
 
 
 
@@ -256,66 +508,206 @@ cld(emmeans(f3, ~treatment|year, type = 'response'), Letters = letters)
 # Spring
 
 s0 <- glmer.nb(total_slug ~ +
-                 (1|block/plot_id),
+                 (week|block/plot_id),
                data = spring_slugs)
 
 s1 <- glmer.nb(total_slug ~ treatment +
-                 (1|block/plot_id), data = spring_slugs) 
+                 (week|block/plot_id),
+               data = spring_slugs)
 
-s2 <- glmer.nb(total_slug ~ treatment + year +
-                 (1|block/plot_id), data = spring_slugs) 
+s2 <- glmer.nb(total_slug ~ treatment+year+
+                 (week|block/plot_id),
+               data = spring_slugs)
 
-s3 <- glmer.nb(total_slug ~ treatment*year +
-                 (1|block/plot_id), data = spring_slugs)
-rePCA(s3)
-isSingular(s3)
+s3 <- glmer.nb(total_slug ~ treatment+year+week+
+                 (week|block/plot_id),
+               data = spring_slugs)
 
-anova(s0, s1, s2, s3)
-# npar    AIC    BIC  logLik deviance    Chisq Df Pr(>Chisq)    
-# s0    3 1609.7 1621.2 -801.85   1603.7                           
-# s1    6 1611.3 1634.2 -799.64   1599.3   4.4230  3     0.2193    
-# s2    8 1510.3 1540.9 -747.14   1494.3 104.9994  2     <2e-16 ***
-# s3   14 1518.6 1572.2 -745.29   1490.6   3.6926  6     0.7182    
 
-check_model(s3)
-summary(s3)
-hist(residuals(s3))
-check_singularity(s3)
-r2_nakagawa(s3) 
-cld(emmeans(s3, ~treatment|year),Letters = letters)
+s4 <- glmer.nb(total_slug ~ treatment*year+week+
+                 (week|block/plot_id),
+               data = spring_slugs)
+
+s4.5 <- glmer.nb(total_slug ~ treatment + year * week +
+                   (week|block/plot_id), data = spring_slugs) 
+
+s5 <- glmer.nb(total_slug ~   year + treatment* week +
+                 (week|block/plot_id), data = spring_slugs) 
+
+s6 <- glmer.nb(total_slug ~ treatment*year*week +
+                 (week|block/plot_id), data = spring_slugs) 
+rePCA(s6)
+isSingular(s6)
+
+anova(s0, s1, s2, s3, s4, s4.5, s5, s6)
+# npar     AIC     BIC  logLik deviance    Chisq Df Pr(>Chisq)    
+# s0     22 1061.81 1138.39 -508.91  1017.81                           
+# s1     25 1057.78 1144.79 -503.89  1007.78  10.0377  3   0.018249 * # trt  
+# s2     27  856.26  950.24 -401.13   802.26 205.5147  2  < 2.2e-16 *** #yr
+# s3     30  849.28  953.70 -394.64   789.28  12.9788  3   0.004683 ** #week
+# s4     36  858.47  983.77 -393.23   786.47   2.8132  6   0.831903    
+# s4.5   36  786.51  911.81 -357.25   714.51  71.9622  0               
+# s5     39  857.92  993.67 -389.96   779.92   0.0000  3   1.000000   
+# s6     69  785.36 1025.53 -323.68   647.36 132.5594 30  7.498e-15 *** #trt*yr*week
+
+check_model(s6)
+summary(s6)
+hist(residuals(s6))
+check_singularity(s6)
+r2_nakagawa(s6) 
+
+cld(emmeans(s6, ~year),Letters = letters)
+# year emmean       SE  df asymp.LCL asymp.UCL .group
+# 2022  -9.86 3503.929 Inf  -6877.43    6857.7  a    
+# 2023  -9.26 2465.486 Inf  -4841.53    4823.0  a    
+# 2021   1.90    0.156 Inf      1.59       2.2  a  
+
+cld(emmeans(s6, ~treatment), Letters = letters)
+# treatment emmean   SE  df asymp.LCL asymp.UCL .group
+# 1          -8.18 3428 Inf     -6727      6711  a    
+# 4          -5.76 2121 Inf     -4164      4152  a    
+# 2          -4.55 2301 Inf     -4514      4505  a    
+# 3          -4.47 3330 Inf     -6531      6522  a 
+
+cld(emmeans(s6, ~week), Letters = letters)
+
+cld(emmeans(s6, ~treatment|year|week), Letters = letters)
+
+
+# YES in thesis models: with averaged data #####
+s_test <- subset(slug_clean, season == "Spring") %>% 
+  mutate_at(vars(1:6), as.factor)
+s_t_m <- s_test %>% 
+  group_by(year, treatment, block) %>% 
+  summarise(average = mean(total_slug))
+
+nb <- glmer.nb(average ~ treatment*year + (1|block), 
+               data = s_t_m) 
+summary(nb)
+hist(residuals(nb))
+ps <- glmer(average ~ treatment*year + (1|block), 
+            data = s_t_m, family = poisson)
+
+gs <- lmer(average ~ treatment*year + (1|block), 
+           data = s_t_m)
+
+anova(nb, ps, gs)
+
+nb0 <- glmer.nb(average ~ + (1|block), 
+                data = s_t_m) 
+
+nb1 <- glmer.nb(average ~ treatment+ (1|block), 
+                data = s_t_m) 
+
+nb2 <- glmer.nb(average ~ treatment + year+ (1|block), 
+                data = s_t_m) 
+
+nb3 <- glmer.nb(average ~ treatment*year+ (1|block), 
+                data = s_t_m) 
+
+anova(nb0, nb1, nb2, nb3)
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# nb0    3 293.38 299.66 -143.69   287.38                          
+# nb1    6 297.58 310.14 -142.79   285.58  1.8029  3     0.6143    
+# nb2    8 227.36 244.11 -105.68   211.36 74.2179  2     <2e-16 ***
+# nb3   14 235.76 265.09 -103.88   207.76  3.5931  6     0.7315 
+
+cld(emmeans(nb3, ~treatment|year), Letters = letters)
 # year = 2021:
-#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          1.1587 0.597 Inf    -0.011    2.3284  a    
-# 4          1.4228 0.594 Inf     0.259    2.5862  ab   
-# 2          1.5517 0.593 Inf     0.390    2.7136  ab   
-# 3          1.8102 0.592 Inf     0.650    2.9704   b   
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          1.421 0.234 Inf     0.962     1.881  a    
+# 4          1.825 0.197 Inf     1.438     2.211  ab   
+# 2          2.043 0.181 Inf     1.689     2.397  ab   
+# 3          2.197 0.170 Inf     1.864     2.531   b   
 # 
 # year = 2022:
-#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
-# 1         -1.9395 0.942 Inf    -3.785   -0.0940  a    
-# 2         -1.6942 0.913 Inf    -3.484    0.0952  a    
-# 4         -1.2619 0.871 Inf    -2.970    0.4459  a    
-# 3         -1.0525 0.860 Inf    -2.738    0.6334  a    
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1         -1.609 1.003 Inf    -3.576     0.357  a    
+# 2         -1.386 0.898 Inf    -3.147     0.374  a    
+# 4         -0.916 0.712 Inf    -2.311     0.479  a    
+# 3         -0.799 0.672 Inf    -2.115     0.518  a    
 # 
 # year = 2023:
-#   treatment  emmean    SE  df asymp.LCL asymp.UCL .group
-# 3         -0.2238 0.697 Inf    -1.590    1.1420  a    
-# 1         -0.1949 0.696 Inf    -1.560    1.1700  a    
-# 2         -0.1114 0.696 Inf    -1.475    1.2518  a    
-# 4          0.0581 0.694 Inf    -1.302    1.4180  a    
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 3          1.174 0.262 Inf     0.660     1.687  a    
+# 1          1.184 0.261 Inf     0.673     1.695  a    
+# 2          1.317 0.246 Inf     0.836     1.798  a    
+# 4          1.386 0.238 Inf     0.920     1.853  a   
 
-cld(emmeans(s3, ~treatment), Letters = letters)
-# treatment  emmean    SE  df asymp.LCL asymp.UCL .group
-# 1         -0.3252 0.439 Inf    -1.186     0.536  a    
-# 2         -0.0846 0.432 Inf    -0.931     0.762  a    
-# 4          0.0730 0.422 Inf    -0.754     0.900  a    
-# 3          0.1780 0.419 Inf    -0.644     1.000  a 
 
-cld(emmeans(s3, ~year), Letters = letters)
-# year emmean    SE  df asymp.LCL asymp.UCL .group
-# 2022 -1.487 0.807 Inf    -3.069    0.0951  a    
-# 2023 -0.118 0.675 Inf    -1.441    1.2050  ab   
-# 2021  1.486 0.580 Inf     0.349    2.6223   b 
+cld(emmeans(nb3, ~year), Letters = letters)
+# year emmean     SE  df asymp.LCL asymp.UCL .group
+# 2022  -1.18 0.4162 Inf     -1.99    -0.362  a    
+# 2023   1.27 0.1259 Inf      1.02     1.512   b   
+# 2021   1.87 0.0986 Inf      1.68     2.065    c  
+
+f_test <- subset(slug_clean, season == "Fall") %>% 
+  mutate_at(vars(1:6), as.factor)
+f_t_m <- f_test %>% 
+  group_by(year, treatment, block) %>% 
+  summarise(average = mean(total_slug))
+
+nb <- glmer.nb(average ~ treatment*year + (1|block), 
+               data = f_t_m) 
+summary(nb)
+hist(residuals(nb))
+ps <- glmer(average ~ treatment*year + (1|block), 
+            data = f_t_m, family = poisson)
+
+gs <- lmer(average ~ treatment*year + (1|block), 
+           data = f_t_m)
+
+anova(nb, ps, gs)
+
+fnb0 <- glmer.nb(average ~ + (1|block), 
+                data = f_t_m) 
+
+fnb1 <- glmer.nb(average ~ treatment+ (1|block), 
+                data = f_t_m) 
+
+fnb2 <- glmer.nb(average ~ treatment + year+ (1|block), 
+                data = f_t_m) 
+
+fnb3 <- glmer.nb(average ~ treatment*year+ (1|block), 
+                data = f_t_m) 
+
+hist(residuals(fnb3))
+
+anova(fnb0, fnb1, fnb2, fnb3)
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# fnb0    3 339.47 345.75 -166.73   333.47                          
+# fnb1    6 341.56 354.13 -164.78   329.56  3.9052  3   0.271882    
+# fnb2    8 278.15 294.91 -131.07   262.15 67.4119  2    2.3e-15 ***
+# fnb3   14 268.54 297.86 -120.27   240.54 21.6078  6   0.001426 ** 
+
+cld(emmeans(fnb3, ~treatment|year), Letters= letters)
+# year = 2021:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 3          0.210 0.386 Inf    -0.546     0.966  a    
+# 4          0.427 0.345 Inf    -0.249     1.103  a    
+# 2          0.550 0.340 Inf    -0.116     1.216  a    
+# 1          0.916 0.249 Inf     0.428     1.404  a    
+# 
+# year = 2022:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 3          1.723 0.189 Inf     1.353     2.092  a    
+# 4          2.028 0.162 Inf     1.711     2.345  ab   
+# 2          2.544 0.125 Inf     2.298     2.789   bc  
+# 1          2.696 0.115 Inf     2.470     2.922    c  
+# 
+# year = 2023:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 2          1.317 0.231 Inf     0.864     1.770  a    
+# 1          1.803 0.178 Inf     1.454     2.152  a    
+# 4          1.835 0.178 Inf     1.486     2.184  a    
+# 3          1.946 0.168 Inf     1.616     2.276  a  
+
+
+cld(emmeans(fnb3, ~year), Letters= letters)
+# year emmean     SE  df asymp.LCL asymp.UCL .group
+# 2021  0.526 0.1710 Inf     0.191     0.861  a    
+# 2023  1.725 0.0956 Inf     1.538     1.913   b   
+# 2022  2.248 0.0754 Inf     2.100     2.395    c  
 
 
 # plots corn slugs ####
@@ -355,21 +747,13 @@ ggplot(slug_plot, aes(x = treatment, y = mean, fill = treatment))+
 # fall
 fall_plot <- fall_slugs %>% 
   mutate(group = case_when(
-    year == '2021' & treatment == '3' ~ 'a',
-    year == '2021' & treatment == '4' ~ 'ab', 
-    year == '2021' & treatment == '2' ~ 'ab', 
-    year == '2021' & treatment == '1' ~ 'b', 
     year == '2022' & treatment == '3' ~ 'a', 
-    year == '2022' & treatment == '4' ~ 'a', 
-    year == '2022' & treatment == '2' ~ 'b', 
-    year == '2022' & treatment == '1' ~ 'b', 
-    year == '2023' & treatment == '1' ~ 'a', 
-    year == '2023' & treatment == '2' ~ 'a', 
-    year == '2023' & treatment == '3' ~ 'a', 
-    year == '2023' & treatment == '4' ~ 'a'
+    year == '2022' & treatment == '4' ~ 'ab', 
+    year == '2022' & treatment == '2' ~ 'bc', 
+    year == '2022' & treatment == '1' ~ 'c'
   ))
 
-f.labs <- c('2021 a', '2022 b', '2023 b')
+f.labs <- c('2021 a', '2022 b', '2023 c')
 names(f.labs) <- c('2021', '2022', '2023')
 ggplot(fall_plot, aes(x = treatment, y = total_slug, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
@@ -402,15 +786,7 @@ spring_plot <- spring_slugs %>%
     year == '2021' & treatment == '1' ~ 'a',
     year == '2021' & treatment == '4' ~ 'ab',
     year == '2021' & treatment == '2' ~ 'ab',
-    year == '2021' & treatment == '3' ~ 'b',
-    year == '2022' & treatment == '1' ~ 'a',
-    year == '2022' & treatment == '2' ~ 'a',
-    year == '2022' & treatment == '3' ~ 'a',
-    year == '2022' & treatment == '4' ~ 'a',
-    year == '2023' & treatment == '3' ~ 'a',
-    year == '2023' & treatment == '1' ~ 'a',
-    year == '2023' & treatment == '2' ~ 'a',
-    year == '2023' & treatment == '4' ~ 'a'
+    year == '2021' & treatment == '3' ~ 'b'
   ))
 # year emmean    SE  df asymp.LCL asymp.UCL .group
 # 2022 -1.487 0.807 Inf    -3.069    0.0951  a    
