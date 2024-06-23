@@ -90,9 +90,9 @@ sent_years <- beans_sent %>%
 # subset by year and then growth stage 
 bent_22 <- subset(sent_years, year == '2022')
 bent_23 <- subset(sent_years, year == '2023')
-
-pred_tot <- sent_years %>% 
-  dplyr::select(-pm.absent, -pm.partial, -am.absent, -am.partial, -d.pred, -n.pred)
+# 
+# pred_tot <- sent_years %>% 
+#   dplyr::select(-pm.absent, -pm.partial, -am.absent, -am.partial, -d.pred, -n.pred)
 
 
 sent_prop <- beans_sent %>% 
@@ -160,121 +160,123 @@ cbent2223 %>%
 cbent2122
 
 m0 <- glmer(to.predated ~ +
-              (1|gblock/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2122)
 
 m1 <- glmer(to.predated ~ treatment+
-              (1|block/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2122)
 
 m2 <- glmer(to.predated ~ treatment + crop+
-              (1|block/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2122)
 
 m3 <- glmer(to.predated ~ treatment*crop+
-              (1|block/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2122)
 anova(m0, m1, m2, m3)
-
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
+# m0    7 553.76 585.82 -269.88   539.76                         
+# m1   10 548.72 594.51 -264.36   528.72 11.0437  3   0.011492 * 
+# m2   11 542.29 592.66 -260.14   520.29  8.4313  1   0.003688 **
+# m3   14 541.40 605.50 -256.70   513.40  6.8946  3   0.075333 . 
 
 hist(residuals(m3))
 summary(m3)
 check_model(m3)
 
-cbent2122_emm <- cld(emmeans(m3, ~treatment + crop), Letters = letters, max.overlaps = Inf)
-# treatment crop  emmean    SE  df asymp.LCL asymp.UCL .group
-# 1         corn   0.663 0.276 Inf     0.123      1.20  a    
-# 2         corn   0.921 0.283 Inf     0.366      1.48  ab   
-# 3         corn   1.732 0.336 Inf     1.074      2.39  abc  
-# 1         beans  2.123 0.375 Inf     1.388      2.86   bc  
-# 4         corn   2.390 0.413 Inf     1.581      3.20   bc  
-# 4         beans  2.699 0.458 Inf     1.801      3.60    c  
-# 2         beans  3.421 0.612 Inf     2.222      4.62    c  
-# 3         beans  3.422 0.611 Inf     2.224      4.62    c  
+cld(emmeans(m3, ~treatment), Letters = letters, max.overlaps = Inf)
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1           1.41 0.254 Inf     0.908      1.90  a    
+# 2           2.19 0.353 Inf     1.495      2.88  ab   
+# 4           2.56 0.329 Inf     1.920      3.21   b   
+# 3           2.59 0.364 Inf     1.881      3.31   b  
+
+cld(emmeans(m3, ~crop), Letters = letters, max.overlaps = Inf)
+# crop  emmean    SE  df asymp.LCL asymp.UCL .group
+# corn    1.43 0.176 Inf      1.09      1.78  a    
+# beans   2.94 0.335 Inf      2.29      3.60   b
+
+cld(emmeans(m3, ~crop*treatment), Letters = letters, max.overlaps = Inf)
+# crop  treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# corn  1          0.669 0.288 Inf     0.105      1.23  a    
+# corn  2          0.924 0.294 Inf     0.347      1.50  ab   
+# corn  3          1.741 0.346 Inf     1.063      2.42  abc  
+# beans 1          2.144 0.402 Inf     1.357      2.93   bc  
+# corn  4          2.405 0.424 Inf     1.574      3.24   bc  
+# beans 4          2.725 0.487 Inf     1.771      3.68    c  
+# beans 3          3.449 0.630 Inf     2.215      4.68    c  
+# beans 2          3.450 0.630 Inf     2.215      4.69    c  
+
+
 
 # corn 22 - beans 23
 cbent2223
 
 m10 <- glmer(to.predated ~ +
-              (1|block/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2223)
 
 m11 <- glmer(to.predated ~ treatment+
-              (1|block/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2223)
 
 m12 <- glmer(to.predated ~ treatment + crop+
-              (1|block/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2223)
 
 m13 <- glmer(to.predated ~ treatment*crop+
-              (1|block/plot_id/crop),
+              (crop|block/plot_id),
             family = binomial,
             data = cbent2223)
 anova(m10, m11, m12, m13)
-
+# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
+# m10    7 529.30 561.35 -257.65   515.30                       
+# m11   10 530.05 575.85 -255.03   510.05 5.2456  3    0.15467  
+# m12   11 528.72 579.09 -253.36   506.72 3.3351  1    0.06782 .
+# m13   14 526.26 590.37 -249.13   498.26 8.4538  3    0.03751 *
 
 hist(residuals(m13))
 summary(m13)
 check_model(m13)
 
-cbent2223_emm <- cld(emmeans(m13, ~treatment + crop), Letters = letters, max.overlaps = Inf)
+cld(emmeans(m13, ~treatment|crop), Letters = letters, max.overlaps = Inf)
+# crop = corn:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 3           1.97 0.325 Inf     1.337      2.61  a    
+# 1           2.20 0.354 Inf     1.506      2.89  a    
+# 4           2.64 0.425 Inf     1.808      3.47  a    
+# 2           2.84 0.462 Inf     1.929      3.74  a    
+# 
+# crop = beans:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1           1.03 0.272 Inf     0.497      1.56  a    
+# 4           1.63 0.312 Inf     1.022      2.25  ab   
+# 2           2.00 0.348 Inf     1.317      2.68  ab   
+# 3           2.87 0.479 Inf     1.927      3.81   b  
+
+
+cld(emmeans(m13, ~treatment*crop), Letters = letters, max.overlaps = Inf)
 # treatment crop  emmean    SE  df asymp.LCL asymp.UCL .group
-# 1         beans   1.03 0.264 Inf     0.508      1.54  a    
-# 4         beans   1.63 0.306 Inf     1.029      2.23  ab   
-# 2         beans   1.99 0.342 Inf     1.321      2.66  ab   
-# 3         corn    1.99 0.342 Inf     1.321      2.66  ab   
-# 1         corn    2.22 0.372 Inf     1.492      2.95  ab   
-# 4         corn    2.66 0.439 Inf     1.802      3.52   b   
-# 3         beans   2.86 0.476 Inf     1.925      3.79   b   
-# 2         corn    2.86 0.476 Inf     1.925      3.79   b  
+# 1         beans   1.03 0.272 Inf     0.497      1.56  a    
+# 4         beans   1.63 0.312 Inf     1.022      2.25  ab   
+# 3         corn    1.97 0.325 Inf     1.337      2.61  ab   
+# 2         beans   2.00 0.348 Inf     1.317      2.68  ab   
+# 1         corn    2.20 0.354 Inf     1.506      2.89  ab   
+# 4         corn    2.64 0.425 Inf     1.808      3.47   b   
+# 2         corn    2.84 0.462 Inf     1.929      3.74   b   
+# 3         beans   2.87 0.479 Inf     1.927      3.81   b   
 
 # plots ####
 # 21 -23
-# emmeans
-
-ggplot(cbent2122_emm, aes(treatment, emmean, color = treatment))+
-  geom_point(size = 10)+
-  facet_wrap(~crop, strip.position = 'right', ncol = 1)+
-  coord_flip()+
-  geom_errorbar(aes(x = treatment,ymin = emmean - SE, ymax = emmean + SE),
-                color = "black", alpha = 1, width = 0.2, linewidth = 1)+
-  scale_x_discrete(labels=c("1-3 DAP", "3-7 DPP", "14-28 DPP", "No CC"),
-                   limits = c("3", "4", "2", "1"))+ 
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  labs(
-    title = "Mean predation x Treatment and Crop",
-    subtitle = "Years: 2021 Corn - 2022 Soybean",
-    x = "Treatment",
-    y = "Emmeans of predation",
-    caption = "DPP: Days pre plant
-DAP: Days after plant")+
-  theme(legend.position = 'none',
-        axis.title = element_text(size = 32),
-        plot.subtitle = element_text(size = 24),
-        plot.title = element_text(size = 28),
-        # axis.line = element_line(size = 1.25),
-        # axis.ticks = element_line(size = 1.25),
-        # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 26),
-        axis.text.y = element_text(size = 26), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
-        strip.text = element_text(size = 26))+
-  geom_text(aes(x = treatment, y = 4.5,label = trimws(.group)), size = 10 , color = 'black')
-
-# proportions 
-# this one is better
-cld <- c('a', 'bc', 'ab', 'c', 'abc', 'c', 'bc', 'c')
+cld <- c('ab', 'a', 'ab', 'b',  'ab', 'b','b', 'ab')
 cbent2122_plot <- cbent2122 %>%
   mutate(crop = case_when(crop == 'corn' ~ 'Corn',
                           crop == 'beans' ~ 'Soybean')) %>%
@@ -318,6 +320,7 @@ ggplot(cbent2122_plot, aes(treatment, prop, color = treatment))+
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
         strip.text = element_text(size = 32))+
   geom_text(aes(x = treatment, y = 1,label = trimws(cld)), size = 10 , color = 'black')
+
 
 ####
 ###
