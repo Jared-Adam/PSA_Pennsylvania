@@ -402,40 +402,48 @@ tot_arth_plot <- tot_arth %>%
                            plot %in% c('501', '502', '503', '503') ~ 5))
 
 p <- glmer(value ~ trt*crop +
-             (1|block/crop), 
+             (crop|block/plot), 
            family = poisson, 
            data = tot_arth_plot)
 
 nb <- glmer.nb(value ~ trt*crop +
-            (1|block/crop),
+            (crop|block/plot),
           data = tot_arth_plot)
 
 lrtest(p, nb)
 
 
 m0 <- glmer.nb(value ~ 
-           (1|block/crop),
+           (crop|block/plot),
          data = tot_arth_plot)
 
 m1 <- glmer.nb(value ~ trt +
-                 (1|block/crop),
+                 (crop|block/plot),
                data = tot_arth_plot)
 
 m2 <- glmer.nb(value ~ trt + crop +
-                 (1|block/crop),
+                 (crop|block/plot),
                data = tot_arth_plot)
 
 m3 <- glmer.nb(value ~ trt*crop +
-                 (1|block/crop),
+                 (crop|block/plot),
                data = tot_arth_plot)
 
 
 anova(m0, m1, m2, m3)
+# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)   
+# m0    8 2631.9 2669.0 -1308.0   2615.9                        
+# m1   11 2635.7 2686.7 -1306.9   2613.7 2.1981  3   0.532329   
+# m2   12 2628.3 2683.9 -1302.2   2604.3 9.3759  1   0.002199 **
+# m3   15 2632.5 2702.0 -1301.2   2602.5 1.8784  3   0.598024   
+
 hist(residuals(m3))
 check_model(m3)
 
-bc_emm <- cld(emmeans(m3, ~ trt + crop), Letters = letters)
-
+cld(emmeans(m3, ~crop), Letters = letters)
+# crop  emmean    SE  df asymp.LCL asymp.UCL .group
+# corn   0.373 0.122 Inf     0.134     0.611  a    
+# beans  1.173 0.128 Inf     0.922     1.424   b  
 
 tot_se_df <- tot_arth %>% 
   group_by(crop) %>% 
