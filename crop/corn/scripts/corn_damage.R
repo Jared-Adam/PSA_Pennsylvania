@@ -248,7 +248,7 @@ TukeyHSD(a1)
 # facet gs
 cld_av_dmg <- avg_dam_p %>% 
   mutate(group = case_when(
-    treatment %in% c('2','3') & growth_stage %in% c('V3', 'V5') ~ 'b',
+    treatment %in% c('2','3') & growth_stage %in% c('V3') ~ 'b',
     treatment == '1' & growth_stage == 'V3' ~ 'a',
     treatment == '4' & growth_stage == 'V3' ~ 'ab',
     treatment %in% c('4','2','1') & growth_stage == 'V5' ~'a',
