@@ -14,6 +14,7 @@ library(emmeans)
 library(lmtest)
 library(nlme)
 library(multcomp)
+library(car)
 
 # data ####
 sent <- PSA_PA_Sent_prey
@@ -67,22 +68,22 @@ sent_years <- sent_years %>%
 # removed growth stage from the random effects term
 # model I am using for now 
 m0 <- glmer(to.predated ~ 
-              (growth_stage|year/block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
 
 m1 <- glmer(to.predated ~ treatment +
-              (growth_stage|year/block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
 
 m2 <- glmer(to.predated ~ treatment+growth_stage +
-              (growth_stage|year/block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
  
 m3 <- glmer(to.predated ~ treatment*growth_stage +
-              (growth_stage|year/block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years, 
             family = binomial)
 
@@ -94,50 +95,52 @@ isSingular(m3)
 check_model(m3)
 hist(residuals(m3))
 anova(m0, m1, m2, m3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
-# m0   19 950.59 1045.3 -456.29   912.59                         
-# m1   22 944.17 1053.8 -450.09   900.17 12.4150  3   0.006089 **
-# m2   24 945.39 1065.0 -448.69   897.39  2.7863  2   0.248295   
-# m3   30 955.89 1105.4 -447.95   895.89  1.4972  6   0.959682 
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# m0    4 1079.5 1099.5 -535.77   1071.5                          
+# m1    7 1076.9 1111.8 -531.47   1062.9  8.6093  3    0.03496 *  
+# m2    9 1041.8 1086.7 -511.93   1023.9 39.0870  2  3.254e-09 ***
+# m3   15 1051.5 1126.2 -510.73   1021.5  2.3972  6    0.87979    
+
+Anova(m3)
+
 summary(m3)
 r2_nakagawa(m3)
-# Conditional R2: 0.846
-# Marginal R2: 0.246
+# Conditional R2: 0.350
+# Marginal R2: 0.076
 
 cld(emmeans(m3, ~treatment), Letters = letters)
-# treatment emmean   SE  df asymp.LCL asymp.UCL .group
-# 1           2.28 1.57 Inf   -0.7950      5.36  a    
-# 2           2.69 1.57 Inf   -0.3882      5.78  ab   
-# 3           3.12 1.57 Inf    0.0321      6.21  ab   
-# 4           3.50 1.58 Inf    0.4081      6.60   b  
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          0.936 0.608 Inf   -0.2549      2.13  a    
+# 2          1.291 0.611 Inf    0.0941      2.49  ab   
+# 3          1.585 0.612 Inf    0.3848      2.79  ab   
+# 4          1.904 0.621 Inf    0.6864      3.12   b 
 
 cld(emmeans(m3, ~ growth_stage), Letters = letters)
 # growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
-# V3             0.80 0.373 Inf    0.0691      1.53  a    
-# V5             1.89 0.769 Inf    0.3827      3.40  a    
-# R3             6.01 3.732 Inf   -1.3053     13.32  a   
+# V3            0.738 0.586 Inf    -0.410      1.89  a    
+# V5            1.726 0.593 Inf     0.564      2.89   b   
+# R3            1.823 0.593 Inf     0.660      2.99   b    
 
 cld(emmeans(m3, ~treatment|growth_stage), Letters = letters)
-# growth_stage = R3:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          5.465 3.740 Inf    -1.866     12.80  a    
-# 2          5.592 3.742 Inf    -1.742     12.93  a    
-# 3          6.190 3.751 Inf    -1.162     13.54  a    
-# 4          6.791 3.763 Inf    -0.585     14.17  a    
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          1.530 0.652 Inf     0.253      2.81  a    
+# 2          1.599 0.653 Inf     0.318      2.88  a    
+# 3          1.848 0.660 Inf     0.554      3.14  a    
+# 4          2.314 0.685 Inf     0.971      3.66  a    
 # 
 # growth_stage = V3:
 #   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          0.306 0.521 Inf    -0.716      1.33  a    
-# 2          0.662 0.525 Inf    -0.367      1.69  a    
-# 3          1.039 0.524 Inf     0.012      2.07  a    
-# 4          1.194 0.537 Inf     0.142      2.25  a    
+# 1          0.303 0.635 Inf    -0.943      1.55  a    
+# 2          0.596 0.637 Inf    -0.652      1.85  a    
+# 3          0.968 0.639 Inf    -0.285      2.22  a    
+# 4          1.086 0.646 Inf    -0.180      2.35  a    
 # 
 # growth_stage = V5:
 #   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          1.076 0.806 Inf    -0.504      2.66  a    
-# 2          1.830 0.823 Inf     0.218      3.44  ab   
-# 3          2.127 0.836 Inf     0.488      3.77  ab   
-# 4          2.526 0.864 Inf     0.833      4.22   b  
+# 1          0.975 0.641 Inf    -0.282      2.23  a    
+# 2          1.678 0.656 Inf     0.393      2.96  ab   
+# 3          1.939 0.664 Inf     0.638      3.24  ab   
+# 4          2.313 0.685 Inf     0.971      3.66   b  
 
 
 
@@ -237,11 +240,11 @@ trt_new <- sent %>%
             se = sd/sqrt(n)) %>% 
   mutate_at(vars(1), factor) %>% 
   print(n= Inf)
-# treatment emmean   SE  df asymp.LCL asymp.UCL .group
-# 1           2.28 1.57 Inf   -0.7950      5.36  a    
-# 2           2.69 1.57 Inf   -0.3882      5.78  ab   
-# 3           3.12 1.57 Inf    0.0321      6.21  ab   
-# 4           3.50 1.58 Inf    0.4081      6.60   b 
+# treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          0.936 0.608 Inf   -0.2549      2.13  a    
+# 2          1.291 0.611 Inf    0.0941      2.49  ab   
+# 3          1.585 0.612 Inf    0.3848      2.79  ab   
+# 4          1.904 0.621 Inf    0.6864      3.12   b 
 ggplot(trt_new, aes(x = treatment, y = prop, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
   scale_x_discrete(labels=c("No CC", "Early", "Late", "Green"),
@@ -288,7 +291,10 @@ gs_prop <- sent %>%
             se = sd/sqrt(n)) %>% 
   mutate_at(vars(1), factor) %>% 
   print(n= Inf)
-
+# growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# V3            0.738 0.586 Inf    -0.410      1.89  a    
+# V5            1.726 0.593 Inf     0.564      2.89   b   
+# R3            1.823 0.593 Inf     0.660      2.99   b  
 ggplot(gs_prop, aes(x = growth_stage, y =  prop, fill = growth_stage))+
   geom_boxplot(alpha = 0.7)+
   scale_x_discrete(limits = c("V3", "V5", "R3"))+ 
@@ -312,8 +318,8 @@ ggplot(gs_prop, aes(x = growth_stage, y =  prop, fill = growth_stage))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   annotate("text", x = 1, y = 1, label = "a", size = 10)+
-  annotate("text", x = 2, y = 1, label = "a", size = 10)+
-  annotate("text", x = 3, y = 1, label = "a", size = 10)+
+  annotate("text", x = 2, y = 1, label = "b", size = 10)+
+  annotate("text", x = 3, y = 1, label = "b", size = 10)+
   scale_y_continuous(limits = c(0,1))
   
 # pub plots ####

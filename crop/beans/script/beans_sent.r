@@ -12,6 +12,7 @@ library(emmeans)
 library(lmtest)
 library(nlme)
 library(multcomp)
+library(car)
 
 # data ####
 beans_sent <- sent_prey_beans_all
@@ -64,22 +65,22 @@ sent_years <- sent_years %>%
   mutate_at(vars(1:5), as_factor)
 
 m0 <- glmer(to.predated ~ 
-              (0+growth_stage|block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years,
             family = binomial)
 
 m1 <- glmer(to.predated ~ treatment +
-              (0+growth_stage|block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years,
             family = binomial)
 
 m2 <- glmer(to.predated ~ treatment + growth_stage +
-              (0+growth_stage|block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years,
             family = binomial)
 
 m3 <- glmer(to.predated ~ treatment*growth_stage +
-              (growth_stage|block/plot_id),
+              (1|year/block/plot_id),
             data = sent_years,
             family = binomial)
 
@@ -97,11 +98,14 @@ ss$which.OK
 ss$llik
 
 anova(m0 , m1, m2, m3)
-# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)   
-# m0   13 477.28 536.81 -225.64   451.28                        
-# m1   16 467.68 540.94 -217.84   435.68 15.607  3   0.001365 **
-# m2   18 464.96 547.39 -214.48   428.96  6.715  2   0.034822 * 
-# m3   24 469.34 579.25 -210.67   421.34  7.616  6   0.267610  
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# m0    4 480.30 498.61 -236.15   472.30                          
+# m1    7 469.25 501.30 -227.62   455.25 17.0475  3   0.000691 ***
+# m2    9 437.56 478.78 -209.78   419.56 35.6854  2  1.782e-08 ***
+# m3   15 441.77 510.46 -205.89   411.77  7.7915  6   0.253778   
+
+Anova(m3)
+
 check_model(m3)
 binned_residuals(m3)
 hist(residuals(m3))
