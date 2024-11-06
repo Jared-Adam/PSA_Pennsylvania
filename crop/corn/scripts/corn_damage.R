@@ -13,9 +13,11 @@ library(MASS)
 library(performance)
 library(emmeans)
 library(ggpubr)
+install.packages('rempsyc')
 library(rempsyc)
 library(multcomp)
 library(car)
+library(ggResidpanel)
 # data ####
 damage_type <- PSA_PA_damage
 
@@ -119,76 +121,128 @@ dmg_sev <- new_dmg %>%
 avg_dmg <- dmg_sev %>%
   dplyr::select(treatment, year, growth_stage, block, plot_id, damage_score) 
 
-sm0 <- glmer(damage_score ~ 
-               (1|year/block/plot_id), 
-             data = avg_dmg, 
-             family = poisson)
+# test here 
+avg_dmg <- avg_dmg %>% 
+  mutate(dmg_prop = damage_score/4)
 
-sm1 <- glmer(damage_score ~ treatment +
-                  (1|year/block/plot_id), 
-                data = avg_dmg, 
-             family = poisson)
 
-sm2 <- glmer(damage_score ~ treatment + growth_stage +
-                  (1|year/block/plot_id), 
-                data = avg_dmg, 
-             family = poisson)
+btest <- glmer(dmg_prop ~ treatment*growth_stage +
+                 (1|year/block/plot_id), 
+               family = binomial,
+               data = avg_dmg)
+summary(btest)
+Anova(btest)
+cld(emmeans(btest, ~treatment*growth_stage), Letters = letters)
+# growth_stage = V3:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          -5.46 0.525 Inf     -6.49     -4.43  a    
+# 4          -5.44 0.527 Inf     -6.47     -4.41  a    
+# 3          -5.05 0.435 Inf     -5.91     -4.20  a    
+# 2          -4.47 0.324 Inf     -5.11     -3.84  a    
+# 
+# growth_stage = V5:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 2          -4.95 0.416 Inf     -5.77     -4.14  a    
+# 4          -4.48 0.328 Inf     -5.12     -3.84  a    
+# 1          -4.15 0.276 Inf     -4.69     -3.61  a    
+# 3          -2.72 0.145 Inf     -3.00     -2.43   b 
 
-sm3 <- glmer(damage_score ~ treatment*growth_stage +
-                  (1|year/block/plot_id), 
-                data = avg_dmg, 
-                family = poisson)
+cld(emmeans(btest, ~growth_stage), Letters = letters)
 
-rePCA(sm3)
-isSingular(sm3)
-anova(sm0, sm1, sm2, sm3)
+# new plot (11/6/2024)
+
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
+
+avg_dmg %>% 
+  group_by(treatment, growth_stage, plot_id) %>% 
+  summarise(mean = mean(dmg_prop)) %>% 
+  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
+                             growth_stage == 'V3' & treatment == '2' ~ 'a',
+                             growth_stage == 'V3' & treatment == '3' ~ 'a',
+                             growth_stage == 'V3' & treatment == '4' ~ 'a',
+                             growth_stage == 'V5' & treatment == '1' ~ 'a',
+                             growth_stage == 'V5' & treatment == '2' ~ 'a',
+                             growth_stage == 'V5' & treatment == '3' ~ 'b',
+                             growth_stage == 'V5' & treatment == '4' ~ 'a')
+         ) %>% 
+  ggplot(aes(x = treatment, y = mean, fill = treatment))+
+  geom_boxplot(alpha = 0.7)+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs(title = 'Corn: Average Damage Score x Treatment and Growth Stage',
+       subtitle = "Years: 2021-2023",
+       x = 'Treatment termination',
+       y = 'Average damage')+
+  theme(legend.position = "none",
+        legend.text = element_text(size = 24),
+        legend.title = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_line(color = "darkgrey"),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 24))+
+  guides(fill = guide_legend(title = 'Growth Stage'))+
+  geom_text(aes(x = treatment, y = 0.4, label = trimws(letters)), size = 10, color = "black")
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+# sm0 <- glmer(damage_score ~ 
+#                (1|year/block/plot_id), 
+#              data = avg_dmg, 
+#              family = poisson)
+# 
+# sm1 <- glmer(damage_score ~ treatment +
+#                   (1|year/block/plot_id), 
+#                 data = avg_dmg, 
+#              family = poisson)
+# 
+# sm2 <- glmer(damage_score ~ treatment + growth_stage +
+#                   (1|year/block/plot_id), 
+#                 data = avg_dmg, 
+#              family = poisson)
+# 
+# sm3 <- glmer(damage_score ~ treatment*growth_stage +
+#                   (1|year/block/plot_id), 
+#                 data = avg_dmg, 
+#                 family = poisson)
+# 
+# rePCA(sm3)
+# isSingular(sm3)
+# anova(sm0, sm1, sm2, sm3)
 # npar   AIC   BIC  logLik deviance   Chisq Df Pr(>Chisq)    
 # sm0    7 13953 14001 -6969.4    13939                          
 # sm1   10 13884 13952 -6931.8    13864 75.3390  3  3.065e-16 ***
 # sm2   11 13884 13959 -6931.2    13862  1.1879  1     0.2757    
 # sm3   14 13864 13960 -6918.2    13836 25.9585  3  9.730e-06 ***
-hist(residuals(sm3))
-summary(sm3)
-binned_residuals(sm3)
-check_model(sm3)
-r2_nakagawa(sm3)
+# hist(residuals(sm3))
+# summary(sm3)
+# binned_residuals(sm3)
+# check_model(sm3)
+# r2_nakagawa(sm3)
 # Conditional R2: 0.100
 # Marginal R2: 0.029
 
-cld(emmeans(sm3, ~treatment|growth_stage), Letters = letters)
-
-# growth_stage = V3:
-#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
-# 1         -0.3168 0.0787 Inf    -0.471  -0.16253  a    
-# 4         -0.2246 0.0779 Inf    -0.377  -0.07192  ab   
-# 2         -0.1464 0.0771 Inf    -0.298   0.00467   b   
-# 3         -0.1011 0.0767 Inf    -0.251   0.04930   b   
+# cld(emmeans(sm3, ~treatment|growth_stage), Letters = letters)
 # 
-# growth_stage = V5:
-#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
-# 4         -0.4917 0.0806 Inf    -0.650  -0.33370  a    
-# 2         -0.4710 0.0807 Inf    -0.629  -0.31294  a    
-# 1         -0.4444 0.0798 Inf    -0.601  -0.28800  a    
-# 3         -0.0779 0.0770 Inf    -0.229   0.07295   b   
-
-# d_s.table <- as.data.frame(summary(sm3)$coefficients)
-# d_s.table <-cbind(row.names(d_s.table), d_s.table)
-# d_s.table <- as_tibble(d_s.table) %>% 
-#   mutate(`row.names(d_s.table)` = case_when(`row.names(d_s.table)` == 'treatment2' ~ '14-28 DPP',
-#                           `row.names(d_s.table)` == 'treatment4' ~ '3-7 DPP',
-#                           `row.names(d_s.table)` == 'treatment3' ~ '1-3 DAP',
-#                           `row.names(d_s.table)` == 'growth_stageV5' ~ 'V5',
-#                           `row.names(d_s.table)` == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-#                           `row.names(d_s.table)` == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-#                           `row.names(d_s.table)` == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-#                           .default = as.character(`row.names(d_s.table)`)))
-# names(d_s.table) <- c("Term", "B", "SE", "t", "p")
-# d_s.table <- flextable(d_s.table)
-# d_s.table <- autofit(d_s.table)
-# theme_zebra(d_s.table) %>% 
-#   save_as_docx(path = 'damage_coef_summarytable.docx')
-
-
 
 # avg df plot 
 
@@ -199,52 +253,52 @@ avg_dam_p <- dmg_sev %>%
             n = n(), 
             se = sd/sqrt(n))
 
-trt_ord <- c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP")
-avg_for_paper <- dmg_sev %>% 
-  mutate(treatment = case_when(treatment == '1' ~ 'No CC',
-                               treatment == '2' ~ '14-28 DPP',
-                               treatment == '3' ~ '1-3 DAP',
-                               treatment == '4' ~ '3-7 DPP')) %>% 
-  mutate(treatment = factor(treatment, levels = trt_ord)) %>% 
-  group_by(treatment, growth_stage) %>% 
-  summarise(mean = mean(damage_score),
-            sd = sd(damage_score), 
-            n = n(), 
-            se = sd/ sqrt(n))
-names(avg_for_paper) <- c("Treatment", "Growth Stage", "Mean","Sd", "n", "SE")
-avg_dmg_table <- flextable(avg_for_paper)
-avg_dmg_table <- autofit(avg_dmg_table)
-theme_zebra(avg_dmg_table) %>% 
-  save_as_docx(path = 'average.dmg.trt.gs.docx')
-
-
-
-ggplot(avg_dam_p, aes(x = treatment, y = mean))+
-  geom_bar(stat= 'identity', position = 'dodge')+
-  facet_wrap(~year)+
-  geom_errorbar(aes(ymin = mean-se, ymax = mean+se))
-
-# sum df plot
-sum_dmg <- dmg_sev %>% 
-  group_by(treatment, year, growth_stage, plot_id) %>% 
-  summarise(sum = sum(damage_score))
-
-a1 <- aov(sum ~ year , data = sum_dmg)
-TukeyHSD(a1)  
-
-# dmg severity plot ####
-#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
-# 1         -0.3168 0.0787 Inf    -0.471  -0.16253  a    
-# 4         -0.2246 0.0779 Inf    -0.377  -0.07192  ab   
-# 2         -0.1464 0.0771 Inf    -0.298   0.00467   b   
-# 3         -0.1011 0.0767 Inf    -0.251   0.04930   b   
+# trt_ord <- c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP")
+# avg_for_paper <- dmg_sev %>% 
+#   mutate(treatment = case_when(treatment == '1' ~ 'No CC',
+#                                treatment == '2' ~ '14-28 DPP',
+#                                treatment == '3' ~ '1-3 DAP',
+#                                treatment == '4' ~ '3-7 DPP')) %>% 
+#   mutate(treatment = factor(treatment, levels = trt_ord)) %>% 
+#   group_by(treatment, growth_stage) %>% 
+#   summarise(mean = mean(damage_score),
+#             sd = sd(damage_score), 
+#             n = n(), 
+#             se = sd/ sqrt(n))
+# names(avg_for_paper) <- c("Treatment", "Growth Stage", "Mean","Sd", "n", "SE")
+# avg_dmg_table <- flextable(avg_for_paper)
+# avg_dmg_table <- autofit(avg_dmg_table)
+# theme_zebra(avg_dmg_table) %>% 
+#   save_as_docx(path = 'average.dmg.trt.gs.docx')
 # 
-# growth_stage = V5:
-#   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
-# 4         -0.4917 0.0806 Inf    -0.650  -0.33370  a    
-# 2         -0.4710 0.0807 Inf    -0.629  -0.31294  a    
-# 1         -0.4444 0.0798 Inf    -0.601  -0.28800  a    
-# 3         -0.0779 0.0770 Inf    -0.229   0.07295   b   
+# 
+# 
+# ggplot(avg_dam_p, aes(x = treatment, y = mean))+
+#   geom_bar(stat= 'identity', position = 'dodge')+
+#   facet_wrap(~year)+
+#   geom_errorbar(aes(ymin = mean-se, ymax = mean+se))
+# 
+# # sum df plot
+# sum_dmg <- dmg_sev %>% 
+#   group_by(treatment, year, growth_stage, plot_id) %>% 
+#   summarise(sum = sum(damage_score))
+# 
+# a1 <- aov(sum ~ year , data = sum_dmg)
+# TukeyHSD(a1)  
+# 
+# # dmg severity plot ####
+# #   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
+# # 1         -0.3168 0.0787 Inf    -0.471  -0.16253  a    
+# # 4         -0.2246 0.0779 Inf    -0.377  -0.07192  ab   
+# # 2         -0.1464 0.0771 Inf    -0.298   0.00467   b   
+# # 3         -0.1011 0.0767 Inf    -0.251   0.04930   b   
+# # 
+# # growth_stage = V5:
+# #   treatment  emmean     SE  df asymp.LCL asymp.UCL .group
+# # 4         -0.4917 0.0806 Inf    -0.650  -0.33370  a    
+# # 2         -0.4710 0.0807 Inf    -0.629  -0.31294  a    
+# # 1         -0.4444 0.0798 Inf    -0.601  -0.28800  a    
+# # 3         -0.0779 0.0770 Inf    -0.229   0.07295   b   
 
 # facet gs
 cld_av_dmg <- avg_dam_p %>% 
@@ -331,57 +385,57 @@ DAP : Days after plant")+
 
 
 
-sum_dmg
+# sum_dmg
+# 
+# year.labs <- c("2021  a", "2022  b", "2023  c")
+# names(year.labs) <- c("2021", "2022", "2023")
+# 
+# ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
+#   geom_boxplot(alpha = 0.7)+
+#   facet_wrap(~year, labeller = labeller(year = year.labs))+
+#   geom_point(size = 2)+
+#   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+#   scale_x_discrete(limits = c("1", "2", "4", "3"),
+#                    labels=c("No CC", "Early", "Late", "Green"))+
+#   labs(title = 'Corn: Total Damage Score x Treatment and Year',
+#        x = 'Termination termination',
+#        y = 'Total damage score per plot (0-4)')+
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(size=26),
+#         axis.text.y = element_text(size = 26),
+#         axis.title = element_text(size = 32),
+#         plot.title = element_text(size = 28),
+#         plot.subtitle = element_text(size = 24), 
+#         panel.grid.major.y = element_line(color = "darkgrey"),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.text = element_text(size = 32))
 
-year.labs <- c("2021  a", "2022  b", "2023  c")
-names(year.labs) <- c("2021", "2022", "2023")
-
-ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
-  geom_boxplot(alpha = 0.7)+
-  facet_wrap(~year, labeller = labeller(year = year.labs))+
-  geom_point(size = 2)+
-  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "Early", "Late", "Green"))+
-  labs(title = 'Corn: Total Damage Score x Treatment and Year',
-       x = 'Termination termination',
-       y = 'Total damage score per plot (0-4)')+
-  theme(legend.position = "none",
-        axis.text.x = element_text(size=26),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size = 32))
-
-
-
-ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
-  geom_violin(alpha = 0.5, fill = 'black')+
-  geom_boxplot(width = 0.1, fill = 'white')+
-  facet_wrap(~year, labeller = labeller(year = year.labs))+
-  geom_point()+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
-  labs(title = 'Corn: Total Damage Score x Treatment and Year',
-       x = 'Treatment',
-       y = 'Total Damage Score x Plot (0-4)',
-       caption = "DPP: Days pre plant
-DAP : Days after plant")+
-  theme(legend.position = "none",
-        axis.text.x = element_text(size=20),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size = 24),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+# 
+# 
+# ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
+#   geom_violin(alpha = 0.5, fill = 'black')+
+#   geom_boxplot(width = 0.1, fill = 'white')+
+#   facet_wrap(~year, labeller = labeller(year = year.labs))+
+#   geom_point()+
+#   scale_x_discrete(limits = c("1", "2", "4", "3"),
+#                    labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
+#   labs(title = 'Corn: Total Damage Score x Treatment and Year',
+#        x = 'Treatment',
+#        y = 'Total Damage Score x Plot (0-4)',
+#        caption = "DPP: Days pre plant
+# DAP : Days after plant")+
+#   theme(legend.position = "none",
+#         axis.text.x = element_text(size=20),
+#         axis.text.y = element_text(size = 26),
+#         axis.title = element_text(size = 32),
+#         plot.title = element_text(size = 28),
+#         plot.subtitle = element_text(size = 24), 
+#         panel.grid.major.y = element_line(color = "darkgrey"),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         strip.text = element_text(size = 24),
+#         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 
 # slug models and plot ####
@@ -633,7 +687,7 @@ ggplot(raw_bcw, aes(x = treatment, y = mean, fill = treatment))+
     title = "Corn: Black Cutworm Damage x Treatment",
     subtitle = "Years: 2021-2023",
     x = "Treatment termination",
-    y = "Average damage"
+    y = "Average damage incidence"
   )+
   theme(legend.position = "none",
         legend.text = element_text(size = 24),
@@ -916,7 +970,7 @@ ggplot(raw_mult, aes(color = treatment))+
     title = "Corn: Multiple Damage x Treatment",
     subtitle = "Years: 2021-2023",
     x = "Treatment termination",
-    y = "Average damage"
+    y = "Average damage incidence"
   )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
@@ -931,14 +985,14 @@ ggplot(raw_mult, aes(color = treatment))+
         panel.grid.major.y = element_line(color = "darkgrey"),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))+
-  geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+  # geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
 
 
 
 ggplot(raw_mult, aes(x = treatment, y = mean, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
-  facet_wrap(~growth_stage)+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
@@ -946,7 +1000,7 @@ ggplot(raw_mult, aes(x = treatment, y = mean, fill = treatment))+
     title = "Corn: Multiple Damage x Treatment",
     subtitle = "Years: 2021-2023",
     x = "Treatment termination",
-    y = "Average damage"
+    y = "Average damage incidence"
   )+
   theme(legend.position = "none",
         legend.text = element_text(size = 24),
@@ -964,8 +1018,7 @@ ggplot(raw_mult, aes(x = treatment, y = mean, fill = treatment))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   guides(fill = guide_legend(title = 'Growth Stage'))+
-  scale_y_continuous(limits = c(0,.2))+
-  geom_text(aes(x = treatment, y = .18, label = trimws(letters)), size = 10, color = "black")
+  scale_y_continuous(limits = c(0,.2))
 
 
 
