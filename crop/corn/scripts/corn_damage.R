@@ -15,6 +15,7 @@ library(emmeans)
 library(ggpubr)
 library(rempsyc)
 library(multcomp)
+library(car)
 # data ####
 damage_type <- PSA_PA_damage
 
@@ -119,22 +120,22 @@ avg_dmg <- dmg_sev %>%
   dplyr::select(treatment, year, growth_stage, block, plot_id, damage_score) 
 
 sm0 <- glmer(damage_score ~ 
-               (growth_stage|year/block), 
+               (1|year/block/plot_id), 
              data = avg_dmg, 
              family = poisson)
 
 sm1 <- glmer(damage_score ~ treatment +
-                  (growth_stage|year/block), 
+                  (1|year/block/plot_id), 
                 data = avg_dmg, 
              family = poisson)
 
 sm2 <- glmer(damage_score ~ treatment + growth_stage +
-                  (growth_stage|year/block), 
+                  (1|year/block/plot_id), 
                 data = avg_dmg, 
              family = poisson)
 
 sm3 <- glmer(damage_score ~ treatment*growth_stage +
-                  (growth_stage|year/block), 
+                  (1|year/block/plot_id), 
                 data = avg_dmg, 
                 family = poisson)
 
@@ -390,29 +391,29 @@ slug_model <- new_dmg %>%
 unique(slug_model$treatment)
 
 m0 <- glmer(s ~ +
-        (growth_stage|year/block/plot_id), data = slug_model,
+        (1|year/block/plot_id), data = slug_model,
       family = binomial)
 
 m1 <- glmer(s ~ treatment +
-              (growth_stage|year/block/plot_id), data = slug_model,
+              (1|year/block/plot_id), data = slug_model,
             family = binomial)
 
 m2 <- glmer(s ~ treatment+growth_stage +
-              (growth_stage|year/block/plot_id), data = slug_model,
+              (1|year/block/plot_id), data = slug_model,
             family = binomial)
 
 m3 <- glmer(s ~ treatment*growth_stage +
-              (growth_stage|year/block/plot_id), data = slug_model,
+              (1|year/block/plot_id), data = slug_model,
             family = binomial)
 
 rePCA(m3)
 
 anova(m0,m1,m2,m3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)  
-# m0   10 7056.3 7124.4 -3518.1   7036.3                        
-# m1   13 7061.1 7149.7 -3517.6   7035.1  1.1777  3    0.75835  
-# m2   14 7063.0 7158.4 -3517.5   7035.0  0.1050  1    0.74591  
-# m3   17 7058.6 7174.4 -3512.3   7024.6 10.4293  3    0.01525 *
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# m0    4 8003.1 8030.3 -3997.5   7995.1                          
+# m1    7 8007.7 8055.4 -3996.8   7993.7  1.4304  3     0.6984    
+# m2    8 7958.6 8013.1 -3971.3   7942.6 51.0817  1  8.860e-13 ***
+# m3   11 7923.7 7998.7 -3950.9   7901.7 40.8481  3  7.043e-09 ***
 summary(m3)
 res <- residuals(m3)
 qqline(res)
@@ -420,52 +421,44 @@ plot(fitted(m3), res)
 hist(residuals(m3))
 plot(density(res))
 
-cld(emmeans(m3, ~treatment|growth_stage), Letters = letters)
+cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
+# growth_stage = V3:
+#   treatment  prob    SE  df asymp.LCL asymp.UCL .group
+# 1         0.466 0.128 Inf     0.242     0.706  a    
+# 3         0.508 0.129 Inf     0.273     0.739  a    
+# 4         0.537 0.128 Inf     0.297     0.761  a    
+# 2         0.609 0.123 Inf     0.362     0.811  a    
+# 
+# growth_stage = V5:
+#   treatment  prob    SE  df asymp.LCL asymp.UCL .group
+# 4         0.358 0.119 Inf     0.169     0.605  a    
+# 2         0.409 0.125 Inf     0.201     0.656  a    
+# 1         0.467 0.128 Inf     0.242     0.706  a    
+# 3         0.472 0.128 Inf     0.246     0.710  a    
 
 
-# sl.table <- as.data.frame(summary(m3)$coefficients)
-# #CI <- confint(m3)
-# sl.table <-cbind(row.names(sl.table), sl.table)
-# names(sl.table) <- c("Term", "B", "SE", "t", "p")
-# sl.table <- as_tibble(sl.table) %>% 
-#   mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
-#          Term == 'treatment4' ~ '3-7 DPP',
-#          Term == 'treatment3' ~ '1-3 DAP',
-#          Term == 'growth_stageV5' ~ 'V5',
-#          Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-#          Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-#          Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-#          .default = as.character(Term)))
-# sl.table <- flextable(sl.table)
-# sl.table <- autofit(sl.table)
-# sl.table <- add_header_lines(sl.table,
-#                               values = 'Slug: Summary')
-# theme_zebra(sl.table) %>% 
-#   save_as_docx(path = 'slug_summary_table.docx')
+
+cld(emmeans(m3, ~growth_stage, type = 'response'), Letters = letters)
+# growth_stage  prob    SE  df asymp.LCL asymp.UCL .group
+# V5           0.426 0.120 Inf     0.220     0.661  a    
+# V3           0.531 0.123 Inf     0.301     0.748   b 
+
+
+cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
+# treatment  prob    SE  df asymp.LCL asymp.UCL .group
+# 4         0.446 0.127 Inf     0.227     0.687  a    
+# 1         0.467 0.127 Inf     0.243     0.705  a    
+# 3         0.490 0.128 Inf     0.261     0.724  a    
+# 2         0.510 0.128 Inf     0.276     0.740  a  
+
 
 raw_slug <- slug_model %>% 
-  group_by(growth_stage, treatment) %>% 
+  group_by(growth_stage, treatment, plot_id) %>% 
   summarise(mean = mean(s),
             sd = sd(s), 
             n = n(), 
             se = sd/sqrt(n))
 
-# growth_stage  mean    sd     n      se
-# <fct>        <dbl> <dbl> <int>   <dbl>
-#   1 V3           0.601 0.490  3388 0.00841
-# 2 V5           0.531 0.499  3345 0.00863
-
-
-# growth_stage treatment  mean    sd     n     se
-# <fct>        <fct>     <dbl> <dbl> <int>  <dbl>
-#   1 V3           1         0.525 0.500   859 0.0170
-# 2 V3           2         0.681 0.466   857 0.0159
-# 3 V3           3         0.574 0.495   836 0.0171
-# 4 V3           4         0.624 0.485   836 0.0168
-# 5 V5           1         0.524 0.500   863 0.0170
-# 6 V5           2         0.558 0.497   828 0.0173
-# 7 V5           3         0.551 0.498   817 0.0174
-# 8 V5           4         0.491 0.500   837 0.0173
 
 ggplot(raw_slug, aes(color = treatment))+
   geom_point(aes(x = treatment, y = mean), size = 10,
@@ -480,7 +473,7 @@ ggplot(raw_slug, aes(color = treatment))+
     title = "Corn: Slug Damage x Treatment",
     subtitle = "Years: 2021-2023",
     x = "Treatment termination",
-    y = "Average damage"
+    y = "Average damage incidence"
   )+
   theme(legend.position = 'none',
         axis.title = element_text(size = 32),
@@ -499,25 +492,29 @@ ggplot(raw_slug, aes(color = treatment))+
 
 
 
-test_slug <- slug_model %>% 
-  group_by(growth_stage, treatment, plot_id) %>% 
-  summarise(mean = mean(s),
-            sd = sd(s), 
-            n = n(), 
-            se = sd/sqrt(n))
+# test_slug <- slug_model %>% 
+#   group_by(growth_stage, treatment, plot_id) %>% 
+#   summarise(mean = mean(s),
+#             sd = sd(s), 
+#             n = n(), 
+#             se = sd/sqrt(n))
 
-ggplot(test_slug, aes(x = treatment, y = mean,fill = growth_stage))+
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
+
+ggplot(raw_slug, aes(x = treatment, y = mean, fill = treatment))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_boxplot(alpha = 0.7)+
-  scale_fill_manual(values = c("#E7298A", "#1B9E77"))+
+  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+ 
   labs(
     title = "Corn: Slug Damage x Treatment",
     subtitle = "Years: 2021-2023",
     x = "Treatment termination",
-    y = "Average damage"
+    y = "Average damage incidence"
   )+
-  theme(legend.position = "bottom",
+  theme(legend.position = "none",
         legend.text = element_text(size = 24),
         legend.title = element_text(size = 24),
         axis.title = element_text(size = 32),
@@ -543,69 +540,38 @@ bcw_model <- new_dmg %>%
 unique(bcw_model$treatment)
 
 bm0 <- glmer(bcw ~ +
-              (growth_stage|year/block/plot_id), data = bcw_model,
+              (1|year/block/plot_id), data = bcw_model,
             family = binomial)
 
 bm1 <- glmer(bcw ~ treatment +
-              (growth_stage|year/block/plot_id), data = bcw_model,
+              (1|year/block/plot_id), data = bcw_model,
             family = binomial)
 
 bm2 <- glmer(bcw ~ treatment+growth_stage +
-              (growth_stage|year/block/plot_id), data = bcw_model,
+              (1|year/block/plot_id), data = bcw_model,
             family = binomial)
 
 bm3 <- glmer(bcw ~ treatment*growth_stage +
-              (growth_stage|year/block/plot_id), data = bcw_model,
+              (1|year/block/plot_id), data = bcw_model,
             family = binomial)
 
 anova(bm0, bm1, bm2, bm3)
-# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
-# bm0   10 2097.9 2166.1 -1039.0   2077.9                       
-# bm1   13 2096.8 2185.3 -1035.4   2070.8 7.1947  3    0.06594 .
-# bm2   14 2097.6 2193.0 -1034.8   2069.6 1.1464  1    0.28431  
-# bm3   17 2099.5 2215.3 -1032.8   2065.5 4.1081  3    0.25003  
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# bm0    4 2200.7 2228.0 -1096.4   2192.7                          
+# bm1    7 2199.1 2246.8 -1092.5   2185.1  7.6446  3    0.05396 .  
+# bm2    8 2138.0 2192.6 -1061.0   2122.0 63.0383  1  2.027e-15 ***
+# bm3   11 2140.3 2215.2 -1059.2   2118.3  3.7491  3    0.28987  
 
 summary(bm3)
 hist(residuals(bm3))
 resb <- residuals(bm3)
 qqnorm(resb)
 r2_nakagawa(bm3)
-cld(emmeans(bm3, ~treatment|growth_stage), Letters = letters)
-# growth_stage = V3:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 4          -3.82 0.816 Inf     -5.42     -2.22  a    
-# 2          -3.11 0.795 Inf     -4.67     -1.55  ab   
-# 3          -2.81 0.791 Inf     -4.36     -1.25  ab   
-# 1          -2.69 0.792 Inf     -4.24     -1.14   b   
-# 
-# growth_stage = V5:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 2          -4.28 0.434 Inf     -5.13     -3.43  a    
-# 4          -4.03 0.410 Inf     -4.83     -3.23  a    
-# 1          -3.89 0.407 Inf     -4.68     -3.09  a    
-# 3          -3.44 0.388 Inf     -4.20     -2.68  a   
 
-# bcw.table <- as.data.frame(summary(bm3)$coefficients)
-# #CI <- confint(m3)
-# bcw.table <-cbind(row.names(bcw.table), bcw.table)
-# names(bcw.table) <- c("Term", "B", "SE", "t", "p")
-# bcw.table <- as_tibble(bcw.table) %>% 
-#   mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
-#                           Term == 'treatment4' ~ '3-7 DPP',
-#                           Term == 'treatment3' ~ '1-3 DAP',
-#                           Term == 'growth_stageV5' ~ 'V5',
-#                           Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-#                           Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-#                           Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-#                           .default = as.character(Term)))
-# bcw.table <- flextable(bcw.table)
-# bcw.table <- autofit(bcw.table)
-# bcw.table <- add_header_lines(bcw.table,
-#                                values = 'Black Cutworm: Summary')
-# theme_zebra(bcw.table) %>% 
-#   save_as_docx(path = 'bcw_summary_table.docx')
-
-
+cld(emmeans(bm3, ~growth_stage), Letters = letters)
+# growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# V5            -3.88 0.540 Inf     -4.94     -2.82  a    
+# V3            -2.84 0.532 Inf     -3.88     -1.79   b   
 
 
 
@@ -617,12 +583,13 @@ raw_bcw <- bcw_model %>%
   summarise(mean = mean(bcw),
             sd = sd(bcw), 
             n = n(), 
-            se = sd/sqrt(n)) %>%
-  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'b',
-                             growth_stage == 'V3' & treatment == '2' ~ 'ab',
-                             growth_stage == 'V3' & treatment == '3' ~ 'ab',
-                             growth_stage == 'V3' & treatment == '4' ~ 'a'))
-
+            se = sd/sqrt(n))
+# %>%
+#   mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'b',
+#                              growth_stage == 'V3' & treatment == '2' ~ 'ab',
+#                              growth_stage == 'V3' & treatment == '3' ~ 'ab',
+#                              growth_stage == 'V3' & treatment == '4' ~ 'a'))
+# 
 
 ggplot(raw_bcw, aes(color = treatment))+
   geom_point(aes(x = treatment, y = mean), size = 10,
@@ -657,7 +624,7 @@ ggplot(raw_bcw, aes(color = treatment))+
 
 
 ggplot(raw_bcw, aes(x = treatment, y = mean, fill = treatment))+
-  facet_wrap(~growth_stage)+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_boxplot(alpha = 0.7)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
@@ -684,8 +651,7 @@ ggplot(raw_bcw, aes(x = treatment, y = mean, fill = treatment))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   guides(fill = guide_legend(title = 'Growth Stage'))+
-  scale_y_continuous(limits = c(0,.15))+
-  geom_text(aes(label = letters, y = 0.14), size = 10)
+  scale_y_continuous(limits = c(0,.15))
 
 
 
@@ -699,19 +665,19 @@ taw_model <- new_dmg %>%
 unique(bcw_model$treatment)
 
 tm0 <- glmer(taw ~ +
-               (growth_stage|year/block/plot_id), data = taw_model,
+               (1|year/block/plot_id), data = taw_model,
              family = binomial)
 
 tm1 <- glmer(taw ~ treatment +
-               (growth_stage|year/block/plot_id), data = taw_model,
+               (1|year/block/plot_id), data = taw_model,
              family = binomial)
 
 tm2 <- glmer(taw ~ treatment+growth_stage +
-               (growth_stage|year/block/plot_id), data = taw_model,
+               (1|year/block/plot_id), data = taw_model,
              family = binomial)
 
 tm3 <- glmer(taw ~ treatment*growth_stage +
-               (growth_stage|year/block/plot_id), data = taw_model,
+               (1|year/block/plot_id), data = taw_model,
              family = binomial)
 
 anova(tm0, tm1, tm2, tm3)
@@ -822,44 +788,25 @@ sb_model <- new_dmg %>%
 unique(bcw_model$treatment)
 
 sbm0 <- glmer(sb ~ +
-               (growth_stage|year/block/plot_id), data = sb_model,
+               (1|year/block/plot_id), data = sb_model,
              family = binomial)
 
 sbm1 <- glmer(sb ~ treatment +
-               (growth_stage|year/block/plot_id), data = sb_model,
+               (1|year/block/plot_id), data = sb_model,
              family = binomial)
 
 sbm2 <- glmer(sb ~ treatment+growth_stage +
-               (growth_stage|year/block/plot_id), data = sb_model,
+               (1|year/block/plot_id), data = sb_model,
              family = binomial)
 
 sbm3 <- glmer(sb ~ treatment*growth_stage +
-               (growth_stage|year/block/plot_id), data = sb_model,
+               (1|year/block/plot_id), data = sb_model,
              family = binomial)
 
 anova(sbm0, sbm1, sbm2, sbm3)
 summary(sbm3)
 r2_nakagawa(sbm3)
 cld(emmeans(sbm3, ~treatment|growth_stage), Letters = letters)
-
-
-
-
-
-sb_mult <- sb_model %>% 
-  group_by(growth_stage, treatment, plot_id) %>% 
-  summarise(mean = mean(sb),
-            sd = sd(sb), 
-            n = n(), 
-            se = sd/sqrt(n)) %>%
-  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
-                             growth_stage == 'V3' & treatment == '2' ~ 'a',
-                             growth_stage == 'V3' & treatment == '4' ~ 'a',
-                             growth_stage == 'V3' & treatment == '3' ~ 'b',
-                             growth_stage == 'V5' & treatment == '1' ~ 'a',
-                             growth_stage == 'V5' & treatment == '2' ~ 'a',
-                             growth_stage == 'V5' & treatment == '4' ~ 'a',
-                             growth_stage == 'V5' & treatment == '3' ~ 'b'))
 
 
 ggplot(sb_mult, aes(x = treatment, y = mean, fill = treatment))+
@@ -903,29 +850,28 @@ mult_model <- new_dmg %>%
 unique(bcw_model$treatment)
 
 mm0 <- glmer(multiple ~ +
-                (growth_stage|year/block/plot_id), data = mult_model,
+                (1|year/block/plot_id), data = mult_model,
               family = binomial)
 
 mm1 <- glmer(multiple ~ treatment +
-                (growth_stage|year/block/plot_id), data = mult_model,
+                (1|year/block/plot_id), data = mult_model,
               family = binomial)
 
 mm2 <- glmer(multiple ~ treatment+growth_stage +
-                (growth_stage|year/block/plot_id), data = mult_model,
+                (1|year/block/plot_id), data = mult_model,
               family = binomial)
 
 mm3 <- glmer(multiple ~ treatment*growth_stage +
-                (growth_stage|year/block/plot_id), data = mult_model,
+                (1|year/block/plot_id), data = mult_model,
               family = binomial)
 
 isSingular(mm3)
 anova(mm0, mm1, mm2, mm3)
 # npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# mm0   10 2543.1 2611.3 -1261.5   2523.1                          
-# mm1   13 2526.5 2615.1 -1250.3   2500.5 22.5729  3  4.957e-05 ***
-# mm2   14 2526.3 2621.8 -1249.2   2498.3  2.1844  1     0.1394    
-# mm3   17 2529.6 2645.4 -1247.8   2495.6  2.7929  3     0.4247
-
+# mm0    4 2609.4 2636.7 -1300.7   2601.4                          
+# mm1    7 2593.3 2641.0 -1289.7   2579.3 22.0783  3  6.283e-05 ***
+# mm2    8 2582.0 2636.5 -1283.0   2566.0 13.3227  1  0.0002622 ***
+# mm3   11 2583.3 2658.3 -1280.7   2561.3  4.6563  3  0.1987644 
 
 summary(mm3)
 hist(residuals(mm3))
@@ -934,47 +880,15 @@ qqnorm(resmm)
 r2_nakagawa(mm3)
 cld(emmeans(mm3, ~treatment), Letters = letters)
 # treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          -3.88 0.294 Inf     -4.45     -3.30  a    
-# 4          -3.46 0.275 Inf     -4.00     -2.92  a    
-# 2          -3.40 0.275 Inf     -3.94     -2.86  a    
-# 3          -2.47 0.253 Inf     -2.97     -1.98   b   
+# 1          -3.69 0.301 Inf     -4.28     -3.10  a    
+# 4          -3.29 0.285 Inf     -3.85     -2.73  a    
+# 2          -3.22 0.283 Inf     -3.77     -2.66  a    
+# 3          -2.34 0.268 Inf     -2.86     -1.81   b   
 
-cld(emmeans(mm3, ~treatment|growth_stage), Letters = letters)
-# growth_stage = V3:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          -3.35 0.371 Inf     -4.08     -2.62  a    
-# 2          -3.08 0.359 Inf     -3.78     -2.38  a    
-# 4          -3.06 0.359 Inf     -3.76     -2.36  a    
-# 3          -2.29 0.341 Inf     -2.96     -1.62   b   
-# 
-# growth_stage = V5:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          -4.48 0.421 Inf     -5.30     -3.65  a    
-# 4          -3.95 0.383 Inf     -4.70     -3.20  a    
-# 2          -3.85 0.383 Inf     -4.60     -3.10  a    
-# 3          -2.66 0.328 Inf     -3.30     -2.02   b   
-
-
-# mult.table <- as.data.frame(summary(mm3)$coefficients)
-# #CI <- confint(m3)
-# mult.table <-cbind(row.names(mult.table), mult.table)
-# names(mult.table) <- c("Term", "B", "SE", "t", "p")
-# mult.table <- as_tibble(mult.table) %>% 
-#   mutate(Term = case_when(Term == 'treatment2' ~ '14-28 DPP',
-#                           Term == 'treatment4' ~ '3-7 DPP',
-#                           Term == 'treatment3' ~ '1-3 DAP',
-#                           Term == 'growth_stageV5' ~ 'V5',
-#                           Term == 'treatment2:growth_stageV5' ~ '14-28 DPP:V5',
-#                           Term == 'treatment3:growth_stageV5' ~ '1-3 DAP:V5',
-#                           Term == 'treatment4:growth_stageV5' ~ '3-7 DPP:V5',
-#                           .default = as.character(Term)))
-# mult.table <- flextable(mult.table)
-# mult.table <- autofit(mult.table)
-# mult.table <- add_header_lines(mult.table,
-#                               values = 'Multiple Pest: Summary')
-# theme_zebra(mult.table) %>% 
-#   save_as_docx(path = 'mult_summary_table.docx')
-
+cld(emmeans(mm3, ~growth_stage), Letters = letters)
+# growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
+# V5            -3.39 0.252 Inf     -3.89      -2.9  a    
+# V3            -2.87 0.243 Inf     -3.35      -2.4   b 
 
 
 gs.labs <- c("V3  a", "V5  b")
@@ -985,15 +899,7 @@ raw_mult <- mult_model %>%
   summarise(mean = mean(multiple),
             sd = sd(multiple), 
             n = n(), 
-            se = sd/sqrt(n)) %>%
-  mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
-                             growth_stage == 'V3' & treatment == '2' ~ 'a',
-                             growth_stage == 'V3' & treatment == '4' ~ 'a',
-                             growth_stage == 'V3' & treatment == '3' ~ 'b',
-                             growth_stage == 'V5' & treatment == '1' ~ 'a',
-                             growth_stage == 'V5' & treatment == '2' ~ 'a',
-                             growth_stage == 'V5' & treatment == '4' ~ 'a',
-                             growth_stage == 'V5' & treatment == '3' ~ 'b'))
+            se = sd/sqrt(n))
 
 
 
