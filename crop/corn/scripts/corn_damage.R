@@ -13,7 +13,6 @@ library(MASS)
 library(performance)
 library(emmeans)
 library(ggpubr)
-install.packages('rempsyc')
 library(rempsyc)
 library(multcomp)
 library(car)
@@ -123,29 +122,31 @@ avg_dmg <- dmg_sev %>%
 
 # test here 
 avg_dmg <- avg_dmg %>% 
-  mutate(dmg_prop = damage_score/4)
+  mutate(dmg_prop = damage_score/4,
+         total_damage_score = 4)
 
 
 btest <- glmer(dmg_prop ~ treatment*growth_stage +
                  (1|year/block/plot_id), 
                family = binomial,
+               weights = total_damage_score,
                data = avg_dmg)
 summary(btest)
 Anova(btest)
-cld(emmeans(btest, ~treatment*growth_stage), Letters = letters)
+cld(emmeans(btest, ~treatment|growth_stage), Letters = letters)
 # growth_stage = V3:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          -5.46 0.525 Inf     -6.49     -4.43  a    
-# 4          -5.44 0.527 Inf     -6.47     -4.41  a    
-# 3          -5.05 0.435 Inf     -5.91     -4.20  a    
-# 2          -4.47 0.324 Inf     -5.11     -3.84  a    
+#   treatment emmean     SE  df asymp.LCL asymp.UCL .group
+# 1          -1.51 0.0867 Inf     -1.68    -1.337  a    
+# 4          -1.42 0.0859 Inf     -1.59    -1.249  ab   
+# 2          -1.37 0.0859 Inf     -1.54    -1.205  ab   
+# 3          -1.25 0.0846 Inf     -1.42    -1.084   b   
 # 
 # growth_stage = V5:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 2          -4.95 0.416 Inf     -5.77     -4.14  a    
-# 4          -4.48 0.328 Inf     -5.12     -3.84  a    
-# 1          -4.15 0.276 Inf     -4.69     -3.61  a    
-# 3          -2.72 0.145 Inf     -3.00     -2.43   b 
+#   treatment emmean     SE  df asymp.LCL asymp.UCL .group
+# 2          -1.68 0.0887 Inf     -1.86    -1.507  a    
+# 4          -1.65 0.0879 Inf     -1.82    -1.475  a    
+# 1          -1.56 0.0870 Inf     -1.73    -1.391  a    
+# 3          -1.12 0.0844 Inf     -1.29    -0.956   b   
 
 cld(emmeans(btest, ~growth_stage), Letters = letters)
 
@@ -158,9 +159,9 @@ avg_dmg %>%
   group_by(treatment, growth_stage, plot_id) %>% 
   summarise(mean = mean(dmg_prop)) %>% 
   mutate(letters = case_when(growth_stage == 'V3' & treatment == '1' ~ 'a',
-                             growth_stage == 'V3' & treatment == '2' ~ 'a',
-                             growth_stage == 'V3' & treatment == '3' ~ 'a',
-                             growth_stage == 'V3' & treatment == '4' ~ 'a',
+                             growth_stage == 'V3' & treatment == '2' ~ 'ab',
+                             growth_stage == 'V3' & treatment == '3' ~ 'b',
+                             growth_stage == 'V3' & treatment == '4' ~ 'ab',
                              growth_stage == 'V5' & treatment == '1' ~ 'a',
                              growth_stage == 'V5' & treatment == '2' ~ 'a',
                              growth_stage == 'V5' & treatment == '3' ~ 'b',
@@ -175,7 +176,7 @@ avg_dmg %>%
   labs(title = 'Corn: Average Damage Score x Treatment and Growth Stage',
        subtitle = "Years: 2021-2023",
        x = 'Treatment termination',
-       y = 'Average damage')+
+       y = 'Average damage score (x/4)')+
   theme(legend.position = "none",
         legend.text = element_text(size = 24),
         legend.title = element_text(size = 24),
@@ -891,6 +892,7 @@ ggplot(sb_mult, aes(x = treatment, y = mean, fill = treatment))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   guides(fill = guide_legend(title = 'Growth Stage'))
+  geom_text(aes(x = treatment, y = -1.8, label = trimws(.group)), size = 10, color = "black")
 
 
 
@@ -944,6 +946,21 @@ cld(emmeans(mm3, ~growth_stage), Letters = letters)
 # V5            -3.39 0.252 Inf     -3.89      -2.9  a    
 # V3            -2.87 0.243 Inf     -3.35      -2.4   b 
 
+cld(emmeans(mm3, ~treatment|growth_stage), Letters = letters)
+
+# growth_stage = V3:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          -3.28 0.311 Inf     -3.88     -2.67  a    
+# 2          -3.00 0.298 Inf     -3.59     -2.42  a    
+# 4          -2.97 0.297 Inf     -3.55     -2.39  a    
+# 3          -2.25 0.278 Inf     -2.79     -1.70   b   
+# 
+# growth_stage = V5:
+#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
+# 1          -4.10 0.360 Inf     -4.81     -3.40  a    
+# 4          -3.62 0.328 Inf     -4.26     -2.97  a    
+# 2          -3.43 0.321 Inf     -4.06     -2.80  a    
+# 3          -2.43 0.283 Inf     -2.98     -1.87   b   
 
 gs.labs <- c("V3  a", "V5  b")
 names(gs.labs) <- c("V3", "V5")
@@ -956,41 +973,51 @@ raw_mult <- mult_model %>%
             se = sd/sqrt(n))
 
 
+# 
+# ggplot(raw_mult, aes(color = treatment))+
+#   geom_point(aes(x = treatment, y = mean), size = 10,
+#              position = position_dodge(width = .75))+
+#   facet_wrap(~growth_stage)+
+#   geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
+#                 color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
+#   scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+#   scale_x_discrete(limits = c("1", "2", "4", "3"),
+#                    labels=c("No CC", "Early", "Late", "Green"))+ 
+#   labs(
+#     title = "Corn: Multiple Damage x Treatment",
+#     subtitle = "Years: 2021-2023",
+#     x = "Treatment termination",
+#     y = "Average damage incidence"
+#   )+
+#   theme(legend.position = 'none',
+#         axis.title = element_text(size = 32),
+#         plot.subtitle = element_text(size = 24),
+#         plot.title = element_text(size = 28),
+#         # axis.line = element_line(size = 1.25),
+#         # axis.ticks = element_line(size = 1.25),
+#         # axis.ticks.length = unit(.25, "cm"),
+#         axis.text.x = element_text(size = 26),
+#         axis.text.y = element_text(size = 26),
+#         strip.text.x = element_text(size = 32), 
+#         panel.grid.major.y = element_line(color = "darkgrey"),
+#         panel.grid.major.x = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+#   # geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
 
-ggplot(raw_mult, aes(color = treatment))+
-  geom_point(aes(x = treatment, y = mean), size = 10,
-             position = position_dodge(width = .75))+
-  facet_wrap(~growth_stage)+
-  geom_errorbar(aes(x = treatment,ymin = mean - se, ymax = mean + se),
-                color = "black", alpha = 1, width = 0.2, linewidth = 1.5)+
-  scale_color_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-  scale_x_discrete(limits = c("1", "2", "4", "3"),
-                   labels=c("No CC", "Early", "Late", "Green"))+ 
-  labs(
-    title = "Corn: Multiple Damage x Treatment",
-    subtitle = "Years: 2021-2023",
-    x = "Treatment termination",
-    y = "Average damage incidence"
-  )+
-  theme(legend.position = 'none',
-        axis.title = element_text(size = 32),
-        plot.subtitle = element_text(size = 24),
-        plot.title = element_text(size = 28),
-        # axis.line = element_line(size = 1.25),
-        # axis.ticks = element_line(size = 1.25),
-        # axis.ticks.length = unit(.25, "cm"),
-        axis.text.x = element_text(size = 26),
-        axis.text.y = element_text(size = 26),
-        strip.text.x = element_text(size = 32), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
-  # geom_text(aes(x = treatment, y = 0.1, label = trimws(letters)), size = 10, color = "black")
 
-
-
-ggplot(raw_mult, aes(x = treatment, y = mean, fill = treatment))+
+raw_mult %>% 
+  mutate(group = case_when(
+     growth_stage == 'V3' & treatment == '1' ~ 'a',
+     growth_stage == 'V3' & treatment == '2' ~ 'a',
+     growth_stage == 'V3' & treatment == '4' ~ 'a',
+     growth_stage == 'V3' & treatment == '3' ~ 'b',
+     growth_stage == 'V5' & treatment == '1' ~ 'a',
+     growth_stage == 'V5' & treatment == '4' ~ 'a',
+     growth_stage == 'V5' & treatment == '2' ~ 'a',
+     growth_stage == 'V5' & treatment == '3' ~ 'b',
+  )) %>% 
+ggplot(aes(x = treatment, y = mean, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
@@ -1018,7 +1045,8 @@ ggplot(raw_mult, aes(x = treatment, y = mean, fill = treatment))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank())+
   guides(fill = guide_legend(title = 'Growth Stage'))+
-  scale_y_continuous(limits = c(0,.2))
+  scale_y_continuous(limits = c(0,.2))+
+  geom_text(aes(label = group, y = .18), size = 10)
 
 
 

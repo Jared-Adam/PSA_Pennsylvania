@@ -5,13 +5,14 @@
 # packages #### 
 library(tidyverse)
 library(lme4)
-library(emmeans)
+library(MASS)
 library(performance)
-library(jtools)
-library(huxtable)
+library(emmeans)
+library(ggpubr)
 library(rempsyc)
 library(multcomp)
-library(ggpubr)
+library(car)
+library(ggResidpanel)
 
 # data #####
 damage_inc <- PSA_PA_Inc
@@ -105,52 +106,34 @@ model.matrix(~0+., data = dmg_cor) %>%
 damage_done
 
 m0 <- glmer(prop_damaged ~ 
-            (growth|year/block/plotid), 
+            (1|year/block/plotid), 
             data = damage_done, family = binomial, 
             weights = total_sum)
 
 m1 <- glmer(prop_damaged ~ treatment + 
-              (growth|year/block/plotid), 
+              (1|year/block/plotid), 
             data = damage_done, family = binomial, 
             weights = total_sum)
 
 m2 <- glmer(prop_damaged ~ treatment + growth + 
-              (growth|year/block/plotid), 
+              (1|year/block/plotid), 
             data = damage_done, family = binomial, 
             weights = total_sum)
 
 m3 <- glmer(prop_damaged ~ treatment * growth + 
-              (growth|year/block/plotid), 
+              (1|year/block/plotid), 
                  data = damage_done, family = binomial, 
                  weights = total_sum)
 
-# m4 <- glmer(prop_damaged ~ treatment * year + 
-#               (1|block/plotid/growth), 
-#             data = damage_done, family = binomial, 
-#             weights = total_sum)
-# 
-# check_model(m4)
-# check_model(m3)
-# binned_residuals(m4)
-# summary(m4)
-
-
-
 isSingular(m3)
 anova(m0, m1, m2, m3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
-# m0   10 841.14 869.01 -410.57   821.14                         
-# m1   13 835.20 871.44 -404.60   809.20 11.9320  3    0.00762 **
-# m2   14 836.23 875.25 -404.11   808.23  0.9777  1    0.32277   
-# m3   17 833.37 880.76 -399.69   799.37  8.8539  3    0.03130 * 
-
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# m0    4 1640.9 1652.1 -816.47   1632.9                          
+# m1    7 1635.4 1654.9 -810.68   1621.4  11.579  3   0.008973 ** 
+# m2    8 1447.9 1470.2 -715.96   1431.9 189.439  1  < 2.2e-16 ***
+# m3   11 1424.2 1454.9 -701.11   1402.2  29.711  3  1.587e-06 ***
 
 summary(m3)
-hist(residuals(m3))
-res <- residuals(m3)
-plot(fitted(m3), res)
-qqline(res)
-plot(density(res))
 
 
 r2_nakagawa(m3)
@@ -158,10 +141,15 @@ r2_nakagawa(m3)
 # Marginal R2: 0.059
 cld(emmeans(m3, ~treatment), Letters = letters)
 # treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          0.777 0.238 Inf     0.311      1.24  a    
-# 4          0.849 0.239 Inf     0.381      1.32  a    
-# 2          1.022 0.241 Inf     0.548      1.49  ab   
-# 3          1.588 0.242 Inf     1.113      2.06   b 
+# 1          0.755 0.243 Inf     0.280      1.23  a    
+# 4          0.789 0.242 Inf     0.314      1.26  a    
+# 2          0.970 0.244 Inf     0.492      1.45  ab   
+# 3          1.417 0.245 Inf     0.937      1.90   b   
+
+cld(emmeans(m3, ~growth), Letters = letters)
+# growth emmean    SE  df asymp.LCL asymp.UCL .group
+# V5      0.574 0.205 Inf     0.172     0.975  a    
+# V3      1.392 0.206 Inf     0.989     1.796   b  
 
 cld(emmeans(m3, ~treatment|growth), Letters = letters)
 # growth = V3:
@@ -187,10 +175,6 @@ cld(emmeans(m3, ~treatment|growth), Letters = letters)
 
 
 
-
-
-
-
 # plot ####
 
 # dmg_growth <- c('V3 a', 'V5 b')
@@ -211,10 +195,12 @@ damage_done <- damage_done %>%
   ))
 
 
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
 
 ggplot(damage_done, aes(x = treatment, y = prop_damaged, fill = treatment))+
   geom_boxplot(alpha = 0.7)+
-  facet_wrap(~growth)+
+  facet_wrap(~growth, labeller = labeller(growth = gs.labs))+
   geom_point(size = 2)+
   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
