@@ -160,30 +160,31 @@ cbent2223 %>%
 cbent2122
 
 m0 <- glmer(to.predated ~ +
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2122)
 
 m1 <- glmer(to.predated ~ treatment+
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2122)
 
 m2 <- glmer(to.predated ~ treatment + crop+
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2122)
 
 m3 <- glmer(to.predated ~ treatment*crop+
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2122)
 anova(m0, m1, m2, m3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
-# m0    7 553.76 585.82 -269.88   539.76                         
-# m1   10 548.72 594.51 -264.36   528.72 11.0437  3   0.011492 * 
-# m2   11 542.29 592.66 -260.14   520.29  8.4313  1   0.003688 **
-# m3   14 541.40 605.50 -256.70   513.40  6.8946  3   0.075333 . 
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# m0    3 580.87 594.61 -287.43   574.87                          
+# m1    6 574.49 601.96 -281.24   562.49 12.3795  3    0.00619 ** 
+# m2    7 535.51 567.57 -260.76   521.51 40.9773  1   1.54e-10 ***
+# m3   10 534.38 580.17 -257.19   514.38  7.1326  3    0.06779 .  
+
 
 hist(residuals(m3))
 summary(m3)
@@ -191,26 +192,26 @@ check_model(m3)
 
 cld(emmeans(m3, ~treatment), Letters = letters, max.overlaps = Inf)
 # treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1           1.41 0.254 Inf     0.908      1.90  a    
-# 2           2.19 0.353 Inf     1.495      2.88  ab   
-# 4           2.56 0.329 Inf     1.920      3.21   b   
-# 3           2.59 0.364 Inf     1.881      3.31   b  
+# 1           1.39 0.246 Inf     0.905      1.87  a    
+# 2           2.16 0.345 Inf     1.482      2.84  ab   
+# 4           2.53 0.322 Inf     1.903      3.16   b   
+# 3           2.56 0.358 Inf     1.863      3.27   b   
 
 cld(emmeans(m3, ~crop), Letters = letters, max.overlaps = Inf)
 # crop  emmean    SE  df asymp.LCL asymp.UCL .group
-# corn    1.43 0.176 Inf      1.09      1.78  a    
-# beans   2.94 0.335 Inf      2.29      3.60   b
+# corn    1.42 0.162 Inf      1.10      1.74  a    
+# beans   2.90 0.261 Inf      2.39      3.42   b 
 
 cld(emmeans(m3, ~crop*treatment), Letters = letters, max.overlaps = Inf)
 # crop  treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# corn  1          0.669 0.288 Inf     0.105      1.23  a    
-# corn  2          0.924 0.294 Inf     0.347      1.50  ab   
-# corn  3          1.741 0.346 Inf     1.063      2.42  abc  
-# beans 1          2.144 0.402 Inf     1.357      2.93   bc  
-# corn  4          2.405 0.424 Inf     1.574      3.24   bc  
-# beans 4          2.725 0.487 Inf     1.771      3.68    c  
-# beans 3          3.449 0.630 Inf     2.215      4.68    c  
-# beans 2          3.450 0.630 Inf     2.215      4.69    c  
+# corn  1          0.658 0.263 Inf     0.142      1.17  a    
+# corn  2          0.917 0.272 Inf     0.384      1.45  ab   
+# corn  3          1.722 0.325 Inf     1.085      2.36  abc  
+# beans 1          2.116 0.366 Inf     1.399      2.83   bc  
+# corn  4          2.376 0.402 Inf     1.588      3.16   bc  
+# beans 4          2.691 0.451 Inf     1.806      3.58    c  
+# beans 2          3.402 0.604 Inf     2.219      4.59    c  
+# beans 3          3.408 0.604 Inf     2.223      4.59    c  
 
 
 
@@ -218,30 +219,30 @@ cld(emmeans(m3, ~crop*treatment), Letters = letters, max.overlaps = Inf)
 cbent2223
 
 m10 <- glmer(to.predated ~ +
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2223)
 
 m11 <- glmer(to.predated ~ treatment+
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2223)
 
 m12 <- glmer(to.predated ~ treatment + crop+
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2223)
 
 m13 <- glmer(to.predated ~ treatment*crop+
-              (crop|block/plot_id),
+              (1|block/plot_id),
             family = binomial,
             data = cbent2223)
 anova(m10, m11, m12, m13)
-# npar    AIC    BIC  logLik deviance  Chisq Df Pr(>Chisq)  
-# m10    7 529.30 561.35 -257.65   515.30                       
-# m11   10 530.05 575.85 -255.03   510.05 5.2456  3    0.15467  
-# m12   11 528.72 579.09 -253.36   506.72 3.3351  1    0.06782 .
-# m13   14 526.26 590.37 -249.13   498.26 8.4538  3    0.03751 *
+# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)   
+# m10    3 530.51 544.25 -262.26   524.51                         
+# m11    6 529.13 556.60 -258.56   517.13  7.3860  3   0.060561 . 
+# m12    7 523.30 555.36 -254.65   509.30  7.8211  1   0.005164 **
+# m13   10 518.93 564.72 -249.47   498.93 10.3727  3   0.015650 * 
 
 hist(residuals(m13))
 summary(m13)
@@ -250,29 +251,29 @@ check_model(m13)
 cld(emmeans(m13, ~treatment|crop), Letters = letters, max.overlaps = Inf)
 # crop = corn:
 #   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 3           1.97 0.325 Inf     1.337      2.61  a    
-# 1           2.20 0.354 Inf     1.506      2.89  a    
-# 4           2.64 0.425 Inf     1.808      3.47  a    
-# 2           2.84 0.462 Inf     1.929      3.74  a    
+# 3           1.98 0.331 Inf     1.332      2.63  a    
+# 1           2.21 0.360 Inf     1.501      2.91  a    
+# 4           2.65 0.430 Inf     1.806      3.49  a    
+# 2           2.84 0.467 Inf     1.928      3.76  a    
 # 
 # crop = beans:
 #   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1           1.03 0.272 Inf     0.497      1.56  a    
-# 4           1.63 0.312 Inf     1.022      2.25  ab   
-# 2           2.00 0.348 Inf     1.317      2.68  ab   
-# 3           2.87 0.479 Inf     1.927      3.81   b  
+# 1           1.02 0.249 Inf     0.529      1.51  a    
+# 4           1.62 0.293 Inf     1.043      2.19  ab   
+# 2           1.98 0.331 Inf     1.332      2.63  ab   
+# 3           2.84 0.467 Inf     1.928      3.76   b  
 
 
 cld(emmeans(m13, ~treatment*crop), Letters = letters, max.overlaps = Inf)
 # treatment crop  emmean    SE  df asymp.LCL asymp.UCL .group
-# 1         beans   1.03 0.272 Inf     0.497      1.56  a    
-# 4         beans   1.63 0.312 Inf     1.022      2.25  ab   
-# 3         corn    1.97 0.325 Inf     1.337      2.61  ab   
-# 2         beans   2.00 0.348 Inf     1.317      2.68  ab   
-# 1         corn    2.20 0.354 Inf     1.506      2.89  ab   
-# 4         corn    2.64 0.425 Inf     1.808      3.47   b   
-# 2         corn    2.84 0.462 Inf     1.929      3.74   b   
-# 3         beans   2.87 0.479 Inf     1.927      3.81   b   
+# 1         beans   1.02 0.249 Inf     0.529      1.51  a    
+# 4         beans   1.62 0.293 Inf     1.043      2.19  ab   
+# 3         corn    1.98 0.331 Inf     1.332      2.63  ab   
+# 2         beans   1.98 0.331 Inf     1.332      2.63  ab   
+# 1         corn    2.21 0.360 Inf     1.501      2.91  ab   
+# 4         corn    2.65 0.430 Inf     1.806      3.49   b   
+# 3         beans   2.84 0.467 Inf     1.928      3.76   b   
+# 2         corn    2.84 0.467 Inf     1.928      3.76   b  
 
 # plots ####
 # 21 -23
