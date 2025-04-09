@@ -133,7 +133,7 @@ btest <- glmer(dmg_prop ~ treatment*growth_stage +
                data = avg_dmg)
 summary(btest)
 Anova(btest)
-cld(emmeans(btest, ~treatment|growth_stage), Letters = letters)
+cld(emmeans(btest, ~treatment|growth_stage, type = 'response'), Letters = letters)
 # growth_stage = V3:
 #   treatment emmean     SE  df asymp.LCL asymp.UCL .group
 # 1          -1.51 0.0867 Inf     -1.68    -1.337  a    
@@ -149,6 +149,44 @@ cld(emmeans(btest, ~treatment|growth_stage), Letters = letters)
 # 3          -1.12 0.0844 Inf     -1.29    -0.956   b   
 
 cld(emmeans(btest, ~growth_stage), Letters = letters)
+
+# 4.9.2025 plot
+dmg_prob_plot <- cld(emmeans(btest, ~treatment|growth_stage, type = 'response'), Letters = letters)
+
+gs.labs <- c("V3  a", "V5  b")
+names(gs.labs) <- c("V3", "V5")
+
+num_labs <- data.frame(label = c('1)', '2)'),
+                       growth_stage = c('V3', 'V5'))
+
+dmg_prob_plot %>% 
+  ggplot(aes(x = treatment, y = prob))+
+  facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = dmg_prob_plot)+
+  geom_text(data = dmg_prob_plot, aes(y = 0.27, label = trimws(.group)), size = 8)+
+  scale_x_discrete(limits = c("1", "2", "4", "3"),
+                   labels=c("No CC", "Early", "Late", "Green"))+
+  labs(title = 'Corn: Response Damage Score x Treatment and Growth Stage',
+       subtitle = "Years: 2021-2023",
+       x = 'Treatment termination',
+       y = 'Response damage score (x/4)')+
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
+           panel.grid.major.x = element_blank(),
+           panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.28,label = label), size = 8)
+
+
+
+
 
 # new plot (11/6/2024)
 
