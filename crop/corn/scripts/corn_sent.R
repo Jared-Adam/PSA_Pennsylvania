@@ -89,7 +89,7 @@ m3 <- glmer(to.predated ~ treatment*growth_stage +
 
 isSingular(m3)
 rePCA(m3)
-
+Anova(m3)
 
 isSingular(m3)
 check_model(m3)
@@ -108,53 +108,74 @@ r2_nakagawa(m3)
 # Conditional R2: 0.350
 # Marginal R2: 0.076
 
-cld(emmeans(m3, ~treatment), Letters = letters)
-# treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          0.936 0.608 Inf   -0.2549      2.13  a    
-# 2          1.291 0.611 Inf    0.0941      2.49  ab   
-# 3          1.585 0.612 Inf    0.3848      2.79  ab   
-# 4          1.904 0.621 Inf    0.6864      3.12   b 
-
-cld(emmeans(m3, ~ growth_stage), Letters = letters)
-# growth_stage emmean    SE  df asymp.LCL asymp.UCL .group
-# V3            0.738 0.586 Inf    -0.410      1.89  a    
-# V5            1.726 0.593 Inf     0.564      2.89   b   
-# R3            1.823 0.593 Inf     0.660      2.99   b    
-
-cld(emmeans(m3, ~treatment|growth_stage), Letters = letters)
-# treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          1.530 0.652 Inf     0.253      2.81  a    
-# 2          1.599 0.653 Inf     0.318      2.88  a    
-# 3          1.848 0.660 Inf     0.554      3.14  a    
-# 4          2.314 0.685 Inf     0.971      3.66  a    
-# 
-# growth_stage = V3:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          0.303 0.635 Inf    -0.943      1.55  a    
-# 2          0.596 0.637 Inf    -0.652      1.85  a    
-# 3          0.968 0.639 Inf    -0.285      2.22  a    
-# 4          1.086 0.646 Inf    -0.180      2.35  a    
-# 
-# growth_stage = V5:
-#   treatment emmean    SE  df asymp.LCL asymp.UCL .group
-# 1          0.975 0.641 Inf    -0.282      2.23  a    
-# 2          1.678 0.656 Inf     0.393      2.96  ab   
-# 3          1.939 0.664 Inf     0.638      3.24  ab   
-# 4          2.313 0.685 Inf     0.971      3.66   b  
-
-
-
-
-# cent.table <- as.data.frame(summary(m3)$coefficients)
-# #CI <- confint(m1)
-# cent.table <-cbind(row.names(cent.table), cent.table)
-# names(cent.table) <- c("Term", "B", "SE", "t", "p")
-# nice_table(cent.table, highlight = TRUE)
-
-
+cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
+cld(emmeans(m3, ~ growth_stage, type = 'response'), Letters = letters)
+cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
 
 
 # plots ####
+
+# pub plots: tp combine with beans ##
+
+sent_trt <- cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
+
+corn_trt_plot <- sent_trt %>% 
+  ggplot(aes(x = treatment, y = prob))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = sent_trt)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('1', '2', '4', '3'), 
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = sent_trt, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+
+sent_gs <- cld(emmeans(m3, ~ growth_stage, type = 'response'), Letters = letters)
+
+corn_sent_plot <- sent_gs %>% 
+  ggplot(aes(x = growth_stage, y = prob))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = growth_stage, ymin = prob - SE, ymax = prob + SE, width = .5), data = sent_gs)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = sent_gs, aes(y = 1, label = trimws(.group)), size = 8)
+
+# Bringing in the bean plots too to arrange. Need to run this code separate 
+
+ggarrange(corn_sent_plot + rremove("ylab") + rremove("xlab")  + rremove("x.text") , 
+          corn_trt_plot+ rremove("ylab") + rremove("xlab")  + rremove("x.text")+ rremove("y.text"),
+          bean_sent_plot + rremove("ylab") ,
+          bean_trt_plot+ rremove("ylab")+ rremove("y.text"))
+
+
+
+##
+
+
+
+
 
 ggplot(sent_prop, aes(x = treatment, y =  prop))+
   geom_point(aes(size = 5, color = treatment))+

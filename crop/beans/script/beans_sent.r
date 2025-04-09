@@ -110,28 +110,77 @@ check_model(m3)
 binned_residuals(m3)
 hist(residuals(m3))
 
-cld(emmeans(m3, ~treatment), Letters = letters)
-# treatment emmean      SE  df asymp.LCL asymp.UCL .group
-# 1           1.67   0.230 Inf      1.22      2.12  a    
-# 2           2.60   0.303 Inf      2.00      3.19  ab   
-# 3           3.35   0.450 Inf      2.47      4.23   b   
-# 4           7.61 727.076 Inf  -1417.44   1432.65  ab   
-
-cld(emmeans(m3, ~growth_stage), Letters = letters)
-# growth_stage emmean      SE  df asymp.LCL asymp.UCL .group
-# V3             1.64   0.302 Inf      1.05      2.23  a    
-# V5             2.50   0.279 Inf      1.95      3.04   b   
-# R3             7.28 545.307 Inf  -1061.50   1076.07  ab 
-
-
-# bent.table <- as.data.frame(summary(m3)$coefficients)
-# #CI <- confint(m1)
-# bent.table <-cbind(row.names(bent.table), bent.table)
-# names(bent.table) <- c("Term", "B", "SE", "t", "p")
-# nice_table(bent.table, highlight = TRUE)
+cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
+cld(emmeans(m3, ~growth_stage, type = 'response'), Letters = letters)
 
 
 # plot for total/ all data ####
+
+# plots for new pub: to combine with corn 
+
+sent_trt_b <- cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
+
+bean_trt_plot <- sent_trt_b %>% 
+  ggplot(aes(x = treatment, y = prob))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = sent_trt_b)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('1', '2', '4', '3'), 
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
+  theme_bw()+
+  labs(x = "Treatment termination")+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = sent_trt_b, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+
+sent_gs_b <- cld(emmeans(m3, ~ growth_stage, type = 'response'), Letters = letters)
+
+bean_sent_plot <- sent_gs_b %>% 
+  ggplot(aes(x = growth_stage, y = prob))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = growth_stage, ymin = prob - SE, ymax = prob + SE, width = .5), data = sent_gs_b)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
+  theme_bw()+
+  labs(x = "Growth stage")+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = sent_gs_b, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 trt_prop <- beans_sent %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
