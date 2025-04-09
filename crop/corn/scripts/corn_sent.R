@@ -115,7 +115,7 @@ cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
 
 # plots ####
 
-# pub plots ##
+# pub plots: tp combine with beans ##
 
 sent_trt <- cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
 
@@ -162,8 +162,12 @@ corn_sent_plot <- sent_gs %>%
         axis.ticks = element_blank())+
   geom_text(data = sent_gs, aes(y = 1, label = trimws(.group)), size = 8)
 
-# Bringing in the bean plots too to arrange. Need to run this code seperate 
+# Bringing in the bean plots too to arrange. Need to run this code separate 
 
+ggarrange(corn_sent_plot + rremove("ylab") + rremove("xlab")  + rremove("x.text") , 
+          corn_trt_plot+ rremove("ylab") + rremove("xlab")  + rremove("x.text")+ rremove("y.text"),
+          bean_sent_plot + rremove("ylab") ,
+          bean_trt_plot+ rremove("ylab")+ rremove("y.text"))
 
 
 
