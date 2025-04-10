@@ -682,6 +682,8 @@ genus %>%
 # 372
 
 
+# 4.10.2025
+
 ggplot(tot_se_years_bc_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
@@ -702,6 +704,30 @@ ggplot(tot_se_years_bc_df, aes(x = reorder(crop, mean), y = mean, fill = crop))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         strip.text = element_text(size = 26))
+
+
+arthropod_crop_plot <- tot_se_years_bc_df %>% 
+  ggplot(aes(x = reorder(crop,mean), y = mean))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin = mean-se, ymax = mean+se), alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 2, y=17, label = "***", size = 12)+
+  labs(title = "Total arthropod by crop",
+       x = 'Crop',
+       y = 'Mean arthropod population / plot')+
+  scale_x_discrete(labels=c('Corn', 'Soybeans'))+
+  theme_bw()+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        axis.ticks = element_blank())
+arthropod_crop_plot
 
 # loop to look at pops by crop ####
 
@@ -764,7 +790,29 @@ cld(emmeans(carab_all, ~crop ), Letters = letters)
 # corn   0.253 0.145 Inf   -0.0316     0.537  a    
 # beans  1.576 0.118 Inf    1.3452     1.808   b 
 
-car<-ggplot(cartabid_plot, aes(x =crop, y = mean, fill = crop))+
+car<-cartabid_plot %>% 
+  ggplot(aes(x =crop, y = mean))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 2, y=6, label = "*", size = 12)+
+  labs(title = "Carabid")+
+  scale_x_discrete(limits = c('corn', 'beans'),
+                   labels=c('Corn', 'Soybeans'))+
+  theme_bw()+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        axis.ticks = element_blank())
+  
+
+ggplot(cartabid_plot, aes(x =crop, y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
   annotate("text", x = 2, y=6, label = "*", size = 12)+
@@ -801,8 +849,31 @@ cld(emmeans(aran_all, ~crop ), Letters = letters)
 # corn    1.17 0.119 Inf     0.937      1.40  a    
 # beans   1.59 0.113 Inf     1.364      1.81   b  
 
+ar <- arane_plot %>% 
+  ggplot(aes(x =crop, y = mean))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 2, y=6, label = "*", size = 12)+
+  labs(title = "Araneomorph")+
+  scale_x_discrete(limits = c('corn', 'beans'),
+                   labels=c('Corn', 'Soybeans'))+
+  theme_bw()+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        axis.ticks = element_blank())
 
-ar <- ggplot(arane_plot, aes(x = crop, y = mean, fill = crop))+
+
+
+
+ggplot(arane_plot, aes(x = crop, y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
   annotate("text", x = 2, y=6, label = "*", size = 12)+
@@ -854,8 +925,31 @@ cld(emmeans(lyc_mod, ~crop ), Letters = letters)
 # corn   0.875 0.138 Inf     0.605      1.15  a    
 # beans  1.467 0.129 Inf     1.214      1.72   b  
 
+lyc <- lyc_plot %>% 
+  ggplot(aes(x =crop, y = mean))+
+  geom_bar(position = 'dodge', stat = 'identity')+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
+  annotate("text", x = 2, y=6, label = "*", size = 12)+
+  labs(title = "Lycosidae")+
+  scale_x_discrete(limits = c('corn', 'beans'),
+                   labels=c('Corn', 'Soybeans'))+
+  theme_bw()+
+  theme(legend.position = "none",
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 26),
+        axis.ticks = element_blank())
 
-lyc <- ggplot(lyc_plot, aes(x = crop, y = mean, fill = crop))+
+
+
+
+ggplot(lyc_plot, aes(x = crop, y = mean, fill = crop))+
   geom_bar(position = 'dodge', stat = 'identity')+
   geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = 1, width = 0.5)+
   annotate("text", x = 2, y=6, label = "*", size = 12)+
@@ -878,11 +972,11 @@ lyc <- ggplot(lyc_plot, aes(x = crop, y = mean, fill = crop))+
 
 
 
-
-fig <- ggarrange(ar,car, lyc, labels = c("1", "2", "3"), font.label = list(size = 20, color = 'cornsilk4'))
+?rremove
+fig <- ggarrange(arthropod_crop_plot + rremove("xy.title"), ar+ rremove("xy.title"),car+ rremove("xy.title"), lyc+ rremove("xy.title"), labels = c("1", "2", "3", "4"), font.label = list(size = 20, color = 'cornsilk4'))
 annotate_figure(fig,
                 bottom = text_grob("Crop", size = 32),
-                left = text_grob("Average abundance / plot", size = 32, rot = 90))
+                left = text_grob("Average abundance / crop", size = 32, rot = 90))
 
 # permanova all years ####
 #
