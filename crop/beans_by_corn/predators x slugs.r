@@ -326,6 +326,40 @@ s_plot <- cbind(sum_sb, pf_sb) %>%
          trt = trt...3) %>% 
   dplyr::select(-crop...5, - year...6, -trt...7)
 
+bean_regression <- s_plot %>%  
+  ggplot(aes(x = pred, y = slugs))+
+  geom_point(size = 10,aes(shape = trt)) +
+  scale_shape_manual(limits = c("1", "2", "4","3"),
+                     values = c(15,16,17,18),
+                     labels=c("No CC", "Early", "Late", "Green"))+
+  guides(shape=guide_legend("Treatment termination"))+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  stat_poly_eq(label.x = "right", label.y = "top", size = 8)+
+  labs(title = "Soybean",
+       x = "Predator population",
+       y = "Slug population"
+       #        caption = "DPP: Days pre plant
+       # DAP: Days after plant"
+  )+
+  annotate("text", x = 480, y = 225, label = "p value < .001", size = 8, fontface = 'italic')+
+  theme_bw()+
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
+        axis.ticks = element_blank())
+
+
+
 ggplot(s_plot, aes(x = pred, y = slugs))+
   geom_point(size = 10,aes(color = trt)) +
   scale_color_manual(limits = c("1", "2", "4","3"),
@@ -369,6 +403,41 @@ c_plot <- cbind(sum_c, pf_c) %>%
          trt = trt...3) %>% 
   dplyr::select(-crop...5, -year...6, -trt...7)
 
+corn_regression <- c_plot %>% 
+  ggplot(aes(x = pred, y = slugs))+
+  geom_point(size = 10,aes(shape = trt)) +
+  scale_shape_manual(limits = c("1", "2", "4","3"),
+                     values = c(15,16,17,18),
+                     labels=c("No CC", "Early", "Late", "Green"))+
+  guides(shape=guide_legend("Treatment termination"))+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = "black")+
+  stat_poly_eq(label.x = "left", label.y = "top", size = 8)+
+  labs(title = "Corn",
+       x = "Predator population",
+       y = "Slug population"
+       #        caption = "DPP: Days pre plant
+       # DAP: Days after plant"
+  )+
+  annotate("text", x = 78, y = 625, label = "p value < .01", size = 8, fontface = 'italic')+
+  theme_bw()+
+  theme(legend.position = "bottom",
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
+        axis.ticks = element_blank())
+
+
+
+
 ggplot(c_plot, aes(x = pred, y = slugs))+
   geom_point(size = 10, aes(color = trt))+
   scale_color_manual(limits = c("1", "2", "4","3"),
@@ -398,6 +467,20 @@ ggplot(c_plot, aes(x = pred, y = slugs))+
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(),
         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
+
+
+
+# combine regressions 
+reg_fig <- ggarrange(corn_regression + rremove('xy.title') + rremove('legend'), bean_regression + rremove('xy.title'),
+          ncol = 1,
+          labels = c("1", "2"),
+          font.label = list(size = 20, color = 'cornsilk4'))
+
+annotate_figure(reg_fig,
+                bottom = text_grob("Predator abundance", size = 32),
+                left = text_grob("Slug abundance", size = 32, rot = 90))
+
+
 
 # all #
 all_plot <- cbind(sum_slug, pf_clean) %>% 
