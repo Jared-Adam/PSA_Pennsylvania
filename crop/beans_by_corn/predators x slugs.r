@@ -15,6 +15,7 @@ library(RColorBrewer)
 library(MASS)
 library(emmeans)
 library(ggpmisc)
+library(lmtest)
 
 # data ####
 corn_pf
@@ -479,6 +480,57 @@ reg_fig <- ggarrange(corn_regression + rremove('xy.title') + rremove('legend'), 
 annotate_figure(reg_fig,
                 bottom = text_grob("Predator abundance", size = 32),
                 left = text_grob("Slug abundance", size = 32, rot = 90))
+
+
+# corn and bean lines on the same plot 
+
+final_fig_df <- rbind(c_plot, s_plot) %>% 
+  mutate(shape = case_when(crop == 'corn' & trt == '1' ~ 'c1',
+                           crop == 'corn' & trt == '2' ~ 'c2', 
+                           crop == 'corn' & trt == '3' ~'c3',
+                           crop == 'corn' & trt == '4' ~ 'c4',
+                           crop == 'bean' & trt == '1' ~ 'b1', 
+                           crop == 'bean' & trt == '2' ~ 'b2', 
+                           crop == 'bean' & trt == '3' ~ 'b3', 
+                           crop == 'bean' & trt == '4' ~ 'b4')) %>% 
+  mutate(shape = as.factor(shape))
+
+final_fig_df %>% 
+  ggplot(aes(x = pred, y = slugs, linetype = crop))+
+  geom_point(size = 10, aes(shape = shape))+
+  scale_shape_manual(limits = c("c1", "c2", "c4","c3", 'b1', 'b2', 'b4', 'b3'),
+                     values = c(0,1,2,5,15,16,17,18),
+                     labels=c(" Corn: No CC", "Corn: Early", " Corn: Late", "Corn: Green", 
+                              " Soybean: No CC", "Soybean: Early", " Soybean: Late", "Soybean: Green"))+
+  guides(shape=guide_legend("Crop: Treatment termination"))+
+  guides(linetype = "none")+
+  geom_smooth(method = "lm", size = 1.5, se = TRUE, color = 'black')+
+  scale_linetype_manual(name = 'crop',
+                        breaks = c('corn', 'bean'),
+                        values = c(2,1))+
+  theme_bw()+
+  theme(legend.position = c(0.85, 0.75),
+        legend.key.size = unit(.50, 'cm'),
+        legend.title = element_text(size = 24),
+        legend.text = element_text(size = 24),
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24), 
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.caption = element_text(hjust = 0, size = 20, color = "grey25"),
+        axis.ticks = element_blank())+
+  labs(title = "Corn and Soybean",
+       x = "Predator population",
+       y = "Slug population")+
+  annotate("text", x = 450, y = 300, label = 'Soybean: p < 0.001, R2 = 0.83', size = 8)+
+  annotate("text", x = 440, y = 240, label = 'Corn: p < 0.01, R2 = 0.29', size = 8)
+  
+?annotate
+
 
 
 
