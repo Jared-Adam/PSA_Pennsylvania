@@ -193,6 +193,12 @@ plot + scale_y_continuous(
   expand = c(0,0)
 )
 
+plot + scale_y_continuous(
+  breaks = c(4*(0:0.3)-1) 
+)
+  
+
+
 plot + annotate('segment', y = c(1,4), yend = c(1.3,4.3), x = 0.5, xend = 0.5)+
   coord_cartesian(clip = 'off', xlim = c(1,4))
   
