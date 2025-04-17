@@ -555,7 +555,7 @@ slug_plot <- slug_dmg_plot %>%
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(
-    # title = 'Corn: Slug Damage x Treatment and Growth Stage',
+      title = 'Slug damage',
     #    subtitle = "Years: 2021-2023",
        x = 'Treatment termination',
        y = 'Response damage incidence')+
@@ -700,7 +700,7 @@ bcw_plot <- bcw_dm_plot %>%
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(
-    # title = 'Corn: BCW Damage x Treatment and Growth Stage',
+      title = 'Black cutworm damage',
     #    subtitle = "Years: 2021-2023",
        x = 'Treatment termination',
        y = 'Response damage incidence')+
@@ -1042,7 +1042,7 @@ mm_plot <- mult_dmg_plot %>%
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(
-    # title = 'Corn: MM Damage x Treatment and Growth Stage',
+      title = 'Multiple pest damage',
     #    subtitle = "Years: 2021-2023",
        x = 'Treatment termination',
        y = 'Response damage incidence')+
@@ -1126,8 +1126,8 @@ ggplot(aes(x = treatment, y = mean, fill = treatment))+
 comb_plot <- ggarrange(slug_plot + rremove("ylab") + rremove("xlab")  + rremove("x.text"), 
           bcw_plot + rremove("ylab") + rremove("xlab"), 
           mm_plot +  rremove("ylab") + rremove("xlab"),
-          labels = c('A','B','C'),
-          font.label = list(size = 26),
+          labels = c('1','2','3'),
+          font.label = list(size = 20, color = 'cornsilk4'),
           hjust = -1.5)
 annotate_figure(comb_plot, bottom = text_grob("Treatment termination", size = 36), 
                 left = text_grob("Response-scale damage incidence", rot = 90, size = 30))
