@@ -17,6 +17,8 @@ library(rempsyc)
 library(multcomp)
 library(car)
 library(ggResidpanel)
+library(ggbreak)
+
 # data ####
 damage_type <- PSA_PA_damage
 
@@ -150,7 +152,7 @@ cld(emmeans(btest, ~treatment|growth_stage, type = 'response'), Letters = letter
 
 cld(emmeans(btest, ~growth_stage), Letters = letters)
 
-# 4.9.2025 plot
+# 4.17.2025 plot
 dmg_prob_plot <- cld(emmeans(btest, ~treatment|growth_stage, type = 'response'), Letters = letters)
 
 gs.labs <- c("V3  a", "V5  b")
@@ -159,7 +161,7 @@ names(gs.labs) <- c("V3", "V5")
 num_labs <- data.frame(label = c('1)', '2)'),
                        growth_stage = c('V3', 'V5'))
 
-dmg_prob_plot %>% 
+plot <- dmg_prob_plot %>% 
   ggplot(aes(x = treatment, y = prob))+
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_point(size = 5)+
@@ -182,9 +184,18 @@ dmg_prob_plot %>%
         plot.subtitle = element_text(size = 24),
         strip.text = element_text(size = 24),
         axis.ticks = element_blank())+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.28,label = label), size = 8)
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.28,label = label), size = 8)+
+  ylim(0,4)
 
+plot + scale_y_continuous(
+  limits = ~c(min(.x), ceiling = max(.x)),
+  breaks = ~.x[2],
+  expand = c(0,0)
+)
 
+plot + annotate('segment', y = c(1,4), yend = c(1.3,4.3), x = 0.5, xend = 0.5)+
+  coord_cartesian(clip = 'off', xlim = c(1,4))
+  
 
 
 
@@ -230,58 +241,6 @@ avg_dmg %>%
   guides(fill = guide_legend(title = 'Growth Stage'))+
   geom_text(aes(x = treatment, y = 0.4, label = trimws(letters)), size = 10, color = "black")
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-# sm0 <- glmer(damage_score ~ 
-#                (1|year/block/plot_id), 
-#              data = avg_dmg, 
-#              family = poisson)
-# 
-# sm1 <- glmer(damage_score ~ treatment +
-#                   (1|year/block/plot_id), 
-#                 data = avg_dmg, 
-#              family = poisson)
-# 
-# sm2 <- glmer(damage_score ~ treatment + growth_stage +
-#                   (1|year/block/plot_id), 
-#                 data = avg_dmg, 
-#              family = poisson)
-# 
-# sm3 <- glmer(damage_score ~ treatment*growth_stage +
-#                   (1|year/block/plot_id), 
-#                 data = avg_dmg, 
-#                 family = poisson)
-# 
-# rePCA(sm3)
-# isSingular(sm3)
-# anova(sm0, sm1, sm2, sm3)
-# npar   AIC   BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# sm0    7 13953 14001 -6969.4    13939                          
-# sm1   10 13884 13952 -6931.8    13864 75.3390  3  3.065e-16 ***
-# sm2   11 13884 13959 -6931.2    13862  1.1879  1     0.2757    
-# sm3   14 13864 13960 -6918.2    13836 25.9585  3  9.730e-06 ***
-# hist(residuals(sm3))
-# summary(sm3)
-# binned_residuals(sm3)
-# check_model(sm3)
-# r2_nakagawa(sm3)
-# Conditional R2: 0.100
-# Marginal R2: 0.029
-
-# cld(emmeans(sm3, ~treatment|growth_stage), Letters = letters)
-# 
 
 # avg df plot 
 
@@ -424,57 +383,6 @@ DAP : Days after plant")+
 
 
 
-# sum_dmg
-# 
-# year.labs <- c("2021  a", "2022  b", "2023  c")
-# names(year.labs) <- c("2021", "2022", "2023")
-# 
-# ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
-#   geom_boxplot(alpha = 0.7)+
-#   facet_wrap(~year, labeller = labeller(year = year.labs))+
-#   geom_point(size = 2)+
-#   scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
-#   scale_x_discrete(limits = c("1", "2", "4", "3"),
-#                    labels=c("No CC", "Early", "Late", "Green"))+
-#   labs(title = 'Corn: Total Damage Score x Treatment and Year',
-#        x = 'Termination termination',
-#        y = 'Total damage score per plot (0-4)')+
-#   theme(legend.position = "none",
-#         axis.text.x = element_text(size=26),
-#         axis.text.y = element_text(size = 26),
-#         axis.title = element_text(size = 32),
-#         plot.title = element_text(size = 28),
-#         plot.subtitle = element_text(size = 24), 
-#         panel.grid.major.y = element_line(color = "darkgrey"),
-#         panel.grid.major.x = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         strip.text = element_text(size = 32))
-
-# 
-# 
-# ggplot(sum_dmg, aes(x = treatment, y = sum, fill = treatment))+
-#   geom_violin(alpha = 0.5, fill = 'black')+
-#   geom_boxplot(width = 0.1, fill = 'white')+
-#   facet_wrap(~year, labeller = labeller(year = year.labs))+
-#   geom_point()+
-#   scale_x_discrete(limits = c("1", "2", "4", "3"),
-#                    labels=c("No CC", "14-28 DPP", "3-7 DPP", "1-3 DAP"))+
-#   labs(title = 'Corn: Total Damage Score x Treatment and Year',
-#        x = 'Treatment',
-#        y = 'Total Damage Score x Plot (0-4)',
-#        caption = "DPP: Days pre plant
-# DAP : Days after plant")+
-#   theme(legend.position = "none",
-#         axis.text.x = element_text(size=20),
-#         axis.text.y = element_text(size = 26),
-#         axis.title = element_text(size = 32),
-#         plot.title = element_text(size = 28),
-#         plot.subtitle = element_text(size = 24), 
-#         panel.grid.major.y = element_line(color = "darkgrey"),
-#         panel.grid.major.x = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         strip.text = element_text(size = 24),
-#         plot.caption = element_text(hjust = 0, size = 20, color = "grey25"))
 
 
 # slug models and plot ####
