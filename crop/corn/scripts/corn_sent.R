@@ -15,6 +15,7 @@ library(lmtest)
 library(nlme)
 library(multcomp)
 library(car)
+library(glmmTMB)
 
 # data ####
 sent <- PSA_PA_Sent_prey
@@ -37,7 +38,21 @@ pred_tot <- sent_years %>%
   dplyr::select(-n.absent, -n.partial, -d.absent, -d.partial, -d.predated)
   
  
-  
+proportion_df <- sent %>%
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  group_by(plot_id, block, growth_stage, treatment, year) %>% 
+  summarise(prop = mean(to.predated)) %>% 
+  mutate_at(1:5, as.factor) %>% 
+  print(n = 10)
+
+proportion_df %>% 
+  ggplot(aes(y = prop, x = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_point()
+
+
+?mutate_at
 sent_prop <- sent %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
@@ -56,6 +71,17 @@ sent_21 <- subset(sent_years, year == '2021')
 sent_22 <- subset(sent_years, year == '2022')
 sent_23 <- subset(sent_years, year == '2023')
 
+
+
+# models with beta distribution ####
+proportion_df
+
+m0 <- glmmTMB(prop ~ (1|year/block/plot_id),  data = proportion_df, family = beta_family(link = "logit"))
+
+
+m3 <- glmmTMB(prop ~ treatment*growth_stage + (1|year), family = list(family = 'beta', link = 'logit'), data = proportion_df)
+
+?beta_family
 
 # all years  ####
 sent_years
