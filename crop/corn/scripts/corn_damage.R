@@ -18,7 +18,7 @@ library(multcomp)
 library(car)
 library(ggResidpanel)
 library(ggbreak)
-
+library(gg.gap)
 # data ####
 damage_type <- PSA_PA_damage
 
@@ -161,12 +161,12 @@ names(gs.labs) <- c("V3", "V5")
 num_labs <- data.frame(label = c('1)', '2)'),
                        growth_stage = c('V3', 'V5'))
 
-plot <- dmg_prob_plot %>% 
+dmg_prob_plot %>% 
   ggplot(aes(x = treatment, y = prob))+
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_point(size = 5)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = dmg_prob_plot)+
-  geom_text(data = dmg_prob_plot, aes(y = 0.27, label = trimws(.group)), size = 8)+
+  geom_text(data = dmg_prob_plot, aes(y = 0.4, label = trimws(.group)), size = 8)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(title = 'Corn: Response Damage Score x Treatment and Growth Stage',
@@ -184,24 +184,10 @@ plot <- dmg_prob_plot %>%
         plot.subtitle = element_text(size = 24),
         strip.text = element_text(size = 24),
         axis.ticks = element_blank())+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.28,label = label), size = 8)+
-  ylim(0,4)
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.4,label = label), size = 8)+
+  scale_y_continuous(limits = c(0,.4), breaks = c(0,.1,.2,.3,.4))
 
-plot + scale_y_continuous(
-  limits = ~c(min(.x), ceiling = max(.x)),
-  breaks = ~.x[2],
-  expand = c(0,0)
-)
-
-plot + scale_y_continuous(
-  breaks = c(4*(0:0.3)-1) 
-)
-  
-
-
-plot + annotate('segment', y = c(1,4), yend = c(1.3,4.3), x = 0.5, xend = 0.5)+
-  coord_cartesian(clip = 'off', xlim = c(1,4))
-  
+plot
 
 
 
