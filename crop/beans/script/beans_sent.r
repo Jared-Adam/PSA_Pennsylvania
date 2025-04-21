@@ -38,10 +38,11 @@ sent_years %>%
   print(n = Inf)
 
 
+
+
+
 pred_tot <- sent_years %>% 
   dplyr::select(-pm.absent, -pm.partial, -am.absent, -am.partial, -d.pred, -n.pred)
-  
- 
   
 sent_prop <- beans_sent %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
@@ -55,12 +56,53 @@ sent_prop <- beans_sent %>%
             se = sd/sqrt(n)) %>% 
   print(n= Inf)
 
+# proportions for new models 4.21.25
+
+B.proportion_df <- sent_years %>% 
+  group_by(plot_id, block, growth_stage, treatment, year) %>% 
+  summarise(prop = mean(to.predated)) %>% 
+  mutate_at(1:5, as.factor) %>% 
+  print(n = 10)
+
+B.ad_proportion_df <- B.proportion_df %>% 
+  mutate(ad_prop = case_when(prop == 0 ~ 0.1,
+                             prop == 1 ~ .99,
+                             .default = as.numeric(prop))) %>% 
+  print(n = 10)
+
+B.ad_proportion_df %>% 
+  ggplot(aes(y = ad_prop, x = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_point()
+
+
 
 # subset by year and then growth stage 
 sent_22 <- subset(sent_years, year == '2022')
 sent_23 <- subset(sent_years, year == '2023')
 
 # models all ####
+
+# new beta dist models 4.21.25
+m0 <- glmmTMB(ad_prop ~ (1|year/block/plot_id), family = beta_family(link = "logit"),  data = B.ad_proportion_df)
+m1 <- glmmTMB(ad_prop ~ treatment + (1|year/block/plot_id), family = beta_family(link = "logit"), data = B.ad_proportion_df)
+m2 <- glmmTMB(ad_prop ~ growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = B.ad_proportion_df)
+m3 <- glmmTMB(ad_prop ~ treatment*growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = B.ad_proportion_df)
+anova(m0,m1,m2,m3)
+Anova(m3)
+summary(m2)
+qqnorm(resid(m2))
+hist(resid(m2))
+
+cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
+cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
+
+
+
+
+
+
+
 sent_years <- sent_years %>% 
   mutate_at(vars(1:5), as_factor)
 

@@ -46,11 +46,20 @@ proportion_df <- sent %>%
   mutate_at(1:5, as.factor) %>% 
   print(n = 10)
 
-proportion_df %>% 
-  ggplot(aes(y = prop, x = treatment))+
+ad_proportion_df <- proportion_df %>% 
+  mutate(ad_prop = case_when(prop == 0 ~ 0.1,
+                                   prop == 1 ~ .99,
+                                   .default = as.numeric(prop))) %>% 
+  print(n = 10)
+
+ad_proportion_df %>% 
+  ggplot(aes(y = ad_prop, x = treatment))+
   facet_wrap(~growth_stage)+
   geom_point()
 
+
+
+?case_when
 
 ?mutate_at
 sent_prop <- sent %>% 
@@ -76,12 +85,35 @@ sent_23 <- subset(sent_years, year == '2023')
 # models with beta distribution ####
 proportion_df
 
-m0 <- glmmTMB(prop ~ (1|year/block/plot_id),  data = proportion_df, family = beta_family(link = "logit"))
+m0 <- glmmTMB(ad_prop ~ (1|year/block/plot_id), family = beta_family(link = "logit"),  data = ad_proportion_df)
+m1 <- glmmTMB(ad_prop ~ treatment + (1|year/block/plot_id), family = beta_family(link = "logit"), data = ad_proportion_df)
+m2 <- glmmTMB(ad_prop ~ growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = ad_proportion_df)
+m3 <- glmmTMB(ad_prop ~ treatment*growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = ad_proportion_df)
+anova(m0,m1,m2,m3)
+Anova(m3)
+summary(m2)
+qqnorm(resid(m2))
+hist(resid(m2))
 
+gs_beta_plot <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
 
-m3 <- glmmTMB(prop ~ treatment*growth_stage + (1|year), family = list(family = 'beta', link = 'logit'), data = proportion_df)
-
-?beta_family
+gs_beta_plot %>% 
+  ggplot(aes(x = growth_stage, y = response))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = gs_beta_plot)+
+  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 8)
 
 # all years  ####
 sent_years
