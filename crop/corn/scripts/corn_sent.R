@@ -95,26 +95,6 @@ summary(m2)
 qqnorm(resid(m2))
 hist(resid(m2))
 
-gs_beta_plot <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
-
-gs_beta_plot %>% 
-  ggplot(aes(x = growth_stage, y = response))+
-  geom_point(size = 5)+
-  geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = gs_beta_plot)+
-  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
-  theme_bw()+
-  theme(panel.grid.major.y = element_blank(),
-        panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=22),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
-        axis.ticks = element_blank())+
-  geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 8)
-
 # all years  ####
 sent_years
 pred_tot
@@ -173,7 +153,47 @@ cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
 
 # plots ####
 
-# pub plots: tp combine with beans ##
+# pub plots: to combine with beans ##
+
+#4.21.25
+
+gs_beta_plot <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
+
+corn_sent_gs.p <- gs_beta_plot %>% 
+  ggplot(aes(x = growth_stage, y = response))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = gs_beta_plot)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
+  labs(title = "Corn",
+       x = 'Growth stage')+
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+corn_sent_gs.p
+bean_sent_trt.p
+bean_sent_gs.p
+
+c_b_beta_fig <- ggarrange(bean_sent_gs.p + rremove("ylab") + rremove("xlab"), 
+          bean_sent_trt.p+ rremove("ylab"),
+          corn_sent_gs.p + rremove("ylab"), labels = c("1", "2", "3"), font.label = list(size = 20, color = 'cornsilk4'))
+
+annotate_figure(c_b_beta_fig,
+                left = text_grob("Proportion of predation (x/6)", size = 32, rot = 90))
+
+###
+
 
 sent_trt <- cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
 

@@ -94,15 +94,57 @@ summary(m2)
 qqnorm(resid(m2))
 hist(resid(m2))
 
-cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
-cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
+br_gs <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
+br_trt <- cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
+
+bean_sent_trt.p <- br_trt %>% 
+  ggplot(aes(x = treatment, y = response))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = treatment, ymin = response - SE, ymax = response + SE, width = .5), data = br_trt)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('1', '2', '4', '3'), 
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
+  labs(title = "Soybean")+
+  theme_bw()+
+  labs(x = "Treatment termination")+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = br_trt, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+bean_sent_gs.p <- br_gs %>% 
+  ggplot(aes(x = growth_stage, y = response))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = br_gs)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
+  labs(title = "Soybean")+
+  theme_bw()+
+  labs(x = "Growth stage")+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = br_gs, aes(y = 1, label = trimws(.group)), size = 8)
 
 
 
 
-
-
-
+##
 sent_years <- sent_years %>% 
   mutate_at(vars(1:5), as_factor)
 
