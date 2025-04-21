@@ -38,10 +38,11 @@ sent_years %>%
   print(n = Inf)
 
 
+
+
+
 pred_tot <- sent_years %>% 
   dplyr::select(-pm.absent, -pm.partial, -am.absent, -am.partial, -d.pred, -n.pred)
-  
- 
   
 sent_prop <- beans_sent %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
@@ -55,12 +56,95 @@ sent_prop <- beans_sent %>%
             se = sd/sqrt(n)) %>% 
   print(n= Inf)
 
+# proportions for new models 4.21.25
+
+B.proportion_df <- sent_years %>% 
+  group_by(plot_id, block, growth_stage, treatment, year) %>% 
+  summarise(prop = mean(to.predated)) %>% 
+  mutate_at(1:5, as.factor) %>% 
+  print(n = 10)
+
+B.ad_proportion_df <- B.proportion_df %>% 
+  mutate(ad_prop = case_when(prop == 0 ~ 0.1,
+                             prop == 1 ~ .99,
+                             .default = as.numeric(prop))) %>% 
+  print(n = 10)
+
+B.ad_proportion_df %>% 
+  ggplot(aes(y = ad_prop, x = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_point()
+
+
 
 # subset by year and then growth stage 
 sent_22 <- subset(sent_years, year == '2022')
 sent_23 <- subset(sent_years, year == '2023')
 
 # models all ####
+
+# new beta dist models 4.21.25
+m0 <- glmmTMB(ad_prop ~ (1|year/block/plot_id), family = beta_family(link = "logit"),  data = B.ad_proportion_df)
+m1 <- glmmTMB(ad_prop ~ treatment + (1|year/block/plot_id), family = beta_family(link = "logit"), data = B.ad_proportion_df)
+m2 <- glmmTMB(ad_prop ~ growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = B.ad_proportion_df)
+m3 <- glmmTMB(ad_prop ~ treatment*growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = B.ad_proportion_df)
+anova(m0,m1,m2,m3)
+Anova(m3)
+summary(m2)
+qqnorm(resid(m2))
+hist(resid(m2))
+
+br_gs <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
+br_trt <- cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
+
+bean_sent_trt.p <- br_trt %>% 
+  ggplot(aes(x = treatment, y = response))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = treatment, ymin = response - SE, ymax = response + SE, width = .5), data = br_trt)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('1', '2', '4', '3'), 
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
+  labs(title = "Soybean")+
+  theme_bw()+
+  labs(x = "Treatment termination")+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = br_trt, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+bean_sent_gs.p <- br_gs %>% 
+  ggplot(aes(x = growth_stage, y = response))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = br_gs)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
+  labs(title = "Soybean")+
+  theme_bw()+
+  labs(x = "Growth stage")+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=26),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = br_gs, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+
+
+##
 sent_years <- sent_years %>% 
   mutate_at(vars(1:5), as_factor)
 

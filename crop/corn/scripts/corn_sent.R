@@ -15,6 +15,7 @@ library(lmtest)
 library(nlme)
 library(multcomp)
 library(car)
+library(glmmTMB)
 
 # data ####
 sent <- PSA_PA_Sent_prey
@@ -37,7 +38,30 @@ pred_tot <- sent_years %>%
   dplyr::select(-n.absent, -n.partial, -d.absent, -d.partial, -d.predated)
   
  
-  
+proportion_df <- sent %>%
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  group_by(plot_id, block, growth_stage, treatment, year) %>% 
+  summarise(prop = mean(to.predated)) %>% 
+  mutate_at(1:5, as.factor) %>% 
+  print(n = 10)
+
+ad_proportion_df <- proportion_df %>% 
+  mutate(ad_prop = case_when(prop == 0 ~ 0.1,
+                                   prop == 1 ~ .99,
+                                   .default = as.numeric(prop))) %>% 
+  print(n = 10)
+
+ad_proportion_df %>% 
+  ggplot(aes(y = ad_prop, x = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_point()
+
+
+
+?case_when
+
+?mutate_at
 sent_prop <- sent %>% 
   mutate(date = as.Date(date, "%m/%d/%Y"),
          year = format(date, '%Y')) %>% 
@@ -56,6 +80,20 @@ sent_21 <- subset(sent_years, year == '2021')
 sent_22 <- subset(sent_years, year == '2022')
 sent_23 <- subset(sent_years, year == '2023')
 
+
+
+# models with beta distribution ####
+proportion_df
+
+m0 <- glmmTMB(ad_prop ~ (1|year/block/plot_id), family = beta_family(link = "logit"),  data = ad_proportion_df)
+m1 <- glmmTMB(ad_prop ~ treatment + (1|year/block/plot_id), family = beta_family(link = "logit"), data = ad_proportion_df)
+m2 <- glmmTMB(ad_prop ~ growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = ad_proportion_df)
+m3 <- glmmTMB(ad_prop ~ treatment*growth_stage + (1|year/block/plot_id), family = beta_family(link = "logit"), data = ad_proportion_df)
+anova(m0,m1,m2,m3)
+Anova(m3)
+summary(m2)
+qqnorm(resid(m2))
+hist(resid(m2))
 
 # all years  ####
 sent_years
@@ -115,7 +153,47 @@ cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
 
 # plots ####
 
-# pub plots: tp combine with beans ##
+# pub plots: to combine with beans ##
+
+#4.21.25
+
+gs_beta_plot <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
+
+corn_sent_gs.p <- gs_beta_plot %>% 
+  ggplot(aes(x = growth_stage, y = response))+
+  geom_point(size = 5)+
+  geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = gs_beta_plot)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
+  labs(title = "Corn",
+       x = 'Growth stage')+
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=22),
+        axis.text.y = element_text(size = 26),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 28),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 8)
+
+
+corn_sent_gs.p
+bean_sent_trt.p
+bean_sent_gs.p
+
+c_b_beta_fig <- ggarrange(bean_sent_gs.p + rremove("ylab") + rremove("xlab"), 
+          bean_sent_trt.p+ rremove("ylab"),
+          corn_sent_gs.p + rremove("ylab"), labels = c("1", "2", "3"), font.label = list(size = 20, color = 'cornsilk4'))
+
+annotate_figure(c_b_beta_fig,
+                left = text_grob("Proportion of predation (x/6)", size = 32, rot = 90))
+
+###
+
 
 sent_trt <- cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
 
