@@ -16,6 +16,7 @@ library(nlme)
 library(multcomp)
 library(car)
 library(glmmTMB)
+library(ggpubr)
 
 # data ####
 sent <- PSA_PA_Sent_prey
@@ -47,7 +48,7 @@ proportion_df <- sent %>%
   print(n = 10)
 
 ad_proportion_df <- proportion_df %>% 
-  mutate(ad_prop = case_when(prop == 0 ~ 0.1,
+  mutate(ad_prop = case_when(prop == 0 ~ 0.01,
                                    prop == 1 ~ .99,
                                    .default = as.numeric(prop))) %>% 
   print(n = 10)
@@ -92,8 +93,8 @@ m3 <- glmmTMB(ad_prop ~ treatment*growth_stage + (1|year/block/plot_id), family 
 anova(m0,m1,m2,m3)
 Anova(m3)
 summary(m2)
-qqnorm(resid(m2))
-hist(resid(m2))
+qqnorm(resid(m3))
+hist(resid(m3))
 
 # all years  ####
 sent_years
@@ -156,6 +157,7 @@ cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
 # pub plots: to combine with beans ##
 
 #4.21.25
+cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
 
 gs_beta_plot <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
 
@@ -181,6 +183,8 @@ corn_sent_gs.p <- gs_beta_plot %>%
   geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 8)
 
 
+
+
 corn_sent_gs.p
 bean_sent_trt.p
 bean_sent_gs.p
@@ -190,7 +194,7 @@ c_b_beta_fig <- ggarrange(bean_sent_gs.p + rremove("ylab") + rremove("xlab"),
           corn_sent_gs.p + rremove("ylab"), labels = c("1", "2", "3"), font.label = list(size = 20, color = 'cornsilk4'))
 
 annotate_figure(c_b_beta_fig,
-                left = text_grob("Proportion of predation (x/6)", size = 32, rot = 90))
+                left = text_grob("Probability of predation (x/6)", size = 32, rot = 90))
 
 ###
 
