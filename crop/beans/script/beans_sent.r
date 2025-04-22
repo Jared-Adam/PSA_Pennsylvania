@@ -13,6 +13,8 @@ library(lmtest)
 library(nlme)
 library(multcomp)
 library(car)
+library(ggpubr)
+
 
 # data ####
 beans_sent <- sent_prey_beans_all
@@ -65,7 +67,7 @@ B.proportion_df <- sent_years %>%
   print(n = 10)
 
 B.ad_proportion_df <- B.proportion_df %>% 
-  mutate(ad_prop = case_when(prop == 0 ~ 0.1,
+  mutate(ad_prop = case_when(prop == 0 ~ 0.01,
                              prop == 1 ~ .99,
                              .default = as.numeric(prop))) %>% 
   print(n = 10)
@@ -96,6 +98,7 @@ hist(resid(m2))
 
 br_gs <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
 br_trt <- cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
+
 
 bean_sent_trt.p <- br_trt %>% 
   ggplot(aes(x = treatment, y = response))+
