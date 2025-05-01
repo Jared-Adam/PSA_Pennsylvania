@@ -17,8 +17,7 @@ library(rempsyc)
 library(multcomp)
 library(car)
 library(ggResidpanel)
-library(ggbreak)
-library(gg.gap)
+
 # data ####
 damage_type <- PSA_PA_damage
 
@@ -166,7 +165,7 @@ dmg_prob_plot %>%
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_point(size = 5)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = dmg_prob_plot)+
-  geom_text(data = dmg_prob_plot, aes(y = 0.4, label = trimws(.group)), size = 8)+
+  geom_text(data = dmg_prob_plot, aes(y = 0.4, label = trimws(.group)), size = 9)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(title = 'Corn: Response Damage Score x Treatment and Growth Stage',
@@ -175,19 +174,19 @@ dmg_prob_plot %>%
        y = 'Response damage score (x/4)')+
   theme_bw()+
   theme(panel.grid.major.y = element_blank(),
-           panel.grid.major.x = element_blank(),
-           panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=26),
-        axis.text.y = element_text(size = 26),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=28),
+        axis.text.y = element_text(size = 28),
         axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
+        plot.title = element_text(size = 32),
         plot.subtitle = element_text(size = 24),
         strip.text = element_text(size = 24),
         axis.ticks = element_blank())+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.4,label = label), size = 8)+
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.4,label = label), size = 9)+
   scale_y_continuous(limits = c(0,.4), breaks = c(0,.1,.2,.3,.4))
 
-plot
+
 
 
 
