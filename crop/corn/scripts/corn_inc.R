@@ -13,6 +13,8 @@ library(rempsyc)
 library(multcomp)
 library(car)
 library(ggResidpanel)
+install.packages('ggcorrplot')
+library(ggcorrplot)
 
 # data #####
 damage_inc <- PSA_PA_Inc
@@ -182,27 +184,23 @@ cld(emmeans(m3, ~treatment|growth), Letters = letters)
 # facet_wrap(~growth, labeller = labeller(growth = dmg_growth))+
 
 
-damage_done <- damage_done %>% 
-  mutate(group = case_when(
-    treatment == '1' & growth == 'V3' ~ 'a',
-    treatment == '4' & growth == 'V3' ~ 'ab',
-    treatment == '2' & growth == 'V3' ~ 'b',
-    treatment == '3' & growth == 'V3' ~ 'b',
-    treatment == '4' & growth == 'V5' ~ 'a',
-    treatment == '2' & growth == 'V5' ~ 'a',
-    treatment == '1' & growth == 'V5' ~ 'ab',
-    treatment == '3' & growth == 'V5' ~ 'b',
-  ))
+# pub plot 4.24.25
+
+dmg_prop_fig_df <- cld(emmeans(m3, ~treatment|growth, type = 'response'), Letters = letters)
 
 
 gs.labs <- c("V3  a", "V5  b")
 names(gs.labs) <- c("V3", "V5")
 
-ggplot(damage_done, aes(x = treatment, y = prop_damaged, fill = treatment))+
-  geom_boxplot(alpha = 0.7)+
+num_labs <- data.frame(label = c('1)', '2)'),
+                       growth = c('V3', 'V5'))
+
+ggplot(dmg_prop_fig_df, aes(x = treatment, y = prob))+
   facet_wrap(~growth, labeller = labeller(growth = gs.labs))+
-  geom_point(size = 2)+
-  scale_fill_manual(values = c("#E7298A", "#D95F02", "#1B9E77", "#7570B3"))+
+  geom_point(size = 5)+
+  ylim(0,1)+
+  geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = dmg_prop_fig_df)+
+  geom_text(data = dmg_prop_fig_df, aes(y = 1, label = trimws(.group)), size = 9)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(
@@ -210,20 +208,19 @@ ggplot(damage_done, aes(x = treatment, y = prop_damaged, fill = treatment))+
     subtitle = "Years: 2021-2023",
     x = 'Treatment termination',
     y = 'Proportion damaged (damaged / total)')+
-  theme(legend.position = "none",
-        legend.text = element_text(size = 24),
-        legend.title = element_text(size = 24),
-        axis.text.x = element_text(size=26),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24), 
-        panel.grid.major.y = element_line(color = "darkgrey"),
+  theme_bw()+
+  theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank(),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size = 24))+
-  geom_text(aes(label = group, y = 1), size = 10)
-
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=28),
+        axis.text.y = element_text(size = 28),
+        axis.title = element_text(size = 32),
+        plot.title = element_text(size = 32),
+        plot.subtitle = element_text(size = 24),
+        strip.text = element_text(size = 24),
+        axis.ticks = element_blank())+
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 1,label = label), size = 9)
+  
 
 ggplot(dam_plot, aes(color = treatment))+
   geom_point(aes(x = treatment, y = mean), size = 10)+
