@@ -10,6 +10,8 @@ library(emmeans)
 library(lmtest)
 library(nlme)
 library(multcomp)
+library(glmmTMB)
+
 
 # data ####
 beans_sent <- sent_prey_beans_all
@@ -53,6 +55,30 @@ sent_prop <- sent %>%
             se = sd/sqrt(n)) %>% 
   mutate_at(vars(1:2), factor) %>% 
   print(n= Inf)
+
+
+# changes for the pub from 5.1.25
+
+proportion_df <- sent %>%
+  mutate(date = as.Date(date, "%m/%d/%Y"),
+         year = format(date, '%Y')) %>% 
+  group_by(plot_id, block, growth_stage, treatment, year) %>% 
+  summarise(prop = mean(to.predated)) %>% 
+  mutate(crop = 'corn') %>% 
+  relocate(crop) %>% 
+  mutate_at(1:6, as.factor) %>% 
+  print(n = 10)
+
+ad_proportion_df <- proportion_df %>% 
+  mutate(ad_prop = case_when(prop == 0 ~ 0.01,
+                             prop == 1 ~ .99,
+                             .default = as.numeric(prop))) %>% 
+  print(n = 10)
+
+ad_proportion_df %>% 
+  ggplot(aes(y = ad_prop, x = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_point()
 
 
 
@@ -107,7 +133,26 @@ sent_prop <- beans_sent %>%
             se = sd/sqrt(n)) %>% 
   print(n= Inf)
 
+# changes for the pub from 5.1.25
 
+B.proportion_df <- sent_years %>% 
+  group_by(plot_id, block, growth_stage, treatment, year) %>% 
+  summarise(prop = mean(to.predated)) %>% 
+  mutate(crop = 'beans') %>%
+  relocate(crop) %>% 
+  mutate_at(1:6, as.factor) %>% 
+  print(n = 10)
+
+B.ad_proportion_df <- B.proportion_df %>% 
+  mutate(ad_prop = case_when(prop == 0 ~ 0.01,
+                             prop == 1 ~ .99,
+                             .default = as.numeric(prop))) %>% 
+  print(n = 10)
+
+B.ad_proportion_df %>% 
+  ggplot(aes(y = ad_prop, x = treatment))+
+  facet_wrap(~growth_stage)+
+  geom_point()
 
 
 # pairings ####
@@ -124,15 +169,20 @@ cbent2122 %>%
             sd = sd(to.predated), 
             n = n(), 
             se = sd/sqrt(n))
-# crop  treatment  mean    sd     n     se
-#   1 corn  1         0.656 0.478    90 0.0504
-# 2 corn  2         0.711 0.456    90 0.0480
-# 3 corn  3         0.844 0.364    90 0.0384
-# 4 corn  4         0.911 0.286    90 0.0302
-# 5 beans 1         0.889 0.316    90 0.0333
-# 6 beans 2         0.967 0.181    90 0.0190
-# 7 beans 3         0.967 0.181    90 0.0190
-# 8 beans 4         0.933 0.251    90 0.0264
+
+# proportion for beta dists binding
+
+cp21 <- ad_proportion_df %>% 
+  filter(year == 2021) %>% 
+  print(n = 10)
+bp22 <- B.ad_proportion_df %>% 
+  filter(year == 2022) %>% 
+  print(n = 10)
+
+
+cb_prop2122 <- rbind(cp21, bp22) %>% 
+  print(n = 10)
+unique(cb_prop2122$crop)
 
 
 # corn 2022 - soybean 2023
@@ -146,17 +196,86 @@ cbent2223 %>%
             sd = sd(to.predated), 
             n = n(), 
             se = sd/sqrt(n))
-# crop  treatment  mean    sd     n     se
-#   1 corn  1         0.9   0.302    90 0.0318
-# 2 corn  2         0.944 0.230    90 0.0243
-# 3 corn  3         0.878 0.329    90 0.0347
-# 4 corn  4         0.933 0.251    90 0.0264
-# 5 beans 1         0.733 0.445    90 0.0469
-# 6 beans 2         0.878 0.329    90 0.0347
-# 7 beans 3         0.944 0.230    90 0.0243
-# 8 beans 4         0.833 0.375    90 0.0395
+
+
+# proportion for beta dists binding
+
+cp22 <- ad_proportion_df %>% 
+  filter(year == 2022) %>% 
+  print(n = 10)
+bp23 <- B.ad_proportion_df %>% 
+  filter(year == 2023) %>% 
+  print(n = 10)
+
+
+cb_prop2223 <- rbind(cp22, bp23) %>% 
+  print(n = 10)
+unique(cb_prop2122$crop)
+
+
+
 
 # models ####
+
+# new 21 22
+
+m0 <- glmmTMB(ad_prop ~ (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2122)
+m1 <- glmmTMB(ad_prop ~ treatment + (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2122)
+m2 <- glmmTMB(ad_prop ~ crop + (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2122)
+m3 <- glmmTMB(ad_prop ~ treatment*crop + (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2122)
+anova(m0,m1,m2,m3)
+# m0  4 -280.22 -269.07 144.11  -288.22                             
+# m2  5 -285.39 -271.45 147.69  -295.39  7.1691      1   0.007417 **
+# m1  7 -278.92 -259.41 146.46  -292.92  0.0000      2   1.000000   
+# m3 11 -283.78 -253.12 152.89  -305.78 12.8648      4   0.011956 * 
+
+cld(emmeans(m3, ~crop, type = 'response'), Letters = letters)
+# crop  response     SE  df asymp.LCL asymp.UCL .group
+# corn     0.793 0.0258 Inf     0.74     0.838  a    
+# beans    0.867 0.0194 Inf     0.834     0.906   b   
+
+cld(emmeans(m3, ~treatment*crop, type = 'response'), Letters = letters)
+# treatment crop  response     SE  df asymp.LCL asymp.UCL .group
+# 1         corn     0.680 0.0591 Inf     0.555     0.783  a    
+# 2         corn     0.757 0.0510 Inf     0.644     0.843  ab   
+# 3         corn     0.829 0.0403 Inf     0.735     0.895  ab   
+# 1         beans    0.854 0.0358 Inf     0.769     0.911  ab   
+# 4         corn     0.870 0.0326 Inf     0.792     0.922  ab   
+# 4         beans    0.874 0.0318 Inf     0.798     0.925   b   
+# 2         beans    0.884 0.0297 Inf     0.812     0.931   b   
+# 3         beans    0.884 0.0297 Inf     0.812     0.931   b 
+
+# 22 23 
+
+m0.1 <- glmmTMB(ad_prop ~ (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2223)
+m1.1 <- glmmTMB(ad_prop ~ treatment + (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2223)
+m2.1 <- glmmTMB(ad_prop ~ crop + (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2223)
+m3.1 <- glmmTMB(ad_prop ~ treatment*crop + (1|block/plot_id), family = beta_family(link = "logit"),  data = cb_prop2223)
+anova(m0.1,m1.1,m2.1,m3.1)
+# m0.1  4 -295.27 -284.12 151.64  -303.27                            
+# m2.1  5 -297.98 -284.04 153.99  -307.98  4.7041      1    0.03009 *
+# m1.1  7 -292.18 -272.67 153.09  -306.18  0.0000      2    1.00000  
+# m3.1 11 -294.75 -264.09 158.38  -316.75 10.5677      4    0.03188 *
+
+cld(emmeans(m3.1, ~crop, type = 'response'), Letters = letters)
+# crop  response     SE  df asymp.LCL asymp.UCL .group
+# beans    0.846 0.0189 Inf     0.806     0.880  a    
+# corn     0.896 0.0147 Inf     0.864     0.922   b  
+
+cld(emmeans(m3.1, ~treatment*crop, type = 'response'), Letters = letters)
+# treatment crop  response     SE  df asymp.LCL asymp.UCL .group
+# 1         beans    0.757 0.0455 Inf     0.657     0.835  a    
+# 4         beans    0.849 0.0338 Inf     0.771     0.905  ab   
+# 2         beans    0.853 0.0332 Inf     0.776     0.907  ab   
+# 3         corn     0.889 0.0271 Inf     0.824     0.932  ab   
+# 1         corn     0.893 0.0263 Inf     0.830     0.935  ab   
+# 4         corn     0.898 0.0252 Inf     0.837     0.938  ab   
+# 3         beans    0.900 0.0248 Inf     0.840     0.940  ab   
+# 2         corn     0.905 0.0239 Inf     0.847     0.943   b   
+
+
+##
+
 cbent2122
 
 m0 <- glmer(to.predated ~ +
