@@ -14,6 +14,7 @@ library(nlme)
 library(multcomp)
 library(car)
 library(ggpubr)
+library(glmmTMB)
 
 
 # data ####
@@ -102,7 +103,7 @@ br_trt <- cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
 
 bean_sent_trt.p <- br_trt %>% 
   ggplot(aes(x = treatment, y = response))+
-  geom_point(size = 5)+
+  geom_point(size = 2)+
   geom_errorbar(aes(x = treatment, ymin = response - SE, ymax = response + SE, width = .5), data = br_trt)+
   ylim(0,1)+
   scale_x_discrete(limits = c('1', '2', '4', '3'), 
@@ -113,19 +114,19 @@ bean_sent_trt.p <- br_trt %>%
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=22),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title  = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 22),
+        strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = br_trt, aes(y = 1, label = trimws(.group)), size = 8)
+  geom_text(data = br_trt, aes(y = 1, label = trimws(.group)), size = 5)
 
 
 bean_sent_gs.p <- br_gs %>% 
   ggplot(aes(x = growth_stage, y = response))+
-  geom_point(size = 5)+
+  geom_point(size = 2)+
   geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = br_gs)+
   ylim(0,1)+
   scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
@@ -135,14 +136,14 @@ bean_sent_gs.p <- br_gs %>%
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=26),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title  = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 22),
+        strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = br_gs, aes(y = 1, label = trimws(.group)), size = 8)
+  geom_text(data = br_gs, aes(y = 1, label = trimws(.group)), size = 5)
 
 
 

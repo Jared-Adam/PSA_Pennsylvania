@@ -84,6 +84,8 @@ sent_23 <- subset(sent_years, year == '2023')
 
 
 # models with beta distribution ####
+# these models are what are being used for the pub
+
 proportion_df
 
 m0 <- glmmTMB(ad_prop ~ (1|year/block/plot_id), family = beta_family(link = "logit"),  data = ad_proportion_df)
@@ -96,60 +98,60 @@ summary(m2)
 qqnorm(resid(m3))
 hist(resid(m3))
 
-# all years  ####
-sent_years
-pred_tot
-sent_prop
-sent_years <- sent_years %>% 
-  mutate_at(vars(1:6), as.factor)
-
-# messed with this on 6/18/24
-# removed growth stage from the random effects term
-# model I am using for now 
-m0 <- glmer(to.predated ~ 
-              (1|year/block/plot_id),
-            data = sent_years, 
-            family = binomial)
-
-m1 <- glmer(to.predated ~ treatment +
-              (1|year/block/plot_id),
-            data = sent_years, 
-            family = binomial)
-
-m2 <- glmer(to.predated ~ treatment+growth_stage +
-              (1|year/block/plot_id),
-            data = sent_years, 
-            family = binomial)
- 
-m3 <- glmer(to.predated ~ treatment*growth_stage +
-              (1|year/block/plot_id),
-            data = sent_years, 
-            family = binomial)
-
-isSingular(m3)
-rePCA(m3)
-Anova(m3)
-
-isSingular(m3)
-check_model(m3)
-hist(residuals(m3))
-anova(m0, m1, m2, m3)
-# npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
-# m0    4 1079.5 1099.5 -535.77   1071.5                          
-# m1    7 1076.9 1111.8 -531.47   1062.9  8.6093  3    0.03496 *  
-# m2    9 1041.8 1086.7 -511.93   1023.9 39.0870  2  3.254e-09 ***
-# m3   15 1051.5 1126.2 -510.73   1021.5  2.3972  6    0.87979    
-
-Anova(m3)
-
-summary(m3)
-r2_nakagawa(m3)
-# Conditional R2: 0.350
-# Marginal R2: 0.076
-
-cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
-cld(emmeans(m3, ~ growth_stage, type = 'response'), Letters = letters)
-cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
+# # all years  ####
+# sent_years
+# pred_tot
+# sent_prop
+# sent_years <- sent_years %>% 
+#   mutate_at(vars(1:6), as.factor)
+# 
+# # messed with this on 6/18/24
+# # removed growth stage from the random effects term
+# # model I am using for now 
+# m0 <- glmer(to.predated ~ 
+#               (1|year/block/plot_id),
+#             data = sent_years, 
+#             family = binomial)
+# 
+# m1 <- glmer(to.predated ~ treatment +
+#               (1|year/block/plot_id),
+#             data = sent_years, 
+#             family = binomial)
+# 
+# m2 <- glmer(to.predated ~ treatment+growth_stage +
+#               (1|year/block/plot_id),
+#             data = sent_years, 
+#             family = binomial)
+#  
+# m3 <- glmer(to.predated ~ treatment*growth_stage +
+#               (1|year/block/plot_id),
+#             data = sent_years, 
+#             family = binomial)
+# 
+# isSingular(m3)
+# rePCA(m3)
+# Anova(m3)
+# 
+# isSingular(m3)
+# check_model(m3)
+# hist(residuals(m3))
+# anova(m0, m1, m2, m3)
+# # npar    AIC    BIC  logLik deviance   Chisq Df Pr(>Chisq)    
+# # m0    4 1079.5 1099.5 -535.77   1071.5                          
+# # m1    7 1076.9 1111.8 -531.47   1062.9  8.6093  3    0.03496 *  
+# # m2    9 1041.8 1086.7 -511.93   1023.9 39.0870  2  3.254e-09 ***
+# # m3   15 1051.5 1126.2 -510.73   1021.5  2.3972  6    0.87979    
+# 
+# Anova(m3)
+# 
+# summary(m3)
+# r2_nakagawa(m3)
+# # Conditional R2: 0.350
+# # Marginal R2: 0.076
+# 
+# cld(emmeans(m3, ~treatment, type = 'response'), Letters = letters)
+# cld(emmeans(m3, ~ growth_stage, type = 'response'), Letters = letters)
+# cld(emmeans(m3, ~treatment|growth_stage, type = 'response'), Letters = letters)
 
 
 # plots ####
@@ -163,7 +165,7 @@ gs_beta_plot <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = let
 
 corn_sent_gs.p <- gs_beta_plot %>% 
   ggplot(aes(x = growth_stage, y = response))+
-  geom_point(size = 5)+
+  geom_point(size = 2)+
   geom_errorbar(aes(x = growth_stage, ymin = response - SE, ymax = response + SE, width = .5), data = gs_beta_plot)+
   ylim(0,1)+
   scale_x_discrete(limits = c('V3', 'V5', 'R3'))+
@@ -173,14 +175,14 @@ corn_sent_gs.p <- gs_beta_plot %>%
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=22),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title  = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 22),
+        strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 8)
+  geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 5)
 
 
 
@@ -191,10 +193,15 @@ bean_sent_gs.p
 
 c_b_beta_fig <- ggarrange(bean_sent_gs.p + rremove("ylab") + rremove("xlab"), 
           bean_sent_trt.p+ rremove("ylab"),
-          corn_sent_gs.p + rremove("ylab"), labels = c("1", "2", "3"), font.label = list(size = 20, color = 'cornsilk4'))
+          corn_sent_gs.p + rremove("ylab"), labels = c("A", "B", "C"), font.label = list(size = 12, color = 'black'))
 
 annotate_figure(c_b_beta_fig,
-                left = text_grob("Probability of predation (x/6)", size = 32, rot = 90))
+                left = text_grob("Mean predation (x/6)", size = 18, rot = 90))
+
+
+ggsave("2025-11-10_Sent.png", plot = , dpi = 1000, width = 10, height = 6, units = "in")
+
+
 
 ###
 
