@@ -448,7 +448,7 @@ num_labs <- data.frame(label = c('1)', '2)'),
 slug_plot <- slug_dmg_plot %>% 
   ggplot(aes(x = treatment, y = prob))+
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
-  geom_point(size = 5)+
+  geom_point(size = 2)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = slug_dmg_plot)+
   ylim(0, 0.78)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
@@ -460,16 +460,16 @@ slug_plot <- slug_dmg_plot %>%
        y = 'Response damage incidence')+
   theme_bw()+
   theme(panel.grid.major.y = element_blank(),
-           panel.grid.major.x = element_blank(),
-           panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=26),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title  = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 22),
+        strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.76,label = label), size = 8)
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.76,label = label), size = 5)
 
 slug_plot
 
@@ -594,7 +594,7 @@ num_labs <- data.frame(label = c('1)', '2)'),
 bcw_plot <- bcw_dm_plot %>% 
   ggplot(aes(x = treatment, y = prob))+
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
-  geom_point(size = 5)+
+  geom_point(size = 2)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = bcw_dm_plot)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
@@ -607,15 +607,15 @@ bcw_plot <- bcw_dm_plot %>%
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=22),
-        axis.text.y = element_text(size = 26),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title  = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 22),
+        strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = bcw_dm_plot, aes(y = 0.14, label = trimws(.group)), size = 8)+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.15,label = label), size = 8)
+  geom_text(data = bcw_dm_plot, aes(y = 0.14, label = trimws(.group)), size = 5)+
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.15,label = label), size = 5)
 bcw_plot
 
 gs.labs <- c("V3  a", "V5  b")
@@ -935,7 +935,7 @@ num_labs <- data.frame(label = c('1)', '2)'),
 mm_plot <- mult_dmg_plot %>% 
   ggplot(aes(x = treatment, y = prob))+
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
-  geom_point(size = 5)+
+  geom_point(size = 2)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = mult_dmg_plot)+
   ylim(0,.135)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
@@ -949,15 +949,15 @@ mm_plot <- mult_dmg_plot %>%
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=22),
-        axis.text.y = element_text(size = 26),
-        axis.title  = element_text(size = 32),
-        plot.title = element_text(size = 28),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title  = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 22),
+        strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = mult_dmg_plot, aes(y = 0.13, label = trimws(.group)), size = 8)+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.135,label = label), size = 8)
+  geom_text(data = mult_dmg_plot, aes(y = 0.13, label = trimws(.group)), size = 5)+
+  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.135,label = label), size = 5)
 mm_plot
 
 
@@ -1025,11 +1025,14 @@ ggplot(aes(x = treatment, y = mean, fill = treatment))+
 comb_plot <- ggarrange(slug_plot + rremove("ylab") + rremove("xlab")  + rremove("x.text"), 
           bcw_plot + rremove("ylab") + rremove("xlab"), 
           mm_plot +  rremove("ylab") + rremove("xlab"),
-          labels = c('1','2','3'),
-          font.label = list(size = 20, color = 'cornsilk4'),
+          labels = c('A', 'B', 'C'),
+          font.label = list(size = 12, color = 'black'),
           hjust = -1.5)
-annotate_figure(comb_plot, bottom = text_grob("Treatment termination", size = 36), 
-                left = text_grob("Response-scale damage incidence", rot = 90, size = 30))
+plot <- annotate_figure(comb_plot, bottom = text_grob("Treatment termination", size = 18), 
+                left = text_grob("Response-scale damage incidence", rot = 90, size = 18))
+
+ggsave("2025-11-10_PestDamage.png", plot = plot, dpi = 1000, width = 10, height = 6, units = "in")
+
 
 
 # DO NOT USE: other models and plot ####
