@@ -495,7 +495,7 @@ final_fig_df <- rbind(c_plot, s_plot) %>%
                            crop == 'bean' & trt == '4' ~ 'b4')) %>% 
   mutate(shape = as.factor(shape))
 
-final_fig_df %>% 
+final_fig <- final_fig_df %>% 
   ggplot(aes(x = pred, y = slugs, linetype = crop))+
   geom_point(size = 10, aes(shape = shape))+
   scale_shape_manual(limits = c("c1", "c2", "c4","c3", 'b1', 'b2', 'b4', 'b3'),
@@ -529,8 +529,7 @@ final_fig_df %>%
   annotate("text", x = 450, y = 300, label = 'Soybean: p < 0.001, R2 = 0.83', size = 8)+
   annotate("text", x = 440, y = 240, label = 'Corn: p < 0.01, R2 = 0.29', size = 8)
   
-?annotate
-
+ggsave("2025-11-10_SxPred.png", plot = final_fig, dpi = 1000, width = 16, height = 10, units = "in")
 
 
 
