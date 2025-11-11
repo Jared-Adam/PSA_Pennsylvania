@@ -195,11 +195,11 @@ c_b_beta_fig <- ggarrange(bean_sent_gs.p + rremove("ylab") + rremove("xlab"),
           bean_sent_trt.p+ rremove("ylab"),
           corn_sent_gs.p + rremove("ylab"), labels = c("A", "B", "C"), font.label = list(size = 12, color = 'black'))
 
-annotate_figure(c_b_beta_fig,
+c_b_beta_fig <- annotate_figure(c_b_beta_fig,
                 left = text_grob("Mean predation (x/6)", size = 18, rot = 90))
 
 
-ggsave("2025-11-10_Sent.png", plot = , dpi = 1000, width = 10, height = 6, units = "in")
+ggsave("2025-11-10_Sent.png", plot = c_b_beta_fig, dpi = 1000, width = 10, height = 6, units = "in")
 
 
 
