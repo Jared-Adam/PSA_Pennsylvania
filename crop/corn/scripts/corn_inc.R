@@ -15,7 +15,8 @@ library(car)
 library(ggResidpanel)
 install.packages('ggcorrplot')
 library(ggcorrplot)
-
+install.packages('patchwork')
+library(patchwork)
 # data #####
 damage_inc <- PSA_PA_Inc
 unique(damage_inc$treatment)
@@ -184,7 +185,7 @@ cld(emmeans(m3, ~treatment|growth), Letters = letters)
 # facet_wrap(~growth, labeller = labeller(growth = dmg_growth))+
 
 
-# pub plot 4.24.25
+# Pest Managment Plot 11/10/2025
 
 dmg_prop_fig_df <- cld(emmeans(m3, ~treatment|growth, type = 'response'), Letters = letters)
 
@@ -195,32 +196,35 @@ names(gs.labs) <- c("V3", "V5")
 num_labs <- data.frame(label = c('1)', '2)'),
                        growth = c('V3', 'V5'))
 
-ggplot(dmg_prop_fig_df, aes(x = treatment, y = prob))+
+PestDmgProp_plot <- ggplot(dmg_prop_fig_df, aes(x = treatment, y = prob))+
   facet_wrap(~growth, labeller = labeller(growth = gs.labs))+
-  geom_point(size = 5)+
+  geom_point(size = 2)+
   ylim(0,1)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = dmg_prop_fig_df)+
-  geom_text(data = dmg_prop_fig_df, aes(y = 1, label = trimws(.group)), size = 9)+
+  geom_text(data = dmg_prop_fig_df, aes(y = 1, label = trimws(.group)), size = 5)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(
-    title = "Corn: Damage Incidence x Treatment",
-    subtitle = "Years: 2021-2023",
+    title = "A                                               B",
     x = 'Treatment termination',
     y = 'Proportion damaged (damaged / total)')+
   theme_bw()+
   theme(panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.grid.minor = element_blank(), 
-        axis.text.x = element_text(size=28),
-        axis.text.y = element_text(size = 28),
-        axis.title = element_text(size = 32),
-        plot.title = element_text(size = 32),
-        plot.subtitle = element_text(size = 24),
-        strip.text = element_text(size = 24),
-        axis.ticks = element_blank())+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 1,label = label), size = 9)
-  
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        strip.text = element_text(size = 12),
+        axis.ticks = element_blank())
+  # geom_text(data = num_labs, mapping = aes(x = 0.6, y = 1,label = label), size = 5)
+
+ggsave("2025-11-10_PestProp.png", plot = PestDmgProp_plot, dpi = 1000, width = 6, height = 4, units = "in")
+
+
+
+##
 
 ggplot(dam_plot, aes(color = treatment))+
   geom_point(aes(x = treatment, y = mean), size = 10)+
