@@ -529,7 +529,7 @@ final_fig <- final_fig_df %>%
   annotate("text", x = 450, y = 300, label = 'Soybean: p < 0.001, R2 = 0.83', size = 8)+
   annotate("text", x = 440, y = 240, label = 'Corn: p < 0.01, R2 = 0.29', size = 8)
   
-ggsave("2025-11-10_SxPred.png", plot = final_fig, dpi = 1000, width = 16, height = 10, units = "in")
+ggsave("2025-11-10_SxPred.png", plot = final_fig, dpi = 1000, width = 18, height = 10, units = "in")
 
 
 
