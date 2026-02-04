@@ -159,7 +159,7 @@ hist(resid(m3))
 # pub plots: to combine with beans ##
 
 #4.21.25
-cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
+trt_beta_plot <- cld(emmeans(m1, ~treatment, type = 'response'), Letters = letters)
 
 gs_beta_plot <- cld(emmeans(m2, ~growth_stage, type = 'response'), Letters = letters)
 
@@ -185,21 +185,44 @@ corn_sent_gs.p <- gs_beta_plot %>%
   geom_text(data = gs_beta_plot, aes(y = 1, label = trimws(.group)), size = 5)
 
 
+corn_sent_trt.p <- trt_beta_plot %>% 
+  ggplot(aes(x = treatment, y = response))+
+  geom_point(size = 2)+
+  geom_errorbar(aes(x = treatment, ymin = response - SE, ymax = response + SE, width = .5), data = trt_beta_plot)+
+  ylim(0,1)+
+  scale_x_discrete(limits = c('1', '2', '4', '3'), 
+                   labels = c('No CC', 'Early', 'Late', 'Green'))+
+  labs(title = "Corn")+
+  theme_bw()+
+  labs(x = "Treatment termination")+
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(), 
+        axis.text.x = element_text(size=12),
+        axis.text.y = element_text(size = 12),
+        axis.title  = element_text(size = 14),
+        plot.title = element_text(size = 14),
+        plot.subtitle = element_text(size = 22),
+        strip.text = element_text(size = 12),
+        axis.ticks = element_blank())
+  #geom_text(data = trt_beta_plot, aes(y = 1, label = trimws(.group)), size = 5)
 
 
+corn_sent_trt.p
 corn_sent_gs.p
 bean_sent_trt.p
 bean_sent_gs.p
 
-c_b_beta_fig <- ggarrange(bean_sent_gs.p + rremove("ylab") + rremove("xlab"), 
-          bean_sent_trt.p+ rremove("ylab"),
-          corn_sent_gs.p + rremove("ylab"), labels = c("A", "B", "C"), font.label = list(size = 12, color = 'black'))
+c_b_beta_fig <- ggarrange(corn_sent_gs.p + rremove("ylab") + rremove("xlab"), 
+          corn_sent_trt.p+ rremove("ylab") + rremove("xlab"),                
+          bean_sent_gs.p+ rremove("ylab"),
+          bean_sent_trt.p + rremove("ylab"), labels = c("A", "B", "C", "D"), font.label = list(size = 12, color = 'black'))
 
 c_b_beta_fig <- annotate_figure(c_b_beta_fig,
                 left = text_grob("Mean predation (x/6)", size = 18, rot = 90))
 
 
-ggsave("2025-11-10_Sent.png", plot = c_b_beta_fig, dpi = 1000, width = 10, height = 6, units = "in")
+ggsave("2026-2-4_Sent.png", plot = c_b_beta_fig, dpi = 1000, width = 10, height = 6, units = "in")
 
 
 
