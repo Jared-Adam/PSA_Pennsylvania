@@ -17,6 +17,7 @@ library(multcomp)
 library(car)
 library(glmmTMB)
 library(ggpubr)
+packageVersion("glmmTMB")
 
 # data ####
 sent <- PSA_PA_Sent_prey
