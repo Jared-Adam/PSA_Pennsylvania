@@ -468,8 +468,9 @@ slug_plot <- slug_dmg_plot %>%
         plot.title = element_text(size = 14),
         plot.subtitle = element_text(size = 22),
         strip.text = element_text(size = 12),
-        axis.ticks = element_blank())+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.76,label = label), size = 5)
+        axis.ticks = element_blank())
+
+#  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.76,label = label), size = 5)
 
 slug_plot
 
@@ -595,6 +596,7 @@ bcw_plot <- bcw_dm_plot %>%
   ggplot(aes(x = treatment, y = prob))+
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_point(size = 2)+
+  ylim(NA, 0.15)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = bcw_dm_plot)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
@@ -614,8 +616,9 @@ bcw_plot <- bcw_dm_plot %>%
         plot.subtitle = element_text(size = 22),
         strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = bcw_dm_plot, aes(y = 0.14, label = trimws(.group)), size = 5)+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.15,label = label), size = 5)
+  geom_text(data = bcw_dm_plot, aes(y = 0.14, label = trimws(.group)), size = 5)
+
+#  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.15,label = label), size = 5)
 bcw_plot
 
 gs.labs <- c("V3  a", "V5  b")
@@ -937,7 +940,7 @@ mm_plot <- mult_dmg_plot %>%
   facet_wrap(~growth_stage, labeller = labeller(growth_stage = gs.labs))+
   geom_point(size = 2)+
   geom_errorbar(aes(x = treatment, ymin = prob - SE, ymax = prob + SE, width = .5), data = mult_dmg_plot)+
-  ylim(0,.135)+
+  ylim(0,.15)+
   scale_x_discrete(limits = c("1", "2", "4", "3"),
                    labels=c("No CC", "Early", "Late", "Green"))+
   labs(
@@ -956,8 +959,9 @@ mm_plot <- mult_dmg_plot %>%
         plot.subtitle = element_text(size = 22),
         strip.text = element_text(size = 12),
         axis.ticks = element_blank())+
-  geom_text(data = mult_dmg_plot, aes(y = 0.13, label = trimws(.group)), size = 5)+
-  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.135,label = label), size = 5)
+  geom_text(data = mult_dmg_plot, aes(y = 0.14, label = trimws(.group)), size = 5)
+
+#  geom_text(data = num_labs, mapping = aes(x = 0.6, y = 0.135,label = label), size = 5)
 mm_plot
 
 
@@ -1025,13 +1029,13 @@ ggplot(aes(x = treatment, y = mean, fill = treatment))+
 comb_plot <- ggarrange(slug_plot + rremove("ylab") + rremove("xlab")  + rremove("x.text"), 
           bcw_plot + rremove("ylab") + rremove("xlab"), 
           mm_plot +  rremove("ylab") + rremove("xlab"),
-          labels = c('A', 'B', 'C'),
+         # labels = c('A', 'B', 'C'),
           font.label = list(size = 12, color = 'black'),
           hjust = -1.5)
 plot <- annotate_figure(comb_plot, bottom = text_grob("Treatment termination", size = 18), 
-                left = text_grob("Response-scale damage incidence", rot = 90, size = 18))
+                left = text_grob("Proportion of plants with damage per pest", rot = 90, size = 18))
 
-ggsave("2025-11-10_PestDamage.png", plot = plot, dpi = 1000, width = 10, height = 6, units = "in")
+ggsave("2026-2-12_PestDamage.png", plot = plot, dpi = 1000, width = 10, height = 6, units = "in")
 
 
 
