@@ -714,7 +714,7 @@ arthropod_crop_plot <- tot_se_years_bc_df %>%
   labs(title = "Total arthropod by crop",
        x = 'Crop',
        y = 'Mean arthropod population / plot')+
-  scale_x_discrete(labels=c('Corn', 'Soybeans'))+
+  scale_x_discrete(labels=c('Corn', 'Soybean'))+
   theme_bw()+
   theme(legend.position = "none",
         panel.grid.major.y = element_blank(),
@@ -749,7 +749,7 @@ for(i in 1:9){
   print(i)
   spss <- colnames(all_sp_list[i])
   print(spss)
-  all_loop <- subset(func_tot, dplyr::select = c("crop", "trt", spss))
+  all_loop <- subset(func_tot, select=c("crop", "trt", spss))
   colnames(all_loop) <- c("crop", "trt", "spss")
   
   model <- aov(spss ~ crop, all_loop)
@@ -797,7 +797,7 @@ car<-cartabid_plot %>%
   annotate("text", x = 2, y=6, label = "*", size = 6)+
   labs(title = "Carabidae")+
   scale_x_discrete(limits = c('corn', 'beans'),
-                   labels=c('Corn', 'Soybeans'))+
+                   labels=c('Corn', 'Soybean'))+
   theme_bw()+
   theme(legend.position = "none",
         panel.grid.major.y = element_blank(),
@@ -819,7 +819,7 @@ ggplot(cartabid_plot, aes(x =crop, y = mean, fill = crop))+
   labs(title = "Carabidae")+
        #x = 'Crop')+
   scale_x_discrete(limits = c('corn', 'beans'),
-                   labels=c('Corn', 'Soybeans'))+
+                   labels=c('Corn', 'Soybean'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02"))+
   theme(legend.position = "none",
         axis.text.x = element_text(size=26),
@@ -856,7 +856,7 @@ ar <- arane_plot %>%
   annotate("text", x = 2, y=6, label = "*", size = 6)+
   labs(title = "Araneomorph")+
   scale_x_discrete(limits = c('corn', 'beans'),
-                   labels=c('Corn', 'Soybeans'))+
+                   labels=c('Corn', 'Soybean'))+
   theme_bw()+
   theme(legend.position = "none",
         panel.grid.major.y = element_blank(),
@@ -880,7 +880,7 @@ ggplot(arane_plot, aes(x = crop, y = mean, fill = crop))+
   labs(title = "Araneomorph")+
       # x = 'Crop')+
   scale_x_discrete(limits = c('corn', 'beans'),
-                   labels=c('Corn', 'Soybeans'))+
+                   labels=c('Corn', 'Soybean'))+
   scale_fill_manual(values = c("#1B9E77","#D95F02"))+
   theme(legend.position = "none",
         axis.text.x = element_text(size=26),
@@ -928,11 +928,11 @@ cld(emmeans(lyc_mod, ~crop ), Letters = letters)
 lyc <- lyc_plot %>% 
   ggplot(aes(x =crop, y = mean))+
   geom_bar(position = 'dodge', stat = 'identity')+
-  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = , width = 0.5)+
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se), color = 'black', alpha = 1, size = .5, width = 0.5)+
   annotate("text", x = 2, y=6, label = "*", size = 6)+
   labs(title = "Lycosidae")+
   scale_x_discrete(limits = c('corn', 'beans'),
-                   labels=c('Corn', 'Soybeans'))+
+                   labels=c('Corn', 'Soybean'))+
   theme_bw()+
   theme(legend.position = "none",
         panel.grid.major.y = element_blank(),
@@ -976,9 +976,10 @@ fig <- ggarrange(arthropod_crop_plot + rremove("xy.title"), ar+ rremove("xy.titl
                  lyc+ rremove("xy.title"), labels = c("A", "B", "C", "D"), font.label = list(size = 12, color = 'black'))
 fig <- annotate_figure(fig,
                 bottom = text_grob("Crop", size = 18),
-                left = text_grob("Average abundance / crop", size = 18, rot = 90))
+                left = text_grob("Average predator abundance per crop", size = 18, rot = 90))
+fig
 
-ggsave("2025-11-11_PFAbundance.png", plot = fig, dpi = 1000, width = 10, height = 6, units = "in")
+ggsave("2026-2-23_PFAbundance.png", plot = fig, dpi = 1000, width = 10, height = 6, units = "in")
 
 
 
